@@ -417,6 +417,186 @@ img {
     color: var(--text-secondary);
 }
 
+/* --- Benchmarks --- */
+.benchmarks {
+    padding: 80px 0;
+}
+
+.bench-stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+}
+
+.bench-stat {
+    text-align: center;
+    padding: 24px 32px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    min-width: 180px;
+}
+
+.bench-stat-value {
+    display: block;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--rust);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.bench-stat-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.bench-highlight {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 56px;
+}
+
+.bench-chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.bench-chart-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.bench-detail-title {
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.bench-detail-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+}
+
+.bench-scenarios {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 960px;
+    margin: 0 auto 32px;
+}
+
+.bench-scenario {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.bench-scenario[open] {
+    border-color: var(--border-light);
+}
+
+.bench-scenario summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    transition: background 0.2s;
+}
+
+.bench-scenario summary::-webkit-details-marker {
+    display: none;
+}
+
+.bench-scenario summary::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(-45deg);
+    margin-right: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.bench-scenario[open] summary::before {
+    transform: rotate(45deg);
+}
+
+.bench-scenario summary:hover {
+    background: var(--bg-secondary);
+}
+
+.bench-scenario-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.bench-scenario-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    background: rgba(78, 204, 163, 0.1);
+    color: var(--green);
+    border: 1px solid rgba(78, 204, 163, 0.25);
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.bench-scenario-badge-best {
+    background: rgba(206, 66, 43, 0.1);
+    color: var(--rust);
+    border-color: rgba(206, 66, 43, 0.3);
+}
+
+.bench-scenario-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--border);
+}
+
+.bench-scenario-charts img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.bench-methodology {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
 /* --- Demo Preview --- */
 .demo-section {
     padding: 80px 0;
@@ -815,6 +995,27 @@ img {
 }
 
 @media (max-width: 768px) {
+    .bench-stats {
+        gap: 16px;
+    }
+
+    .bench-stat {
+        min-width: 140px;
+        padding: 18px 20px;
+    }
+
+    .bench-stat-value {
+        font-size: 1.6rem;
+    }
+
+    .bench-chart-card {
+        padding: 8px;
+    }
+
+    .bench-scenario-charts {
+        padding: 8px 12px 12px;
+    }
+
     .nav-toggle {
         display: flex;
     }

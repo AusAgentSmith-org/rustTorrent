@@ -25,6 +25,7 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#features">Features</a></li>
+                <li><a href="#benchmarks">Benchmarks</a></li>
                 <li><a href="#demo-section">Demo</a></li>
                 <li><a href="#getting-started">Get Started</a></li>
                 <li><a href="#attribution">Attribution</a></li>
@@ -40,8 +41,8 @@
                 <h1 class="hero-title"><span class="rust-text">rust</span>Torrent</h1>
                 <p class="hero-subtitle">A Modern BitTorrent Client Written in Rust</p>
                 <p class="hero-description">
-                    Fast, lightweight, and built for self-hosters. rustTorrent provides a clean web UI,
-                    a full HTTP API, and runs anywhere Docker does. Currently in active development.
+                    Fast, lightweight, and built for self-hosters. Benchmarked at up to <strong>11x faster</strong> than qBittorrent
+                    with throughput exceeding <strong>15 Gbps</strong>. Clean web UI, full HTTP API, and runs anywhere Docker does.
                 </p>
                 <div class="hero-badges">
                     <span class="badge badge-rust">Rust</span>
@@ -92,7 +93,7 @@
                         </svg>
                     </div>
                     <h3>Blazing Fast</h3>
-                    <p>Written in Rust with async I/O powered by Tokio. Low memory footprint and high throughput even with many simultaneous torrents.</p>
+                    <p>2.5&ndash;11x faster than qBittorrent in benchmarks. Peaks at 15+ Gbps throughput with async I/O powered by Tokio and efficient multi-core utilization.</p>
                 </div>
 
                 <div class="feature-card">
@@ -183,7 +184,7 @@
                 <div class="arch-card">
                     <div class="arch-label">Core Library</div>
                     <div class="arch-items">
-                        <span>librqbit</span>
+                        <span>librtbit</span>
                         <span>Session Manager</span>
                         <span>Torrent State Machine</span>
                         <span>Pluggable Storage</span>
@@ -218,6 +219,118 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- Benchmarks Section -->
+    <section class="benchmarks" id="benchmarks">
+        <div class="container">
+            <h2 class="section-title">Performance</h2>
+            <p class="section-subtitle">Benchmarked head-to-head against qBittorrent across six real-world scenarios</p>
+
+            <!-- Headline Stats -->
+            <div class="bench-stats">
+                <div class="bench-stat">
+                    <span class="bench-stat-value">11x</span>
+                    <span class="bench-stat-label">Faster (100 files)</span>
+                </div>
+                <div class="bench-stat">
+                    <span class="bench-stat-value">15.7 Gbps</span>
+                    <span class="bench-stat-label">Peak throughput</span>
+                </div>
+                <div class="bench-stat">
+                    <span class="bench-stat-value">2.5&ndash;11x</span>
+                    <span class="bench-stat-label">Faster across all scenarios</span>
+                </div>
+            </div>
+
+            <!-- Highlighted Charts -->
+            <div class="bench-highlight">
+                <div class="bench-chart-card">
+                    <img src="img/benchmarks/cross_scenario.svg" alt="Cross-scenario speed comparison: rustTorrent vs qBittorrent" loading="lazy">
+                </div>
+                <div class="bench-chart-card">
+                    <img src="img/benchmarks/dashboard.svg" alt="Benchmark dashboard: duration, speed, CPU, and memory across all scenarios" loading="lazy">
+                </div>
+            </div>
+
+            <!-- All Scenarios -->
+            <h3 class="bench-detail-title">Detailed Scenario Breakdowns</h3>
+            <p class="bench-detail-subtitle">Click a scenario to see the full comparison and time-series data</p>
+
+            <div class="bench-scenarios">
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 3 peers</span>
+                        <span class="bench-scenario-badge">2.83x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz8g_f1_3p_comparison.svg" alt="8GB 1 file 3 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz8g_f1_3p_timeseries.svg" alt="8GB 1 file 3 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">16 GB &middot; 1 file &middot; 3 peers</span>
+                        <span class="bench-scenario-badge">2.55x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz16g_f1_3p_comparison.svg" alt="16GB 1 file 3 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz16g_f1_3p_timeseries.svg" alt="16GB 1 file 3 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">8 GB &middot; 10 files &middot; 3 peers</span>
+                        <span class="bench-scenario-badge">3.86x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz8g_f10_3p_comparison.svg" alt="8GB 10 files 3 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz8g_f10_3p_timeseries.svg" alt="8GB 10 files 3 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">8 GB &middot; 100 files &middot; 3 peers</span>
+                        <span class="bench-scenario-badge bench-scenario-badge-best">11.03x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz8g_f100_3p_comparison.svg" alt="8GB 100 files 3 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz8g_f100_3p_timeseries.svg" alt="8GB 100 files 3 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 100 peers</span>
+                        <span class="bench-scenario-badge">2.86x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz8g_f1_100p_comparison.svg" alt="8GB 1 file 100 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz8g_f1_100p_timeseries.svg" alt="8GB 1 file 100 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+
+                <details class="bench-scenario">
+                    <summary>
+                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 500 peers</span>
+                        <span class="bench-scenario-badge">3.60x faster</span>
+                    </summary>
+                    <div class="bench-scenario-charts">
+                        <img src="img/benchmarks/sz8g_f1_500p_comparison.svg" alt="8GB 1 file 500 peers comparison" loading="lazy">
+                        <img src="img/benchmarks/sz8g_f1_500p_timeseries.svg" alt="8GB 1 file 500 peers timeseries" loading="lazy">
+                    </div>
+                </details>
+            </div>
+
+            <p class="bench-methodology">
+                All benchmarks run in Docker containers on identical hardware with direct peer-to-peer transfers.
+                Metrics collected via Docker stats API. Full methodology and scripts available on
+                <a href="https://github.com/AusAgentSmith/rustTorrent" target="_blank" rel="noopener">GitHub</a>.
+            </p>
         </div>
     </section>
 
@@ -306,7 +419,7 @@
                         <div class="terminal-line"><span class="terminal-prompt">$</span> docker compose up --build -d</div>
                         <div class="terminal-line terminal-output">
                             <span class="terminal-success">&#10003;</span> Building multi-stage Rust image...<br>
-                            <span class="terminal-success">&#10003;</span> Starting rqbit container<br>
+                            <span class="terminal-success">&#10003;</span> Starting rtbit container<br>
                             <span class="terminal-success">&#10003;</span> Web UI available at <span class="terminal-link">http://localhost:3030</span>
                         </div>
                     </div>
@@ -327,9 +440,9 @@
                         <div class="terminal-line"><span class="terminal-prompt">$</span> git clone https://github.com/AusAgentSmith/rustTorrent.git</div>
                         <div class="terminal-line"><span class="terminal-prompt">$</span> cd rustTorrent</div>
                         <div class="terminal-line"><span class="terminal-prompt">$</span> cargo build --release --features webui</div>
-                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./target/release/rqbit server start</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./target/release/rtbit server start</div>
                         <div class="terminal-line terminal-output">
-                            <span class="terminal-success">&#10003;</span> rqbit server started<br>
+                            <span class="terminal-success">&#10003;</span> rtbit server started<br>
                             <span class="terminal-success">&#10003;</span> Web UI at <span class="terminal-link">http://localhost:3030</span>
                         </div>
                     </div>
