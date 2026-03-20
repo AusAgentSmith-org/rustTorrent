@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>rustTorrent - Interactive Demo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f9f2;</text></svg>">
+<style>
+/* ============================================
+   rustTorrent Demo — Self-contained styles
+   ============================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #0f1419;
+  --surface: #1a1f2e;
+  --card: #1c2333;
+  --border: #2a3040;
+  --border-light: #353d50;
+  --text: #e4e8f0;
+  --text-secondary: #8b95a8;
+  --text-muted: #5a6478;
+  --rust: #ce422b;
+  --rust-hover: #e04e35;
+  --green: #4ecca3;
+  --blue: #4a9eff;
+  --yellow: #f9a825;
+  --red: #e74c3c;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.4);
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Roboto Mono', Menlo, monospace;
+  --nav-height: 52px;
+  --sidebar-width: 240px;
+}
+
+html { font-size: 14px; line-height: 1.5; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+a { color: var(--rust); text-decoration: none; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Layout */
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--nav-height);
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar-brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.topbar-brand .rust { color: var(--rust); }
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.topbar-stats .down { color: var(--green); }
+.topbar-stats .up { color: var(--blue); }
+
+.btn-sm {
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+
+.btn-rust { background: var(--rust); color: #fff; }
+.btn-rust:hover { background: var(--rust-hover); }
+.btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface); color: var(--text); }
+
+/* Main content */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 320px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-box:focus { border-color: var(--rust); }
+.search-box::placeholder { color: var(--text-muted); }
+
+.filter-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+
+.filter-btn:hover { background: var(--surface); color: var(--text); }
+.filter-btn.active { background: var(--rust); color: #fff; border-color: var(--rust); }
+
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Torrent Table */
+.table-wrap { flex: 1; overflow-y: auto; }
+
+table { width: 100%; border-collapse: collapse; }
+thead { position: sticky; top: 0; z-index: 1; background: var(--surface); }
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+th:hover { color: var(--text-secondary); }
+th .sort-arrow { font-size: 0.6rem; margin-left: 4px; opacity: 0.4; }
+th .sort-arrow.active { opacity: 1; color: var(--rust); }
+
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr { transition: background 0.1s; }
+tr:hover td { background: rgba(206, 66, 43, 0.03); }
+tr.selected td { background: rgba(206, 66, 43, 0.08); }
+
+.t-name {
+  font-weight: 500;
+  color: var(--text);
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.t-size, .t-eta { color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap; }
+.t-speed { font-family: var(--font-mono); font-size: 0.82rem; white-space: nowrap; }
+.t-speed-down { color: var(--green); }
+.t-speed-up { color: var(--blue); }
+.t-speed-none { color: var(--text-muted); }
+
+.t-peers {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* Progress bar */
+.progress-cell { min-width: 140px; }
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.progress-fill.downloading { background: var(--rust); }
+.progress-fill.seeding { background: var(--green); }
+.progress-fill.paused { background: var(--text-muted); }
+.progress-fill.checking { background: var(--yellow); }
+.progress-fill.error { background: var(--red); }
+
+.progress-pct {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-downloading { background: rgba(78, 204, 163, 0.1); color: var(--green); }
+.status-downloading .dot { background: var(--green); }
+.status-seeding { background: rgba(74, 158, 255, 0.1); color: var(--blue); }
+.status-seeding .dot { background: var(--blue); }
+.status-paused { background: rgba(138, 150, 168, 0.08); color: var(--text-muted); }
+.status-paused .dot { background: var(--text-muted); }
+.status-checking { background: rgba(249, 168, 37, 0.1); color: var(--yellow); }
+.status-checking .dot { background: var(--yellow); }
+.status-error { background: rgba(231, 76, 60, 0.1); color: var(--red); }
+.status-error .dot { background: var(--red); }
+
+/* Action buttons */
+.actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+tr:hover .actions { opacity: 1; }
+.action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.15s;
+}
+.action-btn:hover { background: var(--surface); color: var(--text); }
+.action-btn.danger:hover { background: rgba(231, 76, 60, 0.1); color: var(--red); }
+
+/* Detail pane */
+.detail-pane {
+  display: none;
+  border-top: 2px solid var(--rust);
+  background: var(--surface);
+  max-height: 300px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.detail-pane.open { display: block; }
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-title { font-weight: 600; font-size: 1rem; }
+.detail-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+}
+.detail-close:hover { color: var(--text); }
+
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+.detail-tab {
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.detail-tab:hover { color: var(--text-secondary); }
+.detail-tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+.detail-content { padding: 16px 20px; }
+
+.file-list { list-style: none; }
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.file-item:last-child { border-bottom: none; }
+.file-icon { color: var(--text-muted); }
+.file-name { flex: 1; color: var(--text); }
+.file-size { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+
+.peer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.peer-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+}
+.peer-addr { font-family: var(--font-mono); color: var(--text); margin-bottom: 4px; }
+.peer-client { color: var(--text-muted); font-size: 0.78rem; }
+.peer-speed { font-family: var(--font-mono); font-size: 0.78rem; margin-top: 4px; }
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 6px 16px;
+  font-size: 0.85rem;
+}
+.info-label { color: var(--text-muted); font-weight: 500; }
+.info-value { color: var(--text); font-family: var(--font-mono); font-size: 0.82rem; }
+
+/* Add torrent modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal h3 { margin-bottom: 16px; font-size: 1.1rem; }
+
+.modal-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  outline: none;
+}
+.modal-input:focus { border-color: var(--rust); }
+.modal-input::placeholder { color: var(--text-muted); }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Back link */
+.back-link {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  text-decoration: none;
+  z-index: 50;
+  transition: all 0.15s;
+}
+.back-link:hover { background: var(--card); color: var(--text); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  padding: 10px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(0); pointer-events: auto; }
+.toast.error { border-left-color: var(--red); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .topbar-stats { display: none; }
+  th:nth-child(n+5), td:nth-child(n+5) { display: none; }
+  .t-name { max-width: 180px; }
+  .toolbar { flex-wrap: wrap; }
+  .search-box { max-width: none; min-width: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand"><span class="rust">rust</span>Torrent <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span></div>
+    <div class="topbar-actions">
+      <div class="topbar-stats">
+        <span class="down" id="globalDown">&#9660; 0 MB/s</span>
+        <span class="up" id="globalUp">&#9650; 0 MB/s</span>
+        <span>DHT: <span id="dhtNodes">847</span> nodes</span>
+      </div>
+      <button class="btn-sm btn-rust" onclick="openAddModal()">+ Add Torrent</button>
+      <a href="../" class="btn-sm btn-ghost">Back to Site</a>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="search" class="search-box" id="searchBox" placeholder="Filter torrents...">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" data-filter="downloading" onclick="setFilter('downloading', this)">Downloading</button>
+    <button class="filter-btn" data-filter="seeding" onclick="setFilter('seeding', this)">Seeding</button>
+    <button class="filter-btn" data-filter="paused" onclick="setFilter('paused', this)">Paused</button>
+    <div class="toolbar-right">
+      <span id="torrentCount">0 torrents</span>
+    </div>
+  </div>
+
+  <!-- Main table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')">Name <span class="sort-arrow" id="sort-name">&#9650;</span></th>
+          <th onclick="sortBy('size')">Size <span class="sort-arrow" id="sort-size">&#9650;</span></th>
+          <th onclick="sortBy('progress')">Progress <span class="sort-arrow" id="sort-progress">&#9650;</span></th>
+          <th onclick="sortBy('downSpeed')">Down <span class="sort-arrow" id="sort-downSpeed">&#9650;</span></th>
+          <th onclick="sortBy('upSpeed')">Up <span class="sort-arrow" id="sort-upSpeed">&#9650;</span></th>
+          <th onclick="sortBy('peers')">Peers <span class="sort-arrow" id="sort-peers">&#9650;</span></th>
+          <th onclick="sortBy('eta')">ETA <span class="sort-arrow" id="sort-eta">&#9650;</span></th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="torrentTable"></tbody>
+    </table>
+  </div>
+
+  <!-- Detail pane -->
+  <div class="detail-pane" id="detailPane">
+    <div class="detail-header">
+      <span class="detail-title" id="detailTitle">-</span>
+      <button class="detail-close" onclick="closeDetail()">&times;</button>
+    </div>
+    <div class="detail-tabs">
+      <button class="detail-tab active" data-tab="files" onclick="switchDetailTab('files', this)">Files</button>
+      <button class="detail-tab" data-tab="peers" onclick="switchDetailTab('peers', this)">Peers</button>
+      <button class="detail-tab" data-tab="info" onclick="switchDetailTab('info', this)">Info</button>
+    </div>
+    <div class="detail-content" id="detailContent"></div>
+  </div>
+</div>
+
+<!-- Add torrent modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h3>Add Torrent</h3>
+    <input type="text" class="modal-input" id="magnetInput" placeholder="Paste magnet link or info hash...">
+    <div class="modal-actions">
+      <button class="btn-sm btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn-sm btn-rust" onclick="addTorrent()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// Demo data — all fictional names
+// ============================================
+var DUMMY_TORRENTS = [
+  {
+    id: 1, name: 'project-alpha-v2.3.iso', size: 4509715660,
+    progress: 0.73, state: 'downloading', downSpeed: 13005000, upSpeed: 1200000,
+    peers: 42, seeds: 156, eta: 380,
+    hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+    files: [
+      { name: 'project-alpha-v2.3.iso', size: 4509715660 }
+    ]
+  },
+  {
+    id: 2, name: 'open-dataset-2024-q3.tar.gz', size: 20078927462,
+    progress: 0.31, state: 'downloading', downSpeed: 8500000, upSpeed: 400000,
+    peers: 28, seeds: 89, eta: 2240,
+    hash: 'b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3',
+    files: [
+      { name: 'dataset-part-01.parquet', size: 5019731865 },
+      { name: 'dataset-part-02.parquet', size: 5019731865 },
+      { name: 'dataset-part-03.parquet', size: 5019731865 },
+      { name: 'dataset-part-04.parquet', size: 5019731867 },
+      { name: 'README.md', size: 14522 }
+    ]
+  },
+  {
+    id: 3, name: 'creative-commons-music-collection', size: 935329792,
+    progress: 1.0, state: 'seeding', downSpeed: 0, upSpeed: 2400000,
+    peers: 8, seeds: 234, eta: -1,
+    hash: 'c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+    files: [
+      { name: 'Track01-Sunrise.flac', size: 52428800 },
+      { name: 'Track02-Moonlight.flac', size: 48234496 },
+      { name: 'Track03-Rainstorm.flac', size: 55574528 },
+      { name: 'Track04-Breeze.flac', size: 44040192 },
+      { name: 'Track05-Thunder.flac', size: 61865984 },
+      { name: 'cover.jpg', size: 2097152 },
+      { name: 'tracklist.txt', size: 1024 }
+    ]
+  },
+  {
+    id: 4, name: 'firmware-update-bundle-v8.1', size: 1181116006,
+    progress: 0.56, state: 'paused', downSpeed: 0, upSpeed: 0,
+    peers: 0, seeds: 0, eta: -1,
+    hash: 'd4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5',
+    files: [
+      { name: 'firmware-main-v8.1.bin', size: 838860800 },
+      { name: 'firmware-radio-v8.1.bin', size: 209715200 },
+      { name: 'changelog.txt', size: 45678 },
+      { name: 'checksums.sha256', size: 512 }
+    ]
+  },
+  {
+    id: 5, name: 'blender-benchmark-scenes-2024', size: 7516192768,
+    progress: 0.89, state: 'downloading', downSpeed: 22000000, upSpeed: 3100000,
+    peers: 67, seeds: 312, eta: 90,
+    hash: 'e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6',
+    files: [
+      { name: 'monster-under-bed.blend', size: 1879048192 },
+      { name: 'classroom.blend', size: 1610612736 },
+      { name: 'barbershop.blend', size: 2147483648 },
+      { name: 'junk-shop.blend', size: 1879048192 }
+    ]
+  },
+  {
+    id: 6, name: 'public-domain-ebooks-collection', size: 3221225472,
+    progress: 1.0, state: 'seeding', downSpeed: 0, upSpeed: 890000,
+    peers: 12, seeds: 445, eta: -1,
+    hash: 'f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1',
+    files: [
+      { name: 'fiction/', size: 1610612736 },
+      { name: 'non-fiction/', size: 1073741824 },
+      { name: 'poetry/', size: 536870912 },
+      { name: 'catalog.json', size: 524288 }
+    ]
+  },
+  {
+    id: 7, name: 'neural-network-weights-resnet50', size: 102760448,
+    progress: 0.15, state: 'downloading', downSpeed: 3200000, upSpeed: 0,
+    peers: 5, seeds: 23, eta: 28,
+    hash: 'a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3',
+    files: [
+      { name: 'resnet50-weights.h5', size: 98566144 },
+      { name: 'model-config.json', size: 4194304 }
+    ]
+  },
+  {
+    id: 8, name: 'satellite-imagery-tiles-europe-2023', size: 52428800000,
+    progress: 0.04, state: 'downloading', downSpeed: 5600000, upSpeed: 200000,
+    peers: 15, seeds: 8, eta: 9200,
+    hash: 'b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4',
+    files: [
+      { name: 'tiles-z10/', size: 10485760000 },
+      { name: 'tiles-z12/', size: 20971520000 },
+      { name: 'tiles-z14/', size: 20971520000 }
+    ]
+  },
+  {
+    id: 9, name: 'retro-game-dev-toolkit-v3', size: 524288000,
+    progress: 1.0, state: 'seeding', downSpeed: 0, upSpeed: 150000,
+    peers: 3, seeds: 67, eta: -1,
+    hash: 'c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5',
+    files: [
+      { name: 'sprites/', size: 157286400 },
+      { name: 'tilesets/', size: 104857600 },
+      { name: 'sound-effects/', size: 78643200 },
+      { name: 'music/', size: 157286400 },
+      { name: 'docs/', size: 26214400 }
+    ]
+  },
+  {
+    id: 10, name: 'conference-talks-archive-2023', size: 15728640000,
+    progress: 0.62, state: 'downloading', downSpeed: 6800000, upSpeed: 950000,
+    peers: 34, seeds: 78, eta: 1420,
+    hash: 'd5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6',
+    files: [
+      { name: 'day1-keynote.mp4', size: 2621440000 },
+      { name: 'day1-talk-distributed-systems.mp4', size: 1572864000 },
+      { name: 'day1-talk-rust-async.mp4', size: 1310720000 },
+      { name: 'day2-keynote.mp4', size: 2097152000 },
+      { name: 'day2-talk-wasm.mp4', size: 1835008000 },
+      { name: 'day2-talk-security.mp4', size: 1572864000 },
+      { name: 'day3-workshop.mp4', size: 4718592000 }
+    ]
+  },
+  {
+    id: 11, name: 'font-pack-open-source-2024', size: 268435456,
+    progress: 0.92, state: 'checking', downSpeed: 0, upSpeed: 0,
+    peers: 0, seeds: 0, eta: -1,
+    hash: 'e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7',
+    files: [
+      { name: 'sans-serif/', size: 83886080 },
+      { name: 'serif/', size: 67108864 },
+      { name: 'monospace/', size: 52428800 },
+      { name: 'display/', size: 41943040 },
+      { name: 'handwriting/', size: 23068672 }
+    ]
+  },
+  {
+    id: 12, name: 'weather-data-noaa-historical', size: 41943040000,
+    progress: 0.08, state: 'error', downSpeed: 0, upSpeed: 0,
+    peers: 0, seeds: 2, eta: -1,
+    hash: 'f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2',
+    error: 'Tracker returned error: connection timeout',
+    files: [
+      { name: '1950-1980/', size: 10485760000 },
+      { name: '1980-2000/', size: 10485760000 },
+      { name: '2000-2020/', size: 15728640000 },
+      { name: '2020-2023/', size: 5242880000 }
+    ]
+  }
+];
+
+// Fake peers
+var FAKE_PEERS = [
+  { addr: '192.168.1.45:51413', client: 'rqbit/7.0.1', down: 2400000, up: 300000 },
+  { addr: '10.0.0.23:6881', client: 'libtorrent/2.0.9', down: 1800000, up: 150000 },
+  { addr: '172.16.0.100:50000', client: 'Transmission/4.0.5', down: 900000, up: 800000 },
+  { addr: '192.168.2.78:42069', client: 'qBittorrent/4.6.3', down: 3200000, up: 500000 },
+  { addr: '10.10.1.5:6889', client: 'Deluge/2.1.1', down: 600000, up: 200000 },
+  { addr: '172.20.0.50:8999', client: 'rqbit/7.0.1', down: 1100000, up: 400000 },
+];
+
+// State
+var torrents = JSON.parse(JSON.stringify(DUMMY_TORRENTS));
+var currentFilter = 'all';
+var searchQuery = '';
+var sortField = 'name';
+var sortDir = 1;
+var selectedId = null;
+var detailTab = 'files';
+
+// Format helpers
+function formatBytes(b) {
+  if (b === 0) return '0 B';
+  var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var i = Math.floor(Math.log(b) / Math.log(1024));
+  return (b / Math.pow(1024, i)).toFixed(i > 1 ? 1 : 0) + ' ' + units[i];
+}
+
+function formatSpeed(b) {
+  if (b === 0) return '-';
+  return formatBytes(b) + '/s';
+}
+
+function formatEta(s) {
+  if (s < 0) return '-';
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+}
+
+function stateLabel(t) {
+  if (t.state === 'downloading') return 'Downloading';
+  if (t.state === 'seeding') return 'Seeding';
+  if (t.state === 'paused') return 'Paused';
+  if (t.state === 'checking') return 'Checking';
+  if (t.state === 'error') return 'Error';
+  return t.state;
+}
+
+function stateClass(t) {
+  return 'status-' + t.state;
+}
+
+function progressClass(t) {
+  return t.state;
+}
+
+// Render
+function render() {
+  var filtered = torrents.filter(function(t) {
+    if (currentFilter !== 'all' && t.state !== currentFilter) return false;
+    if (searchQuery && t.name.toLowerCase().indexOf(searchQuery.toLowerCase()) === -1) return false;
+    return true;
+  });
+
+  filtered.sort(function(a, b) {
+    var va = a[sortField], vb = b[sortField];
+    if (typeof va === 'string') return va.localeCompare(vb) * sortDir;
+    return ((va || 0) - (vb || 0)) * sortDir;
+  });
+
+  var html = '';
+  filtered.forEach(function(t) {
+    var sel = t.id === selectedId ? ' selected' : '';
+    html += '<tr class="torrent-row' + sel + '" data-id="' + t.id + '" onclick="selectTorrent(' + t.id + ')">';
+    html += '<td class="t-name">' + escHtml(t.name) + '</td>';
+    html += '<td class="t-size">' + formatBytes(t.size) + '</td>';
+    html += '<td class="progress-cell"><div class="progress-wrap">';
+    html += '<div class="progress-bar"><div class="progress-fill ' + progressClass(t) + '" style="width:' + (t.progress * 100).toFixed(1) + '%"></div></div>';
+    html += '<span class="progress-pct">' + (t.progress * 100).toFixed(0) + '%</span>';
+    html += '</div></td>';
+    html += '<td class="t-speed ' + (t.downSpeed > 0 ? 't-speed-down' : 't-speed-none') + '">' + formatSpeed(t.downSpeed) + '</td>';
+    html += '<td class="t-speed ' + (t.upSpeed > 0 ? 't-speed-up' : 't-speed-none') + '">' + formatSpeed(t.upSpeed) + '</td>';
+    html += '<td class="t-peers">' + t.peers + ' / ' + t.seeds + '</td>';
+    html += '<td class="t-eta">' + formatEta(t.eta) + '</td>';
+    html += '<td><span class="status-badge ' + stateClass(t) + '"><span class="dot"></span>' + stateLabel(t) + '</span></td>';
+    html += '<td><div class="actions">';
+    if (t.state === 'paused' || t.state === 'error') {
+      html += '<button class="action-btn" onclick="event.stopPropagation();togglePause(' + t.id + ')" title="Resume">&#9654;</button>';
+    } else if (t.state !== 'checking') {
+      html += '<button class="action-btn" onclick="event.stopPropagation();togglePause(' + t.id + ')" title="Pause">&#10074;&#10074;</button>';
+    }
+    html += '<button class="action-btn danger" onclick="event.stopPropagation();removeTorrent(' + t.id + ')" title="Remove">&#10005;</button>';
+    html += '</div></td>';
+    html += '</tr>';
+  });
+
+  document.getElementById('torrentTable').innerHTML = html;
+  document.getElementById('torrentCount').textContent = filtered.length + ' torrent' + (filtered.length !== 1 ? 's' : '');
+
+  // Global speeds
+  var totalDown = 0, totalUp = 0;
+  torrents.forEach(function(t) { totalDown += t.downSpeed; totalUp += t.upSpeed; });
+  document.getElementById('globalDown').innerHTML = '&#9660; ' + formatSpeed(totalDown);
+  document.getElementById('globalUp').innerHTML = '&#9650; ' + formatSpeed(totalUp);
+
+  // Update detail if open
+  if (selectedId && document.getElementById('detailPane').classList.contains('open')) {
+    renderDetail();
+  }
+}
+
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Sort
+function sortBy(field) {
+  if (sortField === field) {
+    sortDir *= -1;
+  } else {
+    sortField = field;
+    sortDir = 1;
+  }
+  document.querySelectorAll('.sort-arrow').forEach(function(el) {
+    el.classList.remove('active');
+    el.innerHTML = '&#9650;';
+  });
+  var arrow = document.getElementById('sort-' + field);
+  if (arrow) {
+    arrow.classList.add('active');
+    arrow.innerHTML = sortDir === 1 ? '&#9650;' : '&#9660;';
+  }
+  render();
+}
+
+// Filter
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  render();
+}
+
+// Search
+document.getElementById('searchBox').addEventListener('input', function(e) {
+  searchQuery = e.target.value;
+  render();
+});
+
+// Select
+function selectTorrent(id) {
+  selectedId = id;
+  detailTab = 'files';
+  document.querySelectorAll('.detail-tab').forEach(function(t) {
+    t.classList.toggle('active', t.getAttribute('data-tab') === 'files');
+  });
+  document.getElementById('detailPane').classList.add('open');
+  render();
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.getElementById('detailPane').classList.remove('open');
+  render();
+}
+
+function switchDetailTab(tab, btn) {
+  detailTab = tab;
+  document.querySelectorAll('.detail-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  renderDetail();
+}
+
+function renderDetail() {
+  var t = torrents.find(function(x) { return x.id === selectedId; });
+  if (!t) return;
+  document.getElementById('detailTitle').textContent = t.name;
+  var html = '';
+
+  if (detailTab === 'files') {
+    html += '<ul class="file-list">';
+    t.files.forEach(function(f) {
+      var icon = f.name.endsWith('/') ? '&#128193;' : '&#128196;';
+      html += '<li class="file-item"><span class="file-icon">' + icon + '</span>';
+      html += '<span class="file-name">' + escHtml(f.name) + '</span>';
+      html += '<span class="file-size">' + formatBytes(f.size) + '</span></li>';
+    });
+    html += '</ul>';
+  } else if (detailTab === 'peers') {
+    if (t.state === 'paused' || t.state === 'checking' || t.peers === 0) {
+      html += '<div style="color:var(--text-muted);padding:20px 0">No connected peers</div>';
+    } else {
+      html += '<div class="peer-grid">';
+      var numPeers = Math.min(t.peers, 6);
+      for (var i = 0; i < numPeers; i++) {
+        var p = FAKE_PEERS[i % FAKE_PEERS.length];
+        html += '<div class="peer-card">';
+        html += '<div class="peer-addr">' + p.addr + '</div>';
+        html += '<div class="peer-client">' + escHtml(p.client) + '</div>';
+        html += '<div class="peer-speed"><span style="color:var(--green)">&#9660; ' + formatSpeed(p.down) + '</span>';
+        html += ' <span style="color:var(--blue)">&#9650; ' + formatSpeed(p.up) + '</span></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+  } else if (detailTab === 'info') {
+    html += '<div class="info-grid">';
+    html += '<span class="info-label">Hash</span><span class="info-value">' + t.hash + '</span>';
+    html += '<span class="info-label">Total Size</span><span class="info-value">' + formatBytes(t.size) + '</span>';
+    html += '<span class="info-label">Downloaded</span><span class="info-value">' + formatBytes(t.size * t.progress) + '</span>';
+    html += '<span class="info-label">State</span><span class="info-value">' + stateLabel(t) + '</span>';
+    html += '<span class="info-label">Peers</span><span class="info-value">' + t.peers + ' connected</span>';
+    html += '<span class="info-label">Seeds</span><span class="info-value">' + t.seeds + ' in swarm</span>';
+    html += '<span class="info-label">Files</span><span class="info-value">' + t.files.length + '</span>';
+    if (t.error) {
+      html += '<span class="info-label">Error</span><span class="info-value" style="color:var(--red)">' + escHtml(t.error) + '</span>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+}
+
+// Actions
+function togglePause(id) {
+  var t = torrents.find(function(x) { return x.id === id; });
+  if (!t) return;
+  if (t.state === 'paused' || t.state === 'error') {
+    t.state = 'downloading';
+    t.downSpeed = Math.floor(Math.random() * 10000000) + 1000000;
+    t.peers = Math.floor(Math.random() * 30) + 5;
+    showToast('Resumed: ' + t.name);
+  } else {
+    t.state = 'paused';
+    t.downSpeed = 0;
+    t.upSpeed = 0;
+    t.peers = 0;
+    t.eta = -1;
+    showToast('Paused: ' + t.name);
+  }
+  render();
+}
+
+function removeTorrent(id) {
+  var t = torrents.find(function(x) { return x.id === id; });
+  if (!t) return;
+  torrents = torrents.filter(function(x) { return x.id !== id; });
+  if (selectedId === id) closeDetail();
+  showToast('Removed: ' + t.name);
+  render();
+}
+
+// Add torrent modal
+function openAddModal() {
+  document.getElementById('addModal').classList.add('open');
+  document.getElementById('magnetInput').value = '';
+  document.getElementById('magnetInput').focus();
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+function addTorrent() {
+  var input = document.getElementById('magnetInput').value.trim();
+  if (!input) { showToast('Please enter a magnet link', true); return; }
+
+  var names = [
+    'community-wallpapers-4k-pack',
+    'open-source-game-assets-v2',
+    'academic-papers-archive-2024',
+    'podcast-episodes-tech-weekly',
+    'sample-video-test-patterns',
+    'documentation-offline-bundle',
+    'code-samples-rust-cookbook'
+  ];
+
+  var newT = {
+    id: Date.now(),
+    name: names[Math.floor(Math.random() * names.length)],
+    size: Math.floor(Math.random() * 10000000000) + 100000000,
+    progress: 0,
+    state: 'downloading',
+    downSpeed: Math.floor(Math.random() * 5000000) + 500000,
+    upSpeed: 0,
+    peers: Math.floor(Math.random() * 20) + 1,
+    seeds: Math.floor(Math.random() * 100) + 10,
+    eta: Math.floor(Math.random() * 5000) + 100,
+    hash: Array.from({length: 40}, function() { return '0123456789abcdef'[Math.floor(Math.random()*16)]; }).join(''),
+    files: [{ name: 'data.bin', size: Math.floor(Math.random() * 5000000000) }]
+  };
+
+  torrents.unshift(newT);
+  closeAddModal();
+  showToast('Added: ' + newT.name);
+  render();
+}
+
+// Toast
+function showToast(msg, isError) {
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() { toast.className = 'toast'; }, 3000);
+}
+
+// Simulation — update speeds/progress periodically
+function simulate() {
+  torrents.forEach(function(t) {
+    if (t.state === 'downloading') {
+      // Vary speed
+      var speedVariance = (Math.random() - 0.5) * 0.3;
+      t.downSpeed = Math.max(100000, Math.floor(t.downSpeed * (1 + speedVariance)));
+      t.upSpeed = Math.max(0, Math.floor(t.downSpeed * (Math.random() * 0.3)));
+
+      // Progress
+      var bytesPerTick = t.downSpeed * 2; // 2 second intervals
+      t.progress = Math.min(1, t.progress + bytesPerTick / t.size);
+      t.eta = t.progress >= 1 ? -1 : Math.floor((t.size * (1 - t.progress)) / t.downSpeed);
+
+      // Peer variance
+      t.peers = Math.max(1, t.peers + Math.floor((Math.random() - 0.5) * 4));
+
+      if (t.progress >= 1) {
+        t.state = 'seeding';
+        t.progress = 1;
+        t.downSpeed = 0;
+        t.eta = -1;
+      }
+    } else if (t.state === 'seeding') {
+      t.upSpeed = Math.max(50000, Math.floor(t.upSpeed * (1 + (Math.random() - 0.5) * 0.4)));
+      t.peers = Math.max(0, t.peers + Math.floor((Math.random() - 0.5) * 3));
+    }
+  });
+
+  // DHT node count variance
+  var dhtEl = document.getElementById('dhtNodes');
+  var dht = parseInt(dhtEl.textContent) + Math.floor((Math.random() - 0.5) * 20);
+  dhtEl.textContent = Math.max(600, Math.min(1200, dht));
+
+  render();
+}
+
+// Enter key for modal
+document.getElementById('magnetInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') addTorrent();
+});
+
+// Click outside modal to close
+document.getElementById('addModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAddModal();
+});
+
+// Initial render
+render();
+setInterval(simulate, 2000);
+</script>
+</body>
+</html>

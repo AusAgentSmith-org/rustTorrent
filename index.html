@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="rustTorrent - A fast, modern BitTorrent client written in Rust with a web UI, HTTP API, and Docker support.">
+    <meta name="keywords" content="rusttorrent, bittorrent, torrent client, rust, webui, docker, http api, self-hosted">
+    <title>rustTorrent - A Modern BitTorrent Client in Rust</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f9f2;</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="nav-brand">
+                <span class="nav-logo-text">rust</span><span class="nav-logo-accent">Torrent</span>
+            </a>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#demo-section">Demo</a></li>
+                <li><a href="#getting-started">Get Started</a></li>
+                <li><a href="#attribution">Attribution</a></li>
+                <li><a href="https://github.com/AusAgentSmith/rustTorrent" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title"><span class="rust-text">rust</span>Torrent</h1>
+                <p class="hero-subtitle">A Modern BitTorrent Client Written in Rust</p>
+                <p class="hero-description">
+                    Fast, lightweight, and built for self-hosters. rustTorrent provides a clean web UI,
+                    a full HTTP API, and runs anywhere Docker does. Currently in active development.
+                </p>
+                <div class="hero-badges">
+                    <span class="badge badge-rust">Rust</span>
+                    <span class="badge badge-ts">React + TypeScript</span>
+                    <span class="badge badge-docker">Docker</span>
+                    <span class="badge badge-api">HTTP API</span>
+                </div>
+                <div class="hero-buttons">
+                    <a href="#getting-started" class="btn btn-primary">Get Started</a>
+                    <a href="demo/" class="btn btn-outline">Live Demo</a>
+                    <a href="https://github.com/AusAgentSmith/rustTorrent" class="btn btn-outline" target="_blank" rel="noopener">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status Banner -->
+    <section class="status-banner">
+        <div class="container">
+            <div class="status-card">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <div class="status-text">
+                    <strong>Active Development</strong>
+                    <span>rustTorrent is under active development. Features are being added regularly. The desktop app (Tauri) is not currently functional &mdash; use the web UI or Docker deployment instead.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Features</h2>
+            <p class="section-subtitle">Built for performance and simplicity</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </div>
+                    <h3>Blazing Fast</h3>
+                    <p>Written in Rust with async I/O powered by Tokio. Low memory footprint and high throughput even with many simultaneous torrents.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <h3>Web UI</h3>
+                    <p>Clean, responsive React + TypeScript interface. Manage torrents from any browser &mdash; desktop or mobile. Dark mode included.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M18 20V10M12 20V4M6 20v-6"/>
+                        </svg>
+                    </div>
+                    <h3>HTTP API</h3>
+                    <p>Full REST API with Swagger documentation. Add torrents, check status, stream files, and manage everything programmatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M22 12H2M22 12l-4-4m4 4l-4 4M2 12l4-4m-4 4l4 4"/>
+                        </svg>
+                    </div>
+                    <h3>DHT &amp; Trackers</h3>
+                    <p>Full DHT support (BEP-5), HTTP and UDP trackers, peer exchange, and UPnP port forwarding for maximum connectivity.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <h3>Magnet Links</h3>
+                    <p>Add torrents via magnet links or .torrent files. Metadata is resolved automatically from the swarm when using magnets.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                        </svg>
+                    </div>
+                    <h3>Docker Ready</h3>
+                    <p>Official multi-stage Docker image. Minimal scratch-based container with only the binary. One command to deploy.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </div>
+                    <h3>File Streaming</h3>
+                    <p>Stream media files directly from incomplete torrents via the HTTP API. Perfect for watching videos while they download.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <h3>Memory Safe</h3>
+                    <p>Rust's ownership model ensures no buffer overflows, data races, or use-after-free bugs. Safe by default.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="architecture" id="architecture">
+        <div class="container">
+            <h2 class="section-title">Architecture</h2>
+            <p class="section-subtitle">A modular Rust workspace with clean separation of concerns</p>
+            <div class="arch-grid">
+                <div class="arch-card">
+                    <div class="arch-label">Core Library</div>
+                    <div class="arch-items">
+                        <span>librqbit</span>
+                        <span>Session Manager</span>
+                        <span>Torrent State Machine</span>
+                        <span>Pluggable Storage</span>
+                    </div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-label">Networking</div>
+                    <div class="arch-items">
+                        <span>DHT (BEP-5)</span>
+                        <span>Peer Wire Protocol</span>
+                        <span>HTTP/UDP Trackers</span>
+                        <span>UPnP</span>
+                    </div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-label">Frontend</div>
+                    <div class="arch-items">
+                        <span>React 18</span>
+                        <span>TypeScript</span>
+                        <span>Tailwind CSS</span>
+                        <span>Zustand</span>
+                        <span>Vite</span>
+                    </div>
+                </div>
+                <div class="arch-card">
+                    <div class="arch-label">Infrastructure</div>
+                    <div class="arch-items">
+                        <span>Tokio Async Runtime</span>
+                        <span>Axum HTTP Server</span>
+                        <span>Docker (scratch)</span>
+                        <span>Multi-stage Build</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo-section">
+        <div class="container">
+            <h2 class="section-title">See It in Action</h2>
+            <p class="section-subtitle">Interactive demo with simulated torrent data</p>
+            <div class="demo-preview">
+                <div class="demo-bar">
+                    <div class="demo-dots"><span></span><span></span><span></span></div>
+                    <div class="demo-url">localhost:3030</div>
+                </div>
+                <div class="demo-body">
+                    <div class="demo-header-row">
+                        <span class="demo-title-text">rustTorrent</span>
+                        <span class="demo-stats-text">4 active &middot; 2 seeding &middot; 1 paused</span>
+                    </div>
+                    <table class="demo-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Size</th>
+                                <th>Progress</th>
+                                <th>Speed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="demo-name">project-alpha-v2.3.iso</td>
+                                <td>4.2 GB</td>
+                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:73%"></div></div><span class="demo-pct">73%</span></td>
+                                <td class="demo-speed">12.4 MB/s</td>
+                                <td><span class="demo-status demo-status-live">Downloading</span></td>
+                            </tr>
+                            <tr>
+                                <td class="demo-name">open-dataset-2024-q3.tar.gz</td>
+                                <td>18.7 GB</td>
+                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:31%"></div></div><span class="demo-pct">31%</span></td>
+                                <td class="demo-speed">8.1 MB/s</td>
+                                <td><span class="demo-status demo-status-live">Downloading</span></td>
+                            </tr>
+                            <tr>
+                                <td class="demo-name">creative-commons-music-pack</td>
+                                <td>892 MB</td>
+                                <td><div class="demo-progress"><div class="demo-progress-bar demo-complete" style="width:100%"></div></div><span class="demo-pct">100%</span></td>
+                                <td class="demo-speed demo-upload">2.3 MB/s</td>
+                                <td><span class="demo-status demo-status-seed">Seeding</span></td>
+                            </tr>
+                            <tr>
+                                <td class="demo-name">firmware-update-bundle-v8.1</td>
+                                <td>1.1 GB</td>
+                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:56%"></div></div><span class="demo-pct">56%</span></td>
+                                <td class="demo-speed demo-paused">&mdash;</td>
+                                <td><span class="demo-status demo-status-paused">Paused</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="demo-cta">
+                <a href="demo/" class="btn btn-primary">Open Interactive Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section class="getting-started" id="getting-started">
+        <div class="container">
+            <h2 class="section-title">Getting Started</h2>
+            <div class="start-tabs">
+                <button class="start-tab active" data-tab="docker" onclick="switchTab('docker')">Docker</button>
+                <button class="start-tab" data-tab="source" onclick="switchTab('source')">From Source</button>
+            </div>
+
+            <div class="start-pane active" id="pane-docker">
+                <div class="terminal">
+                    <div class="terminal-bar">
+                        <div class="terminal-dots"><span></span><span></span><span></span></div>
+                        <span class="terminal-title">Terminal</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> git clone https://github.com/AusAgentSmith/rustTorrent.git</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> cd rustTorrent</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> docker compose up --build -d</div>
+                        <div class="terminal-line terminal-output">
+                            <span class="terminal-success">&#10003;</span> Building multi-stage Rust image...<br>
+                            <span class="terminal-success">&#10003;</span> Starting rqbit container<br>
+                            <span class="terminal-success">&#10003;</span> Web UI available at <span class="terminal-link">http://localhost:3030</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="start-notes">
+                    <p><strong>Ports:</strong> 3030 (Web UI + API), 4240 (BitTorrent TCP + uTP)</p>
+                    <p><strong>Downloads:</strong> Configure the download directory in <code>docker-compose.yml</code></p>
+                </div>
+            </div>
+
+            <div class="start-pane" id="pane-source">
+                <div class="terminal">
+                    <div class="terminal-bar">
+                        <div class="terminal-dots"><span></span><span></span><span></span></div>
+                        <span class="terminal-title">Terminal</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> git clone https://github.com/AusAgentSmith/rustTorrent.git</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> cd rustTorrent</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> cargo build --release --features webui</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./target/release/rqbit server start</div>
+                        <div class="terminal-line terminal-output">
+                            <span class="terminal-success">&#10003;</span> rqbit server started<br>
+                            <span class="terminal-success">&#10003;</span> Web UI at <span class="terminal-link">http://localhost:3030</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="start-notes">
+                    <p><strong>Requirements:</strong> Rust 1.75+ and npm (for webui feature)</p>
+                    <p><strong>Note:</strong> Building from source compiles the web UI into the binary</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Attribution Section -->
+    <section class="attribution" id="attribution">
+        <div class="container">
+            <div class="attribution-card">
+                <h2>Attribution</h2>
+                <p>
+                    rustTorrent is a fork of <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener">rqbit</a>,
+                    originally created by <strong>Igor Katson</strong>. The original project is licensed under the
+                    <strong>Apache License 2.0</strong>.
+                </p>
+                <p>
+                    We are grateful for Igor's work in building a high-quality BitTorrent client in Rust.
+                    rustTorrent builds upon that foundation with additional features and modifications.
+                </p>
+                <div class="attribution-links">
+                    <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener" class="btn btn-outline-sm">Original rqbit Repository</a>
+                    <a href="https://github.com/AusAgentSmith/rustTorrent/blob/main/LICENSE" target="_blank" rel="noopener" class="btn btn-outline-sm">View License</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="footer-left">
+                <span class="footer-brand"><span class="rust-text">rust</span>Torrent</span>
+                <span class="footer-sep">&mdash;</span>
+                <span>Apache 2.0 License &middot; Based on <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener">rqbit</a> by Igor Katson</span>
+            </div>
+            <div class="footer-right">
+                <a href="https://github.com/AusAgentSmith/rustTorrent" target="_blank" rel="noopener" aria-label="GitHub">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
