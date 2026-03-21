@@ -992,6 +992,30 @@ img {
     color: var(--text-primary);
 }
 
+.footer-related {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    transition: opacity 0.3s;
+    text-align: center;
+}
+
+.footer-related:hover {
+    opacity: 0.8;
+}
+
+.footer-related a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.footer-related a:hover {
+    color: var(--rust);
+}
+
 /* --- Responsive --- */
 @media (max-width: 1024px) {
     .feature-grid,
