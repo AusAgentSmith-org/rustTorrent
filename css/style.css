@@ -567,6 +567,12 @@ img {
     margin-left: 12px;
 }
 
+.bench-scenario-badge-neutral {
+    background: rgba(255, 255, 255, 0.05);
+    color: #999;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
 .bench-scenario-badge-best {
     background: rgba(206, 66, 43, 0.1);
     color: var(--rust);
