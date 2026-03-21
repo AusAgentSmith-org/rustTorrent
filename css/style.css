@@ -103,7 +103,7 @@ img {
 .nav-container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 32px;
     height: 100%;
 }
 
@@ -155,6 +155,7 @@ img {
     cursor: pointer;
     background: none;
     border: none;
+    margin-left: auto;
 }
 
 .nav-toggle span {
