@@ -103,7 +103,7 @@ img {
 .nav-container {
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 16px;
     height: 100%;
 }
 
@@ -130,15 +130,18 @@ img {
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 28px;
+    gap: 8px;
     align-items: center;
 }
 
 .nav-menu a {
+    display: block;
+    padding: 8px 16px;
     color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
-    transition: color 0.2s;
+    border-radius: 6px;
+    transition: color 0.2s, background-color 0.2s;
     text-decoration: none;
 }
 
@@ -954,8 +957,8 @@ img {
 
 .footer-inner {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 16px;
 }
 
 .footer-left {
