@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560">
+  <defs>
+    <linearGradient id="tbg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2f3e"/>
+      <stop offset="100%" style="stop-color:#1c2030"/>
+    </linearGradient>
+  </defs>
+  <!-- Window frame -->
+  <rect width="900" height="560" rx="12" fill="#1a1f2e"/>
+  <rect width="900" height="36" rx="12" fill="url(#tbg)"/>
+  <rect y="24" width="900" height="12" fill="url(#tbg)"/>
+  <!-- Window controls -->
+  <circle cx="20" cy="18" r="6" fill="#ff5f57"/>
+  <circle cx="40" cy="18" r="6" fill="#ffbd2e"/>
+  <circle cx="60" cy="18" r="6" fill="#28c840"/>
+  <!-- Title bar text -->
+  <text x="450" y="23" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8" text-anchor="middle">rustTorrent Desktop</text>
+  <!-- App bar -->
+  <rect y="36" width="900" height="44" fill="#1c2333"/>
+  <rect x="16" y="44" width="28" height="28" rx="5" fill="#3d2e22" opacity="0.8"/>
+  <text x="30" y="62" font-family="Arial,sans-serif" font-size="10" fill="#e8dcc8" text-anchor="middle" font-weight="700">T</text>
+  <text x="56" y="63" font-family="system-ui,sans-serif" font-size="14" fill="#ce422b" font-weight="700">rust</text>
+  <text x="88" y="63" font-family="system-ui,sans-serif" font-size="14" fill="#e4e8f0" font-weight="700">Torrent</text>
+  <!-- Nav tabs -->
+  <text x="180" y="63" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0" font-weight="600">Torrents</text>
+  <rect x="174" y="72" width="52" height="2" rx="1" fill="#ce422b"/>
+  <text x="260" y="63" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">Browse Index</text>
+  <!-- Stats -->
+  <text x="750" y="63" font-family="system-ui,sans-serif" font-size="11" fill="#4ecca3">↓ 24.5 MB/s</text>
+  <text x="840" y="63" font-family="system-ui,sans-serif" font-size="11" fill="#4a9eff">↑ 3.2 MB/s</text>
+  <!-- Table header -->
+  <rect y="80" width="900" height="30" fill="#232a3b"/>
+  <text x="30" y="100" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8" font-weight="600">Name</text>
+  <text x="460" y="100" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8" font-weight="600">Size</text>
+  <text x="540" y="100" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8" font-weight="600">Progress</text>
+  <text x="720" y="100" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8" font-weight="600">Speed</text>
+  <text x="810" y="100" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8" font-weight="600">Status</text>
+  <!-- Row 1 - Downloading -->
+  <rect y="110" width="900" height="44" fill="#1a1f2e"/>
+  <text x="30" y="137" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0">ubuntu-24.04-desktop-amd64.iso</text>
+  <text x="460" y="137" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">5.8 GB</text>
+  <!-- Progress bar -->
+  <rect x="540" y="128" width="150" height="8" rx="4" fill="#2a3040"/>
+  <rect x="540" y="128" width="105" height="8" rx="4" fill="#4ecca3"/>
+  <text x="700" y="137" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8">70%</text>
+  <text x="720" y="137" font-family="system-ui,sans-serif" font-size="12" fill="#4ecca3">18.2 MB/s</text>
+  <rect x="800" y="124" width="80" height="22" rx="4" fill="rgba(78,204,163,0.12)"/>
+  <text x="840" y="139" font-family="system-ui,sans-serif" font-size="10" fill="#4ecca3" text-anchor="middle" font-weight="600">Downloading</text>
+  <!-- Row 2 - Downloading -->
+  <rect y="154" width="900" height="44" fill="#1c2333"/>
+  <text x="30" y="181" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0">blender-4.1-linux-x64.tar.xz</text>
+  <text x="460" y="181" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">412 MB</text>
+  <rect x="540" y="172" width="150" height="8" rx="4" fill="#2a3040"/>
+  <rect x="540" y="172" width="60" height="8" rx="4" fill="#4ecca3"/>
+  <text x="700" y="181" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8">40%</text>
+  <text x="720" y="181" font-family="system-ui,sans-serif" font-size="12" fill="#4ecca3">6.3 MB/s</text>
+  <rect x="800" y="168" width="80" height="22" rx="4" fill="rgba(78,204,163,0.12)"/>
+  <text x="840" y="183" font-family="system-ui,sans-serif" font-size="10" fill="#4ecca3" text-anchor="middle" font-weight="600">Downloading</text>
+  <!-- Row 3 - Seeding -->
+  <rect y="198" width="900" height="44" fill="#1a1f2e"/>
+  <text x="30" y="225" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0">rust-1.80-src.tar.gz</text>
+  <text x="460" y="225" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">283 MB</text>
+  <rect x="540" y="216" width="150" height="8" rx="4" fill="#2a3040"/>
+  <rect x="540" y="216" width="150" height="8" rx="4" fill="#4a9eff"/>
+  <text x="700" y="225" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8">100%</text>
+  <text x="720" y="225" font-family="system-ui,sans-serif" font-size="12" fill="#4a9eff">↑ 2.1 MB/s</text>
+  <rect x="800" y="212" width="80" height="22" rx="4" fill="rgba(74,158,255,0.12)"/>
+  <text x="840" y="227" font-family="system-ui,sans-serif" font-size="10" fill="#4a9eff" text-anchor="middle" font-weight="600">Seeding</text>
+  <!-- Row 4 - Seeding -->
+  <rect y="242" width="900" height="44" fill="#1c2333"/>
+  <text x="30" y="269" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0">libreoffice-25.2.2-linux-x86-64.tar.gz</text>
+  <text x="460" y="269" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">1.6 GB</text>
+  <rect x="540" y="260" width="150" height="8" rx="4" fill="#2a3040"/>
+  <rect x="540" y="260" width="150" height="8" rx="4" fill="#4a9eff"/>
+  <text x="700" y="269" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8">100%</text>
+  <text x="720" y="269" font-family="system-ui,sans-serif" font-size="12" fill="#4a9eff">↑ 1.1 MB/s</text>
+  <rect x="800" y="256" width="80" height="22" rx="4" fill="rgba(74,158,255,0.12)"/>
+  <text x="840" y="271" font-family="system-ui,sans-serif" font-size="10" fill="#4a9eff" text-anchor="middle" font-weight="600">Seeding</text>
+  <!-- Row 5 - Paused -->
+  <rect y="286" width="900" height="44" fill="#1a1f2e"/>
+  <text x="30" y="313" font-family="system-ui,sans-serif" font-size="12" fill="#e4e8f0">godot-4.3-stable-linux.zip</text>
+  <text x="460" y="313" font-family="system-ui,sans-serif" font-size="12" fill="#8b95a8">78 MB</text>
+  <rect x="540" y="304" width="150" height="8" rx="4" fill="#2a3040"/>
+  <rect x="540" y="304" width="90" height="8" rx="4" fill="#5a6478"/>
+  <text x="700" y="313" font-family="system-ui,sans-serif" font-size="11" fill="#8b95a8">60%</text>
+  <text x="720" y="313" font-family="system-ui,sans-serif" font-size="12" fill="#5a6478">&mdash;</text>
+  <rect x="800" y="300" width="80" height="22" rx="4" fill="rgba(255,255,255,0.05)"/>
+  <text x="840" y="315" font-family="system-ui,sans-serif" font-size="10" fill="#8b95a8" text-anchor="middle" font-weight="600">Paused</text>
+  <!-- System tray mockup at bottom -->
+  <rect y="520" width="900" height="40" fill="#0f1419"/>
+  <rect x="16" y="528" width="120" height="24" rx="4" fill="#1c2333"/>
+  <rect x="22" y="533" width="14" height="14" rx="3" fill="#3d2e22"/>
+  <text x="29" y="543" font-family="Arial,sans-serif" font-size="7" fill="#e8dcc8" text-anchor="middle" font-weight="700">T</text>
+  <text x="46" y="544" font-family="system-ui,sans-serif" font-size="9" fill="#4ecca3">↓ 24.5</text>
+  <text x="90" y="544" font-family="system-ui,sans-serif" font-size="9" fill="#4a9eff">↑ 3.2</text>
+  <text x="450" y="544" font-family="system-ui,sans-serif" font-size="9" fill="#5a6478" text-anchor="middle">System tray integration with live speed indicators</text>
+</svg>

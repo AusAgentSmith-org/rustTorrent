@@ -108,10 +108,19 @@ img {
 }
 
 .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 1.3rem;
     font-weight: 700;
     text-decoration: none;
     color: var(--text-primary);
+}
+
+.nav-logo-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
 }
 
 .nav-logo-text {
@@ -174,6 +183,14 @@ img {
 .hero {
     padding: 140px 0 80px;
     text-align: center;
+}
+
+.hero-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .hero-title {
@@ -914,6 +931,121 @@ img {
     color: var(--rust);
 }
 
+/* --- Desktop App Section --- */
+.desktop-section {
+    padding: 80px 0;
+}
+
+.desktop-preview {
+    max-width: 860px;
+    margin: 0 auto 40px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+}
+
+.desktop-screenshot {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.download-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 700px;
+    margin: 0 auto 24px;
+}
+
+.download-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.download-card:hover {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 1px var(--rust);
+    color: inherit;
+}
+
+.download-icon svg {
+    fill: var(--text-secondary);
+}
+
+.download-card:hover .download-icon svg {
+    fill: var(--rust);
+}
+
+.download-platform {
+    display: block;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.download-type {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.download-all-link {
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/* --- Indexarr Integration Section --- */
+.indexarr-section {
+    padding: 80px 0;
+    background: var(--bg-secondary);
+}
+
+.indexarr-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+.indexarr-feature {
+    margin-bottom: 24px;
+}
+
+.indexarr-feature h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.indexarr-feature p {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.6;
+}
+
+.indexarr-preview {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.badge-desktop {
+    background: rgba(78, 204, 163, 0.1);
+    color: #4ecca3;
+    border: 1px solid rgba(78, 204, 163, 0.25);
+}
+
 /* --- Attribution --- */
 .attribution {
     padding: 60px 0;
@@ -1025,6 +1157,15 @@ img {
     .feature-grid,
     .arch-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .download-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+
+    .indexarr-content {
+        grid-template-columns: 1fr;
     }
 }
 

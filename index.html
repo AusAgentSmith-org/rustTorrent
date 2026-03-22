@@ -6,7 +6,7 @@
     <meta name="description" content="rustTorrent - A fast, modern BitTorrent client written in Rust with a web UI, HTTP API, and Docker support.">
     <meta name="keywords" content="rusttorrent, bittorrent, torrent client, rust, webui, docker, http api, self-hosted">
     <title>rustTorrent - A Modern BitTorrent Client in Rust</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f9f2;</text></svg>">
+    <link rel="icon" href="img/logo.png" type="image/png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,6 +15,7 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container">
             <a href="#" class="nav-brand">
+                <img src="img/logo.png" alt="rustTorrent" class="nav-logo-img">
                 <span class="nav-logo-text">rust</span><span class="nav-logo-accent">Torrent</span>
             </a>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -25,6 +26,7 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="#home">Home</a></li>
                 <li><a href="#features">Features</a></li>
+                <li><a href="#desktop">Download</a></li>
                 <li><a href="#benchmarks">Benchmarks</a></li>
                 <li><a href="#demo-section">Demo</a></li>
                 <li><a href="#getting-started">Get Started</a></li>
@@ -38,17 +40,19 @@
     <section class="hero" id="home">
         <div class="container">
             <div class="hero-content">
+                <img src="img/logo.png" alt="rustTorrent" class="hero-logo">
                 <h1 class="hero-title"><span class="rust-text">rust</span>Torrent</h1>
                 <p class="hero-subtitle">A Modern BitTorrent Client Written in Rust</p>
                 <p class="hero-description">
                     Fast, lightweight, and built for self-hosters. Benchmarked at up to <strong>15x faster</strong> than qBittorrent
-                    with throughput exceeding <strong>16 Gbps</strong>. Clean web UI, full HTTP API, and runs anywhere Docker does.
+                    with throughput exceeding <strong>16 Gbps</strong>. Desktop app, clean web UI, full HTTP API, and runs anywhere Docker does.
                 </p>
                 <div class="hero-badges">
                     <span class="badge badge-rust">Rust</span>
                     <span class="badge badge-ts">React + TypeScript</span>
                     <span class="badge badge-docker">Docker</span>
                     <span class="badge badge-api">HTTP API</span>
+                    <span class="badge badge-desktop">Desktop App</span>
                 </div>
                 <div class="hero-buttons">
                     <a href="#getting-started" class="btn btn-primary">Get Started</a>
@@ -74,7 +78,7 @@
                 </div>
                 <div class="status-text">
                     <strong>Active Development</strong>
-                    <span>rustTorrent is under active development. Features are being added regularly. The desktop app (Tauri) is not currently functional &mdash; use the web UI or Docker deployment instead.</span>
+                    <span>rustTorrent is under active development. Desktop apps for Windows, macOS, and Linux are now available alongside the web UI and Docker deployment.</span>
                 </div>
             </div>
         </div>
@@ -142,11 +146,33 @@
                 <div class="feature-card">
                     <div class="feature-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <path d="M8 21h8M12 17v4"/>
+                        </svg>
+                    </div>
+                    <h3>Desktop App</h3>
+                    <p>Native desktop application for Windows, macOS, and Linux powered by Tauri. System tray integration, lightweight, and auto-updates.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
                             <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
                         </svg>
                     </div>
                     <h3>Docker Ready</h3>
                     <p>Official multi-stage Docker image. Minimal scratch-based container with only the binary. One command to deploy.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </div>
+                    <h3>Indexarr Integration</h3>
+                    <p>Browse and search the <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a> torrent index directly from the web UI. Search, preview, and download &mdash; all without leaving rustTorrent.</p>
                 </div>
 
                 <div class="feature-card">
@@ -398,12 +424,106 @@
         </div>
     </section>
 
+    <!-- Desktop App Section -->
+    <section class="desktop-section" id="desktop">
+        <div class="container">
+            <h2 class="section-title">Desktop App</h2>
+            <p class="section-subtitle">Native application for Windows, macOS, and Linux</p>
+            <div class="desktop-preview">
+                <img src="img/desktop-screenshot.svg" alt="rustTorrent Desktop App" class="desktop-screenshot" loading="lazy">
+            </div>
+            <div class="download-grid">
+                <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64-setup.exe" class="download-card">
+                    <div class="download-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+                    </div>
+                    <div class="download-info">
+                        <span class="download-platform">Windows</span>
+                        <span class="download-type">.exe installer</span>
+                    </div>
+                </a>
+                <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64.dmg" class="download-card">
+                    <div class="download-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                    </div>
+                    <div class="download-info">
+                        <span class="download-platform">macOS</span>
+                        <span class="download-type">.dmg (Intel &amp; Apple Silicon)</span>
+                    </div>
+                </a>
+                <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.deb" class="download-card">
+                    <div class="download-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    </div>
+                    <div class="download-info">
+                        <span class="download-platform">Linux</span>
+                        <span class="download-type">.deb / .rpm / .AppImage</span>
+                    </div>
+                </a>
+            </div>
+            <p class="download-all-link">
+                <a href="https://github.com/AusAgentSmith/rustTorrent/releases/tag/desktop-latest" target="_blank" rel="noopener">View all downloads on GitHub &rarr;</a>
+            </p>
+        </div>
+    </section>
+
+    <!-- Indexarr Integration Section -->
+    <section class="indexarr-section" id="indexarr">
+        <div class="container">
+            <h2 class="section-title">Indexarr Integration</h2>
+            <p class="section-subtitle">Browse the community torrent index without leaving rustTorrent</p>
+            <div class="indexarr-content">
+                <div class="indexarr-features">
+                    <div class="indexarr-feature">
+                        <h3>Browse &amp; Search</h3>
+                        <p>Search the full <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a> torrent index directly from the rustTorrent web UI. Filter by category, browse recent uploads, and find content across the decentralized network.</p>
+                    </div>
+                    <div class="indexarr-feature">
+                        <h3>One-Click Downloads</h3>
+                        <p>Click any result to resolve metadata, select files, and start downloading &mdash; all within the same interface. No copy-pasting magnet links.</p>
+                    </div>
+                    <div class="indexarr-feature">
+                        <h3>Simple Setup</h3>
+                        <p>Point rustTorrent at your Indexarr instance with three environment variables. The integration proxies all requests server-side &mdash; your API key never reaches the browser.</p>
+                    </div>
+                </div>
+                <div class="indexarr-preview">
+                    <div class="demo-bar">
+                        <div class="demo-dots"><span></span><span></span><span></span></div>
+                        <div class="demo-url">rustTorrent &mdash; Browse Index</div>
+                    </div>
+                    <div class="demo-body" style="padding: 16px;">
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <div style="flex:1;height:32px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;padding:0 12px;color:var(--text-muted);font-size:0.85rem;">Search torrents...</div>
+                            <div style="height:32px;padding:0 16px;background:var(--rust);border-radius:6px;display:flex;align-items:center;color:#fff;font-size:0.85rem;font-weight:600;">Search</div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <span style="padding:4px 10px;background:var(--rust);color:#fff;border-radius:4px;font-size:0.75rem;">All</span>
+                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">Movies</span>
+                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">TV</span>
+                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">Music</span>
+                        </div>
+                        <table class="demo-table" style="font-size:0.8rem;">
+                            <thead><tr><th>Name</th><th>Category</th><th>Size</th><th></th></tr></thead>
+                            <tbody>
+                                <tr><td class="demo-name">Big.Buck.Bunny.2008.4K.BluRay</td><td><span style="color:var(--blue);">Movie</span></td><td>8.1 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
+                                <tr><td class="demo-name">Sintel.2010.1080p.Surround</td><td><span style="color:var(--blue);">Movie</span></td><td>4.3 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
+                                <tr><td class="demo-name">Tears.of.Steel.2012.4K</td><td><span style="color:var(--blue);">Movie</span></td><td>6.7 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Getting Started Section -->
     <section class="getting-started" id="getting-started">
         <div class="container">
             <h2 class="section-title">Getting Started</h2>
             <div class="start-tabs">
                 <button class="start-tab active" data-tab="docker" onclick="switchTab('docker')">Docker</button>
+                <button class="start-tab" data-tab="desktop" onclick="switchTab('desktop')">Desktop</button>
                 <button class="start-tab" data-tab="source" onclick="switchTab('source')">From Source</button>
             </div>
 
@@ -427,6 +547,26 @@
                 <div class="start-notes">
                     <p><strong>Ports:</strong> 3030 (Web UI + API), 4240 (BitTorrent TCP + uTP)</p>
                     <p><strong>Downloads:</strong> Configure the download directory in <code>docker-compose.yml</code></p>
+                </div>
+            </div>
+
+            <div class="start-pane" id="pane-desktop">
+                <div class="terminal">
+                    <div class="terminal-bar">
+                        <div class="terminal-dots"><span></span><span></span><span></span></div>
+                        <span class="terminal-title">Download</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line terminal-output">Download the installer for your platform from GitHub Releases:</div>
+                        <div class="terminal-line">&nbsp;</div>
+                        <div class="terminal-line"><span class="terminal-success">Windows</span> &nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64-setup.exe" style="color:var(--blue);">.exe</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64_en-US.msi" style="color:var(--blue);">.msi</a></div>
+                        <div class="terminal-line"><span class="terminal-success">macOS</span> &nbsp;&nbsp;&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64.dmg" style="color:var(--blue);">Intel .dmg</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_aarch64.dmg" style="color:var(--blue);">Apple Silicon .dmg</a></div>
+                        <div class="terminal-line"><span class="terminal-success">Linux</span> &nbsp;&nbsp;&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.deb" style="color:var(--blue);">.deb</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop-0.0.1-1.x86_64.rpm" style="color:var(--blue);">.rpm</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.AppImage" style="color:var(--blue);">.AppImage</a></div>
+                    </div>
+                </div>
+                <div class="start-notes">
+                    <p><strong>System tray:</strong> rustTorrent runs in the system tray with speed indicators</p>
+                    <p><strong>Web UI:</strong> The desktop app opens the same React web UI at <code>localhost:3030</code></p>
                 </div>
             </div>
 

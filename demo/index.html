@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>rustTorrent - Interactive Demo</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f9f2;</text></svg>">
+<link rel="icon" href="../img/logo.png" type="image/png">
 <style>
 /* ============================================
    rustTorrent Demo — Self-contained styles
@@ -62,10 +62,14 @@ a { color: var(--rust); text-decoration: none; }
 }
 
 .topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
   font-size: 1.1rem;
 }
 
+.topbar-brand img { width: 24px; height: 24px; border-radius: 4px; }
 .topbar-brand .rust { color: var(--rust); }
 
 .topbar-actions {
@@ -477,7 +481,10 @@ tr:hover .actions { opacity: 1; }
 <div class="app">
   <!-- Top bar -->
   <div class="topbar">
-    <div class="topbar-brand"><span class="rust">rust</span>Torrent <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span></div>
+    <div class="topbar-brand"><img src="../img/logo.png" alt="rustTorrent"><span class="rust">rust</span>Torrent <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span>
+      <span style="margin-left:20px;padding:4px 12px;background:var(--rust);color:#fff;border-radius:4px;font-size:0.78rem;font-weight:600;cursor:default;">Torrents</span>
+      <span style="padding:4px 12px;color:var(--text-secondary);font-size:0.78rem;cursor:pointer;" title="Indexarr integration - search and download from the community torrent index">Browse Index</span>
+    </div>
     <div class="topbar-actions">
       <div class="topbar-stats">
         <span class="down" id="globalDown">&#9660; 0 MB/s</span>
