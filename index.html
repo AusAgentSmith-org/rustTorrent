@@ -7,7 +7,7 @@
     <meta name="keywords" content="rusttorrent, bittorrent, torrent client, rust, webui, docker, http api, self-hosted">
     <title>rustTorrent - A Modern BitTorrent Client in Rust</title>
     <link rel="icon" href="img/logo.png" type="image/png">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2">
 </head>
 <body>
 
@@ -15,7 +15,7 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container">
             <a href="#" class="nav-brand">
-                <img src="img/logo.png" alt="rustTorrent" class="nav-logo-img">
+                <img src="img/logo.png" alt="rustTorrent" class="nav-logo-img" width="28" height="28">
                 <span class="nav-logo-text">rust</span><span class="nav-logo-accent">Torrent</span>
             </a>
             <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@
     <section class="hero" id="home">
         <div class="container">
             <div class="hero-content">
-                <img src="img/logo.png" alt="rustTorrent" class="hero-logo">
+                <img src="img/logo.png" alt="rustTorrent" class="hero-logo" width="120" height="120">
                 <h1 class="hero-title"><span class="rust-text">rust</span>Torrent</h1>
                 <p class="hero-subtitle">A Modern BitTorrent Client Written in Rust</p>
                 <p class="hero-description">
@@ -522,12 +522,12 @@
         <div class="container">
             <h2 class="section-title">Getting Started</h2>
             <div class="start-tabs">
-                <button class="start-tab active" data-tab="docker" onclick="switchTab('docker')">Docker</button>
-                <button class="start-tab" data-tab="desktop" onclick="switchTab('desktop')">Desktop</button>
+                <button class="start-tab active" data-tab="desktop" onclick="switchTab('desktop')">Desktop</button>
+                <button class="start-tab" data-tab="docker" onclick="switchTab('docker')">Docker</button>
                 <button class="start-tab" data-tab="source" onclick="switchTab('source')">From Source</button>
             </div>
 
-            <div class="start-pane active" id="pane-docker">
+            <div class="start-pane" id="pane-docker">
                 <div class="terminal">
                     <div class="terminal-bar">
                         <div class="terminal-dots"><span></span><span></span><span></span></div>
