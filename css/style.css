@@ -110,17 +110,21 @@ img {
 .nav-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-size: 1.3rem;
     font-weight: 700;
     text-decoration: none;
     color: var(--text-primary);
+    flex-shrink: 0;
 }
 
 .nav-logo-img {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    max-width: 28px;
+    max-height: 28px;
     border-radius: 6px;
+    flex-shrink: 0;
 }
 
 .nav-logo-text {
@@ -145,10 +149,11 @@ img {
 
 .nav-menu a {
     display: block;
-    padding: 8px 16px;
+    padding: 8px 12px;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 500;
+    white-space: nowrap;
     border-radius: 6px;
     transition: color 0.2s, background-color 0.2s;
     text-decoration: none;
