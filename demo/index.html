@@ -54,14 +54,21 @@ a { color: var(--rust); text-decoration: none; }
 
 /* Top bar */
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   height: var(--nav-height);
   padding: 0 20px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
 }
 
 .topbar-brand {
@@ -145,6 +152,9 @@ a { color: var(--rust); text-decoration: none; }
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .search-box {
@@ -191,6 +201,7 @@ a { color: var(--rust); text-decoration: none; }
 
 /* Torrent Table */
 .table-wrap { flex: 1; overflow-y: auto; }
+.table-wrap table { max-width: 1140px; margin: 0 auto; }
 
 table { width: 100%; border-collapse: collapse; }
 thead { position: sticky; top: 0; z-index: 1; background: var(--surface); }
@@ -341,6 +352,9 @@ tr:hover .actions { opacity: 1; }
   justify-content: space-between;
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .detail-title { font-weight: 600; font-size: 1rem; }
@@ -359,6 +373,9 @@ tr:hover .actions { opacity: 1; }
   gap: 0;
   border-bottom: 1px solid var(--border);
   padding: 0 20px;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .detail-tab {
@@ -376,7 +393,7 @@ tr:hover .actions { opacity: 1; }
 .detail-tab:hover { color: var(--text-secondary); }
 .detail-tab.active { color: var(--rust); border-bottom-color: var(--rust); }
 
-.detail-content { padding: 16px 20px; }
+.detail-content { padding: 16px 20px; max-width: 1140px; margin-left: auto; margin-right: auto; }
 
 .file-list { list-style: none; }
 .file-item {
@@ -540,6 +557,9 @@ tr:hover .actions { opacity: 1; }
   padding: 0 20px;
   flex-shrink: 0;
   background: var(--surface);
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .sub-tab {
@@ -571,6 +591,9 @@ tr:hover .actions { opacity: 1; }
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   flex-wrap: wrap;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .index-search {
@@ -645,6 +668,9 @@ tr:hover .actions { opacity: 1; }
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ============================================
@@ -657,6 +683,9 @@ tr:hover .actions { opacity: 1; }
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Generic badge styles for RSS */
@@ -740,23 +769,25 @@ tr:hover .actions { opacity: 1; }
 <div class="app">
   <!-- Top bar -->
   <div class="topbar">
-    <div class="topbar-brand">
-      <img src="../img/logo.png" alt="rustTorrent"><span class="rust">rust</span>Torrent
-      <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span>
-      <div class="topbar-tabs">
-        <button class="topbar-tab active" onclick="switchPage('torrents', this)">Torrents</button>
-        <button class="topbar-tab" onclick="switchPage('index', this)">Browse Index</button>
-        <button class="topbar-tab" onclick="switchPage('rss', this)">RSS</button>
+    <div class="topbar-inner">
+      <div class="topbar-brand">
+        <img src="../img/logo.png" alt="rustTorrent"><span class="rust">rust</span>Torrent
+        <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span>
+        <div class="topbar-tabs">
+          <button class="topbar-tab active" onclick="switchPage('torrents', this)">Torrents</button>
+          <button class="topbar-tab" onclick="switchPage('index', this)">Browse Index</button>
+          <button class="topbar-tab" onclick="switchPage('rss', this)">RSS</button>
+        </div>
       </div>
-    </div>
-    <div class="topbar-actions">
-      <div class="topbar-stats">
-        <span class="down" id="globalDown">&#9660; 0 MB/s</span>
-        <span class="up" id="globalUp">&#9650; 0 MB/s</span>
-        <span>DHT: <span id="dhtNodes">847</span> nodes</span>
+      <div class="topbar-actions">
+        <div class="topbar-stats">
+          <span class="down" id="globalDown">&#9660; 0 MB/s</span>
+          <span class="up" id="globalUp">&#9650; 0 MB/s</span>
+          <span>DHT: <span id="dhtNodes">847</span> nodes</span>
+        </div>
+        <button class="btn-sm btn-rust" onclick="openAddModal()">+ Add Torrent</button>
+        <a href="../" class="btn-sm btn-ghost">Back to Site</a>
       </div>
-      <button class="btn-sm btn-rust" onclick="openAddModal()">+ Add Torrent</button>
-      <a href="../" class="btn-sm btn-ghost">Back to Site</a>
     </div>
   </div>
 
@@ -1250,70 +1281,70 @@ var FAKE_PEERS = [
 // Browse Index data
 // ============================================
 var INDEX_SEARCH_DATA = [
-  { name: 'The.Matrix.1999.Remastered.2160p.UHD.BluRay.x265', type: 'movie', size: 48534142566, seeders: 234, leechers: 45, age: '2d' },
-  { name: 'Breaking.Bad.S01-S05.Complete.1080p.BluRay', type: 'tv_show', size: 193273528320, seeders: 567, leechers: 123, age: '5d' },
-  { name: 'Ubuntu.24.04.1.Desktop.amd64.iso', type: 'software', size: 5046586573, seeders: 1200, leechers: 89, age: '1d' },
-  { name: 'Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', type: 'movie', size: 19327352832, seeders: 892, leechers: 201, age: '3d' },
-  { name: 'The.Witcher.S03.Complete.720p.WEB-DL.x264', type: 'tv_show', size: 12884901888, seeders: 345, leechers: 67, age: '12d' },
-  { name: 'Pink.Floyd.Discography.FLAC.24bit', type: 'music', size: 32212254720, seeders: 189, leechers: 23, age: '30d' },
-  { name: 'The.Lord.of.the.Rings.Trilogy.Extended.1080p.BluRay.x264', type: 'movie', size: 85899345920, seeders: 456, leechers: 98, age: '8d' },
-  { name: 'Arch.Linux.2024.03.01.x86_64.iso', type: 'software', size: 858993459, seeders: 890, leechers: 12, age: '4d' },
-  { name: 'Game.of.Thrones.S01-S08.Complete.2160p.BluRay.REMUX', type: 'tv_show', size: 644245094400, seeders: 312, leechers: 178, age: '15d' },
-  { name: 'Cyberpunk.2077.Ultimate.Edition.v2.1', type: 'game', size: 75161927680, seeders: 678, leechers: 234, age: '7d' },
-  { name: 'Project.Gutenberg.Complete.Collection.2024', type: 'ebook', size: 64424509440, seeders: 156, leechers: 8, age: '20d' },
-  { name: 'Radiohead.OK.Computer.OKNOTOK.1997.2017.FLAC', type: 'music', size: 1932735283, seeders: 234, leechers: 19, age: '45d' },
-  { name: 'Blade.Runner.2049.2017.2160p.UHD.BluRay.HDR.x265', type: 'movie', size: 64424509440, seeders: 345, leechers: 56, age: '6d' },
-  { name: 'Fedora.Workstation.40.x86_64.Live.iso', type: 'software', size: 2147483648, seeders: 567, leechers: 34, age: '2d' },
-  { name: 'Baldurs.Gate.3.v4.1.1.Hotfix.20', type: 'game', size: 107374182400, seeders: 890, leechers: 345, age: '1d' },
-  { name: 'Severance.S01.Complete.2160p.ATVP.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 42949672960, seeders: 423, leechers: 87, age: '9d' },
-  { name: 'Neal.Stephenson.Collection.EPUB', type: 'ebook', size: 107374182, seeders: 89, leechers: 5, age: '60d' },
-  { name: 'Oppenheimer.2023.1080p.BluRay.x264-SPARKS', type: 'movie', size: 16106127360, seeders: 567, leechers: 112, age: '4d' }
+  { name: 'Crimson.Horizon.2024.Remastered.2160p.UHD.BluRay.x265', type: 'movie', size: 48534142566, seeders: 234, leechers: 45, age: '2d' },
+  { name: 'Quantum.Drift.S01-S05.Complete.1080p.BluRay', type: 'tv_show', size: 193273528320, seeders: 567, leechers: 123, age: '5d' },
+  { name: 'NovaDist.24.04.1.Desktop.amd64.iso', type: 'software', size: 5046586573, seeders: 1200, leechers: 89, age: '1d' },
+  { name: 'The.Last.Algorithm.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', type: 'movie', size: 19327352832, seeders: 892, leechers: 201, age: '3d' },
+  { name: 'The.Signal.S03.Complete.720p.WEB-DL.x264', type: 'tv_show', size: 12884901888, seeders: 345, leechers: 67, age: '12d' },
+  { name: 'Lunar.Echo.Discography.FLAC.24bit', type: 'music', size: 32212254720, seeders: 189, leechers: 23, age: '30d' },
+  { name: 'The.Iron.Bridge.Trilogy.Extended.1080p.BluRay.x264', type: 'movie', size: 85899345920, seeders: 456, leechers: 98, age: '8d' },
+  { name: 'PineCraft.OS.2024.03.01.x86_64.iso', type: 'software', size: 858993459, seeders: 890, leechers: 12, age: '4d' },
+  { name: 'Starfall.Chronicles.S01-S08.Complete.2160p.BluRay.REMUX', type: 'tv_show', size: 644245094400, seeders: 312, leechers: 178, age: '15d' },
+  { name: 'Starforge.Ultimate.Edition.v2.1', type: 'game', size: 75161927680, seeders: 678, leechers: 234, age: '7d' },
+  { name: 'Great.Digital.Library.Complete.Collection.2024', type: 'ebook', size: 64424509440, seeders: 156, leechers: 8, age: '20d' },
+  { name: 'Velvet.Circuit.Resonance.Sessions.FLAC', type: 'music', size: 1932735283, seeders: 234, leechers: 19, age: '45d' },
+  { name: 'Echoes.of.Tomorrow.2017.2160p.UHD.BluRay.HDR.x265', type: 'movie', size: 64424509440, seeders: 345, leechers: 56, age: '6d' },
+  { name: 'RiverOS.Workstation.40.x86_64.Live.iso', type: 'software', size: 2147483648, seeders: 567, leechers: 34, age: '2d' },
+  { name: 'Ironkeep.Chronicles.v4.1.1.Hotfix.20', type: 'game', size: 107374182400, seeders: 890, leechers: 345, age: '1d' },
+  { name: 'Midnight.Protocol.S01.Complete.2160p.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 42949672960, seeders: 423, leechers: 87, age: '9d' },
+  { name: 'Marcus.Varro.Collection.EPUB', type: 'ebook', size: 107374182, seeders: 89, leechers: 5, age: '60d' },
+  { name: 'Neon.Skyline.2023.1080p.BluRay.x264-SPARKS', type: 'movie', size: 16106127360, seeders: 567, leechers: 112, age: '4d' }
 ];
 
 var INDEX_RECENT_DATA = [
-  { name: 'Shogun.S02E01.2160p.HULU.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 5368709120, seeders: 1456, leechers: 234, age: '2h' },
-  { name: 'Daft.Punk.Random.Access.Memories.10th.Anniversary.FLAC', type: 'music', size: 2576980378, seeders: 345, leechers: 67, age: '4h' },
-  { name: 'Debian.12.5.0.amd64.DVD.iso', type: 'software', size: 3865470566, seeders: 678, leechers: 23, age: '6h' },
-  { name: 'The.Penguin.S01E08.Finale.2160p.MAX.WEB-DL.x265', type: 'tv_show', size: 4294967296, seeders: 892, leechers: 156, age: '8h' },
-  { name: 'Elden.Ring.Shadow.of.the.Erdtree.v1.14', type: 'game', size: 53687091200, seeders: 1234, leechers: 456, age: '10h' },
-  { name: 'Interstellar.2014.IMAX.2160p.UHD.BluRay.x265-FLAME', type: 'movie', size: 75161927680, seeders: 567, leechers: 89, age: '12h' },
-  { name: 'Brandon.Sanderson.Cosmere.Collection.EPUB.2024', type: 'ebook', size: 214748365, seeders: 123, leechers: 12, age: '14h' },
-  { name: 'Hades.II.Early.Access.v0.96', type: 'game', size: 21474836480, seeders: 456, leechers: 78, age: '16h' },
-  { name: 'True.Detective.S04.Night.Country.Complete.1080p.WEB-DL', type: 'tv_show', size: 16106127360, seeders: 345, leechers: 56, age: '18h' },
-  { name: 'Tool.Discography.1992-2019.FLAC.24bit', type: 'music', size: 21474836480, seeders: 189, leechers: 34, age: '20h' }
+  { name: 'Midnight.Protocol.S02E01.2160p.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 5368709120, seeders: 1456, leechers: 234, age: '2h' },
+  { name: 'Neon.Pulse.Random.Access.Sessions.10th.Anniversary.FLAC', type: 'music', size: 2576980378, seeders: 345, leechers: 67, age: '4h' },
+  { name: 'CedarOS.12.5.0.amd64.DVD.iso', type: 'software', size: 3865470566, seeders: 678, leechers: 23, age: '6h' },
+  { name: 'The.Vault.S01E08.Finale.2160p.WEB-DL.x265', type: 'tv_show', size: 4294967296, seeders: 892, leechers: 156, age: '8h' },
+  { name: 'Dragonstone.Shadow.of.the.Ancients.v1.14', type: 'game', size: 53687091200, seeders: 1234, leechers: 456, age: '10h' },
+  { name: 'Beyond.the.Cosmos.2014.IMAX.2160p.UHD.BluRay.x265-FLAME', type: 'movie', size: 75161927680, seeders: 567, leechers: 89, age: '12h' },
+  { name: 'Elena.Kosyak.Worldbuilding.Collection.EPUB.2024', type: 'ebook', size: 214748365, seeders: 123, leechers: 12, age: '14h' },
+  { name: 'Ember.Throne.Early.Access.v0.96', type: 'game', size: 21474836480, seeders: 456, leechers: 78, age: '16h' },
+  { name: 'Cold.Harbor.S04.Complete.1080p.WEB-DL', type: 'tv_show', size: 16106127360, seeders: 345, leechers: 56, age: '18h' },
+  { name: 'Sonic.Alchemy.Discography.1992-2019.FLAC.24bit', type: 'music', size: 21474836480, seeders: 189, leechers: 34, age: '20h' }
 ];
 
 // ============================================
 // RSS data
 // ============================================
 var RSS_FEEDS = [
-  { id: 1, name: 'Linux ISOs - Latest', url: 'https://linuxtracker.org/rss.php', interval: 900, category: 'software', filter: '.*x86_64.*', enabled: true, autoDownload: false },
-  { id: 2, name: 'TV Shows - 1080p', url: 'https://indexarr.net/api/rss?cat=tv&res=1080p', interval: 600, category: 'tv_show', filter: '.*1080p.*WEB-DL.*', enabled: true, autoDownload: true },
-  { id: 3, name: 'Movies - 2160p', url: 'https://indexarr.net/api/rss?cat=movie&res=2160p', interval: 1800, category: 'movie', filter: '.*2160p.*BluRay.*', enabled: true, autoDownload: false },
-  { id: 4, name: 'Music - FLAC', url: 'https://indexarr.net/api/rss?cat=music&fmt=flac', interval: 3600, category: 'music', filter: '.*FLAC.*', enabled: false, autoDownload: false },
-  { id: 5, name: 'Games - New Releases', url: 'https://indexarr.net/api/rss?cat=game', interval: 1200, category: 'game', filter: '', enabled: true, autoDownload: true }
+  { id: 1, name: 'Open Distros - Latest', url: 'https://tracker.example.com/rss/distros', interval: 900, category: 'software', filter: '.*x86_64.*', enabled: true, autoDownload: false },
+  { id: 2, name: 'TV Releases - 1080p', url: 'https://indexarr.example.com/api/rss?cat=tv&res=1080p', interval: 600, category: 'tv_show', filter: '.*1080p.*WEB-DL.*', enabled: true, autoDownload: true },
+  { id: 3, name: 'Movie Releases - 2160p', url: 'https://indexarr.example.com/api/rss?cat=movie&res=2160p', interval: 1800, category: 'movie', filter: '.*2160p.*BluRay.*', enabled: true, autoDownload: false },
+  { id: 4, name: 'Music Releases - FLAC', url: 'https://indexarr.example.com/api/rss?cat=music&fmt=flac', interval: 3600, category: 'music', filter: '.*FLAC.*', enabled: false, autoDownload: false },
+  { id: 5, name: 'Game Releases - New', url: 'https://indexarr.example.com/api/rss?cat=game', interval: 1200, category: 'game', filter: '', enabled: true, autoDownload: true }
 ];
 
 var RSS_ITEMS = [
-  { id: 1, title: 'Shogun.S02E01.2160p.HULU.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '2h ago', size: 5368709120, status: 'downloaded' },
-  { id: 2, title: 'Fedora.Workstation.40.x86_64.Live.iso', feedId: 1, feedName: 'Linux ISOs - Latest', published: '3h ago', size: 2147483648, status: 'downloaded' },
-  { id: 3, title: 'Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', feedId: 3, feedName: 'Movies - 2160p', published: '4h ago', size: 19327352832, status: 'pending' },
-  { id: 4, title: 'The.Penguin.S01E08.Finale.2160p.MAX.WEB-DL.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '5h ago', size: 4294967296, status: 'downloaded' },
-  { id: 5, title: 'Baldurs.Gate.3.v4.1.1.Hotfix.20', feedId: 5, feedName: 'Games - New Releases', published: '6h ago', size: 107374182400, status: 'pending' },
-  { id: 6, title: 'Severance.S01.Complete.2160p.ATVP.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '8h ago', size: 42949672960, status: 'downloaded' },
-  { id: 7, title: 'Oppenheimer.2023.2160p.BluRay.REMUX.HEVC.DTS-HD', feedId: 3, feedName: 'Movies - 2160p', published: '10h ago', size: 75161927680, status: 'pending' },
-  { id: 8, title: 'Arch.Linux.2024.03.01.x86_64.iso', feedId: 1, feedName: 'Linux ISOs - Latest', published: '12h ago', size: 858993459, status: 'downloaded' },
-  { id: 9, title: 'Elden.Ring.Shadow.of.the.Erdtree.v1.14', feedId: 5, feedName: 'Games - New Releases', published: '14h ago', size: 53687091200, status: 'downloaded' },
-  { id: 10, title: 'True.Detective.S04.Night.Country.Complete.1080p.WEB-DL', feedId: 2, feedName: 'TV Shows - 1080p', published: '16h ago', size: 16106127360, status: 'pending' },
-  { id: 11, title: 'Blade.Runner.2049.2017.2160p.UHD.BluRay.HDR.x265', feedId: 3, feedName: 'Movies - 2160p', published: '18h ago', size: 64424509440, status: 'downloaded' },
-  { id: 12, title: 'Hades.II.Early.Access.v0.96', feedId: 5, feedName: 'Games - New Releases', published: '20h ago', size: 21474836480, status: 'pending' }
+  { id: 1, title: 'Midnight.Protocol.S02E01.2160p.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Releases - 1080p', published: '2h ago', size: 5368709120, status: 'downloaded' },
+  { id: 2, title: 'RiverOS.Workstation.40.x86_64.Live.iso', feedId: 1, feedName: 'Open Distros - Latest', published: '3h ago', size: 2147483648, status: 'downloaded' },
+  { id: 3, title: 'The.Last.Algorithm.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', feedId: 3, feedName: 'Movie Releases - 2160p', published: '4h ago', size: 19327352832, status: 'pending' },
+  { id: 4, title: 'The.Vault.S01E08.Finale.2160p.WEB-DL.x265', feedId: 2, feedName: 'TV Releases - 1080p', published: '5h ago', size: 4294967296, status: 'downloaded' },
+  { id: 5, title: 'Ironkeep.Chronicles.v4.1.1.Hotfix.20', feedId: 5, feedName: 'Game Releases - New', published: '6h ago', size: 107374182400, status: 'pending' },
+  { id: 6, title: 'Midnight.Protocol.S01.Complete.2160p.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Releases - 1080p', published: '8h ago', size: 42949672960, status: 'downloaded' },
+  { id: 7, title: 'Neon.Skyline.2023.2160p.BluRay.REMUX.HEVC.DTS-HD', feedId: 3, feedName: 'Movie Releases - 2160p', published: '10h ago', size: 75161927680, status: 'pending' },
+  { id: 8, title: 'PineCraft.OS.2024.03.01.x86_64.iso', feedId: 1, feedName: 'Open Distros - Latest', published: '12h ago', size: 858993459, status: 'downloaded' },
+  { id: 9, title: 'Dragonstone.Shadow.of.the.Ancients.v1.14', feedId: 5, feedName: 'Game Releases - New', published: '14h ago', size: 53687091200, status: 'downloaded' },
+  { id: 10, title: 'Cold.Harbor.S04.Complete.1080p.WEB-DL', feedId: 2, feedName: 'TV Releases - 1080p', published: '16h ago', size: 16106127360, status: 'pending' },
+  { id: 11, title: 'Echoes.of.Tomorrow.2017.2160p.UHD.BluRay.HDR.x265', feedId: 3, feedName: 'Movie Releases - 2160p', published: '18h ago', size: 64424509440, status: 'downloaded' },
+  { id: 12, title: 'Ember.Throne.Early.Access.v0.96', feedId: 5, feedName: 'Game Releases - New', published: '20h ago', size: 21474836480, status: 'pending' }
 ];
 
 var RSS_RULES = [
-  { id: 1, name: 'Auto-grab Shogun', regex: 'Shogun\\.S\\d+E\\d+.*2160p', feedId: 2, feedName: 'TV Shows - 1080p', category: 'tv_show', priority: 'force', enabled: true },
-  { id: 2, name: 'Linux ISOs only x86_64', regex: '.*x86_64.*\\.iso$', feedId: 1, feedName: 'Linux ISOs - Latest', category: 'software', priority: 'normal', enabled: true },
-  { id: 3, name: 'Movies - 2160p BluRay only', regex: '.*2160p.*BluRay.*REMUX', feedId: 3, feedName: 'Movies - 2160p', category: 'movie', priority: 'high', enabled: true },
-  { id: 4, name: 'Skip cam rips', regex: '.*CAM.*|.*TS.*|.*HDTS.*', feedId: 3, feedName: 'Movies - 2160p', category: 'movie', priority: 'low', enabled: false }
+  { id: 1, name: 'Auto-grab Midnight Protocol', regex: 'Midnight\\.Protocol\\.S\\d+E\\d+.*2160p', feedId: 2, feedName: 'TV Releases - 1080p', category: 'tv_show', priority: 'force', enabled: true },
+  { id: 2, name: 'Distros only x86_64', regex: '.*x86_64.*\\.iso$', feedId: 1, feedName: 'Open Distros - Latest', category: 'software', priority: 'normal', enabled: true },
+  { id: 3, name: 'Movies - 2160p BluRay only', regex: '.*2160p.*BluRay.*REMUX', feedId: 3, feedName: 'Movie Releases - 2160p', category: 'movie', priority: 'high', enabled: true },
+  { id: 4, name: 'Skip low quality', regex: '.*CAM.*|.*TS.*|.*HDTS.*', feedId: 3, feedName: 'Movie Releases - 2160p', category: 'movie', priority: 'low', enabled: false }
 ];
 
 // ============================================
