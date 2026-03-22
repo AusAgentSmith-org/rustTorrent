@@ -26,6 +26,9 @@
   --blue: #4a9eff;
   --yellow: #f9a825;
   --red: #e74c3c;
+  --purple: #a855f7;
+  --cyan: #06b6d4;
+  --orange: #f97316;
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
   --shadow: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-lg: 0 10px 15px rgba(0,0,0,0.4);
@@ -72,6 +75,29 @@ a { color: var(--rust); text-decoration: none; }
 .topbar-brand img { width: 24px; height: 24px; border-radius: 4px; }
 .topbar-brand .rust { color: var(--rust); }
 
+.topbar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 20px;
+}
+
+.topbar-tab {
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+  transition: all 0.15s;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.topbar-tab:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.topbar-tab.active { background: var(--rust); color: #fff; }
+
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -106,6 +132,10 @@ a { color: var(--rust); text-decoration: none; }
 
 /* Main content */
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Page containers */
+.page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.page.active { display: flex; }
 
 /* Toolbar */
 .toolbar {
@@ -397,6 +427,7 @@ tr:hover .actions { opacity: 1; }
   align-items: center;
   justify-content: center;
 }
+
 .modal-overlay.open { display: flex; }
 
 .modal {
@@ -411,22 +442,54 @@ tr:hover .actions { opacity: 1; }
 
 .modal h3 { margin-bottom: 16px; font-size: 1.1rem; }
 
-.modal-input {
+.modal-input, .modal-select {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font);
   font-size: 0.85rem;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   outline: none;
 }
-.modal-input:focus { border-color: var(--rust); }
+.modal-input:focus, .modal-select:focus { border-color: var(--rust); }
 .modal-input::placeholder { color: var(--text-muted); }
 
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.modal-input.mono { font-family: var(--font-mono); }
+
+.modal-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modal-row label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.modal-row label input[type="checkbox"] {
+  accent-color: var(--rust);
+}
+
+.modal-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 /* Back link */
 .back-link {
@@ -467,13 +530,209 @@ tr:hover .actions { opacity: 1; }
 .toast.show { opacity: 1; transform: translateX(0); pointer-events: auto; }
 .toast.error { border-left-color: var(--red); }
 
+/* ============================================
+   Sub-tabs (used by Browse Index & RSS)
+   ============================================ */
+.sub-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.sub-tab {
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.sub-tab:hover { color: var(--text-secondary); }
+.sub-tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+.sub-page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.sub-page.active { display: flex; }
+
+/* ============================================
+   Browse Index styles
+   ============================================ */
+.index-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.index-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.index-search:focus { border-color: var(--rust); }
+.index-search::placeholder { color: var(--text-muted); }
+
+.index-select {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+.index-select:focus { border-color: var(--rust); }
+
+/* Content type badges */
+.type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.type-movie { background: rgba(74, 158, 255, 0.15); color: #4a9eff; }
+.type-tv_show { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+.type-music { background: rgba(78, 204, 163, 0.15); color: #4ecca3; }
+.type-ebook { background: rgba(249, 168, 37, 0.15); color: #f9a825; }
+.type-game { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+.type-software { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
+
+.seeders { color: var(--green); }
+.leechers { color: var(--text-secondary); }
+
+.dl-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  background: var(--rust);
+  color: #fff;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.dl-btn:hover { background: var(--rust-hover); }
+
+.index-results-info {
+  padding: 8px 20px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   RSS styles
+   ============================================ */
+.rss-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Generic badge styles for RSS */
+.badge-enabled { background: rgba(78, 204, 163, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-disabled { background: rgba(138, 150, 168, 0.08); color: var(--text-muted); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-downloaded { background: rgba(78, 204, 163, 0.15); color: var(--green); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-pending { background: rgba(74, 158, 255, 0.15); color: var(--blue); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+
+/* Priority badges */
+.badge-priority-force { background: rgba(231, 76, 60, 0.15); color: var(--red); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-priority-high { background: rgba(249, 115, 22, 0.15); color: var(--orange); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-priority-normal { background: rgba(138, 150, 168, 0.08); color: var(--text-secondary); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+.badge-priority-low { background: rgba(90, 100, 120, 0.1); color: var(--text-muted); padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; }
+
+.rss-url {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rss-regex {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--yellow);
+  background: rgba(249, 168, 37, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.edit-btn {
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: var(--font);
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.edit-btn:hover { background: var(--surface); color: var(--text); }
+
+.delete-btn {
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: var(--font);
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.delete-btn:hover { background: rgba(231, 76, 60, 0.1); color: var(--red); }
+
+.td-actions {
+  display: flex;
+  gap: 4px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .topbar-stats { display: none; }
-  th:nth-child(n+5), td:nth-child(n+5) { display: none; }
+  .torrent-table th:nth-child(n+5), .torrent-table td:nth-child(n+5) { display: none; }
   .t-name { max-width: 180px; }
   .toolbar { flex-wrap: wrap; }
   .search-box { max-width: none; min-width: 0; }
+  .index-toolbar { flex-wrap: wrap; }
+  .index-search { max-width: none; }
+  .rss-url { max-width: 160px; }
 }
 </style>
 </head>
@@ -481,9 +740,14 @@ tr:hover .actions { opacity: 1; }
 <div class="app">
   <!-- Top bar -->
   <div class="topbar">
-    <div class="topbar-brand"><img src="../img/logo.png" alt="rustTorrent"><span class="rust">rust</span>Torrent <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span>
-      <span style="margin-left:20px;padding:4px 12px;background:var(--rust);color:#fff;border-radius:4px;font-size:0.78rem;font-weight:600;cursor:default;">Torrents</span>
-      <span style="padding:4px 12px;color:var(--text-secondary);font-size:0.78rem;cursor:pointer;" title="Indexarr integration - search and download from the community torrent index">Browse Index</span>
+    <div class="topbar-brand">
+      <img src="../img/logo.png" alt="rustTorrent"><span class="rust">rust</span>Torrent
+      <span style="color:var(--text-muted);font-size:0.75rem;font-weight:400;margin-left:4px">Demo</span>
+      <div class="topbar-tabs">
+        <button class="topbar-tab active" onclick="switchPage('torrents', this)">Torrents</button>
+        <button class="topbar-tab" onclick="switchPage('index', this)">Browse Index</button>
+        <button class="topbar-tab" onclick="switchPage('rss', this)">RSS</button>
+      </div>
     </div>
     <div class="topbar-actions">
       <div class="topbar-stats">
@@ -496,61 +760,320 @@ tr:hover .actions { opacity: 1; }
     </div>
   </div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <input type="search" class="search-box" id="searchBox" placeholder="Filter torrents...">
-    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
-    <button class="filter-btn" data-filter="downloading" onclick="setFilter('downloading', this)">Downloading</button>
-    <button class="filter-btn" data-filter="seeding" onclick="setFilter('seeding', this)">Seeding</button>
-    <button class="filter-btn" data-filter="paused" onclick="setFilter('paused', this)">Paused</button>
-    <div class="toolbar-right">
-      <span id="torrentCount">0 torrents</span>
-    </div>
-  </div>
+  <!-- Main area -->
+  <div class="main">
 
-  <!-- Main table -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th onclick="sortBy('name')">Name <span class="sort-arrow" id="sort-name">&#9650;</span></th>
-          <th onclick="sortBy('size')">Size <span class="sort-arrow" id="sort-size">&#9650;</span></th>
-          <th onclick="sortBy('progress')">Progress <span class="sort-arrow" id="sort-progress">&#9650;</span></th>
-          <th onclick="sortBy('downSpeed')">Down <span class="sort-arrow" id="sort-downSpeed">&#9650;</span></th>
-          <th onclick="sortBy('upSpeed')">Up <span class="sort-arrow" id="sort-upSpeed">&#9650;</span></th>
-          <th onclick="sortBy('peers')">Peers <span class="sort-arrow" id="sort-peers">&#9650;</span></th>
-          <th onclick="sortBy('eta')">ETA <span class="sort-arrow" id="sort-eta">&#9650;</span></th>
-          <th>Status</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="torrentTable"></tbody>
-    </table>
-  </div>
+    <!-- ============== TORRENTS PAGE ============== -->
+    <div class="page active" id="page-torrents">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <input type="search" class="search-box" id="searchBox" placeholder="Filter torrents...">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+        <button class="filter-btn" data-filter="downloading" onclick="setFilter('downloading', this)">Downloading</button>
+        <button class="filter-btn" data-filter="seeding" onclick="setFilter('seeding', this)">Seeding</button>
+        <button class="filter-btn" data-filter="paused" onclick="setFilter('paused', this)">Paused</button>
+        <div class="toolbar-right">
+          <span id="torrentCount">0 torrents</span>
+        </div>
+      </div>
 
-  <!-- Detail pane -->
-  <div class="detail-pane" id="detailPane">
-    <div class="detail-header">
-      <span class="detail-title" id="detailTitle">-</span>
-      <button class="detail-close" onclick="closeDetail()">&times;</button>
+      <!-- Main table -->
+      <div class="table-wrap">
+        <table class="torrent-table">
+          <thead>
+            <tr>
+              <th onclick="sortBy('name')">Name <span class="sort-arrow" id="sort-name">&#9650;</span></th>
+              <th onclick="sortBy('size')">Size <span class="sort-arrow" id="sort-size">&#9650;</span></th>
+              <th onclick="sortBy('progress')">Progress <span class="sort-arrow" id="sort-progress">&#9650;</span></th>
+              <th onclick="sortBy('downSpeed')">Down <span class="sort-arrow" id="sort-downSpeed">&#9650;</span></th>
+              <th onclick="sortBy('upSpeed')">Up <span class="sort-arrow" id="sort-upSpeed">&#9650;</span></th>
+              <th onclick="sortBy('peers')">Peers <span class="sort-arrow" id="sort-peers">&#9650;</span></th>
+              <th onclick="sortBy('eta')">ETA <span class="sort-arrow" id="sort-eta">&#9650;</span></th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="torrentTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Detail pane -->
+      <div class="detail-pane" id="detailPane">
+        <div class="detail-header">
+          <span class="detail-title" id="detailTitle">-</span>
+          <button class="detail-close" onclick="closeDetail()">&times;</button>
+        </div>
+        <div class="detail-tabs">
+          <button class="detail-tab active" data-tab="files" onclick="switchDetailTab('files', this)">Files</button>
+          <button class="detail-tab" data-tab="peers" onclick="switchDetailTab('peers', this)">Peers</button>
+          <button class="detail-tab" data-tab="info" onclick="switchDetailTab('info', this)">Info</button>
+        </div>
+        <div class="detail-content" id="detailContent"></div>
+      </div>
     </div>
-    <div class="detail-tabs">
-      <button class="detail-tab active" data-tab="files" onclick="switchDetailTab('files', this)">Files</button>
-      <button class="detail-tab" data-tab="peers" onclick="switchDetailTab('peers', this)">Peers</button>
-      <button class="detail-tab" data-tab="info" onclick="switchDetailTab('info', this)">Info</button>
+
+    <!-- ============== BROWSE INDEX PAGE ============== -->
+    <div class="page" id="page-index">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchIndexTab('search', this)">Search</button>
+        <button class="sub-tab" onclick="switchIndexTab('recent', this)">Recent</button>
+      </div>
+
+      <!-- Search sub-page -->
+      <div class="sub-page active" id="index-search">
+        <div class="index-toolbar">
+          <input type="search" class="index-search" id="indexSearchBox" placeholder="Search torrents..." oninput="renderIndexSearch()">
+          <select class="index-select" id="indexTypeFilter" onchange="renderIndexSearch()">
+            <option value="all">All Types</option>
+            <option value="movie">Movie</option>
+            <option value="tv_show">TV Show</option>
+            <option value="music">Music</option>
+            <option value="ebook">Ebook</option>
+            <option value="game">Game</option>
+            <option value="software">Software</option>
+          </select>
+          <select class="index-select" id="indexResFilter" onchange="renderIndexSearch()">
+            <option value="any">Any Resolution</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+            <option value="2160p">2160p</option>
+          </select>
+          <select class="index-select" id="indexSortBy" onchange="renderIndexSearch()">
+            <option value="relevance">Relevance</option>
+            <option value="date">Date</option>
+            <option value="seeders">Seeders</option>
+            <option value="size">Size</option>
+          </select>
+        </div>
+        <div class="index-results-info" id="indexResultsInfo">18 results</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Seeders</th>
+                <th>Leechers</th>
+                <th>Age</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="indexSearchTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent sub-page -->
+      <div class="sub-page" id="index-recent">
+        <div class="index-results-info">Recently indexed items</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Seeders</th>
+                <th>Leechers</th>
+                <th>Age</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="indexRecentTable"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="detail-content" id="detailContent"></div>
-  </div>
-</div>
+
+    <!-- ============== RSS PAGE ============== -->
+    <div class="page" id="page-rss">
+      <div class="sub-tabs">
+        <button class="sub-tab active" onclick="switchRssTab('items', this)">Items</button>
+        <button class="sub-tab" onclick="switchRssTab('feeds', this)">Feeds</button>
+        <button class="sub-tab" onclick="switchRssTab('rules', this)">Rules</button>
+      </div>
+
+      <!-- Items sub-page -->
+      <div class="sub-page active" id="rss-items">
+        <div class="rss-toolbar">
+          <select class="index-select" id="rssItemFeedFilter" onchange="renderRssItems()">
+            <option value="all">All Feeds</option>
+          </select>
+          <div class="toolbar-right">
+            <span id="rssItemCount">0 items</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Feed</th>
+                <th>Published</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rssItemsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Feeds sub-page -->
+      <div class="sub-page" id="rss-feeds">
+        <div class="rss-toolbar">
+          <button class="btn-sm btn-rust" onclick="openFeedModal()">+ Add Feed</button>
+          <div class="toolbar-right">
+            <span id="rssFeedCount">0 feeds</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>URL</th>
+                <th>Interval</th>
+                <th>Category</th>
+                <th>Filter</th>
+                <th>Status</th>
+                <th>Auto-DL</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rssFeedsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Rules sub-page -->
+      <div class="sub-page" id="rss-rules">
+        <div class="rss-toolbar">
+          <button class="btn-sm btn-rust" onclick="openRuleModal()">+ Add Rule</button>
+          <div class="toolbar-right">
+            <span id="rssRuleCount">0 rules</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Regex Pattern</th>
+                <th>Feed</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Enabled</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rssRulesTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
 
 <!-- Add torrent modal -->
 <div class="modal-overlay" id="addModal">
   <div class="modal">
     <h3>Add Torrent</h3>
-    <input type="text" class="modal-input" id="magnetInput" placeholder="Paste magnet link or info hash...">
+    <input type="text" class="modal-input mono" id="magnetInput" placeholder="Paste magnet link or info hash...">
     <div class="modal-actions">
       <button class="btn-sm btn-ghost" onclick="closeAddModal()">Cancel</button>
       <button class="btn-sm btn-rust" onclick="addTorrent()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add feed modal -->
+<div class="modal-overlay" id="feedModal">
+  <div class="modal">
+    <h3 id="feedModalTitle">Add Feed</h3>
+    <div>
+      <span class="modal-label">Name</span>
+      <input type="text" class="modal-input" id="feedNameInput" placeholder="My Feed">
+    </div>
+    <div>
+      <span class="modal-label">URL</span>
+      <input type="text" class="modal-input mono" id="feedUrlInput" placeholder="https://example.com/rss">
+    </div>
+    <div>
+      <span class="modal-label">Poll Interval (seconds)</span>
+      <input type="number" class="modal-input" id="feedIntervalInput" placeholder="900" value="900">
+    </div>
+    <div>
+      <span class="modal-label">Category</span>
+      <select class="modal-select" id="feedCategoryInput">
+        <option value="movie">Movie</option>
+        <option value="tv_show">TV Show</option>
+        <option value="music">Music</option>
+        <option value="ebook">Ebook</option>
+        <option value="game">Game</option>
+        <option value="software">Software</option>
+      </select>
+    </div>
+    <div>
+      <span class="modal-label">Filter Regex</span>
+      <input type="text" class="modal-input mono" id="feedFilterInput" placeholder=".*1080p.*">
+    </div>
+    <div class="modal-row">
+      <label><input type="checkbox" id="feedEnabledInput" checked> Enabled</label>
+      <label><input type="checkbox" id="feedAutoDownloadInput"> Auto-Download</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-ghost" onclick="closeFeedModal()">Cancel</button>
+      <button class="btn-sm btn-rust" onclick="saveFeed()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add rule modal -->
+<div class="modal-overlay" id="ruleModal">
+  <div class="modal">
+    <h3 id="ruleModalTitle">Add Rule</h3>
+    <div>
+      <span class="modal-label">Name</span>
+      <input type="text" class="modal-input" id="ruleNameInput" placeholder="My Rule">
+    </div>
+    <div>
+      <span class="modal-label">Regex Pattern</span>
+      <input type="text" class="modal-input mono" id="ruleRegexInput" placeholder=".*pattern.*">
+    </div>
+    <div>
+      <span class="modal-label">Feed</span>
+      <select class="modal-select" id="ruleFeedInput"></select>
+    </div>
+    <div>
+      <span class="modal-label">Category</span>
+      <select class="modal-select" id="ruleCategoryInput">
+        <option value="movie">Movie</option>
+        <option value="tv_show">TV Show</option>
+        <option value="music">Music</option>
+        <option value="ebook">Ebook</option>
+        <option value="game">Game</option>
+        <option value="software">Software</option>
+      </select>
+    </div>
+    <div>
+      <span class="modal-label">Priority</span>
+      <select class="modal-select" id="rulePriorityInput">
+        <option value="force">Force</option>
+        <option value="high">High</option>
+        <option value="normal" selected>Normal</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+    <div class="modal-row">
+      <label><input type="checkbox" id="ruleEnabledInput" checked> Enabled</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-sm btn-ghost" onclick="closeRuleModal()">Cancel</button>
+      <button class="btn-sm btn-rust" onclick="saveRule()">Save</button>
     </div>
   </div>
 </div>
@@ -723,7 +1246,79 @@ var FAKE_PEERS = [
   { addr: '172.20.0.50:8999', client: 'rtbit/7.0.1', down: 1100000, up: 400000 },
 ];
 
+// ============================================
+// Browse Index data
+// ============================================
+var INDEX_SEARCH_DATA = [
+  { name: 'The.Matrix.1999.Remastered.2160p.UHD.BluRay.x265', type: 'movie', size: 48534142566, seeders: 234, leechers: 45, age: '2d' },
+  { name: 'Breaking.Bad.S01-S05.Complete.1080p.BluRay', type: 'tv_show', size: 193273528320, seeders: 567, leechers: 123, age: '5d' },
+  { name: 'Ubuntu.24.04.1.Desktop.amd64.iso', type: 'software', size: 5046586573, seeders: 1200, leechers: 89, age: '1d' },
+  { name: 'Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', type: 'movie', size: 19327352832, seeders: 892, leechers: 201, age: '3d' },
+  { name: 'The.Witcher.S03.Complete.720p.WEB-DL.x264', type: 'tv_show', size: 12884901888, seeders: 345, leechers: 67, age: '12d' },
+  { name: 'Pink.Floyd.Discography.FLAC.24bit', type: 'music', size: 32212254720, seeders: 189, leechers: 23, age: '30d' },
+  { name: 'The.Lord.of.the.Rings.Trilogy.Extended.1080p.BluRay.x264', type: 'movie', size: 85899345920, seeders: 456, leechers: 98, age: '8d' },
+  { name: 'Arch.Linux.2024.03.01.x86_64.iso', type: 'software', size: 858993459, seeders: 890, leechers: 12, age: '4d' },
+  { name: 'Game.of.Thrones.S01-S08.Complete.2160p.BluRay.REMUX', type: 'tv_show', size: 644245094400, seeders: 312, leechers: 178, age: '15d' },
+  { name: 'Cyberpunk.2077.Ultimate.Edition.v2.1', type: 'game', size: 75161927680, seeders: 678, leechers: 234, age: '7d' },
+  { name: 'Project.Gutenberg.Complete.Collection.2024', type: 'ebook', size: 64424509440, seeders: 156, leechers: 8, age: '20d' },
+  { name: 'Radiohead.OK.Computer.OKNOTOK.1997.2017.FLAC', type: 'music', size: 1932735283, seeders: 234, leechers: 19, age: '45d' },
+  { name: 'Blade.Runner.2049.2017.2160p.UHD.BluRay.HDR.x265', type: 'movie', size: 64424509440, seeders: 345, leechers: 56, age: '6d' },
+  { name: 'Fedora.Workstation.40.x86_64.Live.iso', type: 'software', size: 2147483648, seeders: 567, leechers: 34, age: '2d' },
+  { name: 'Baldurs.Gate.3.v4.1.1.Hotfix.20', type: 'game', size: 107374182400, seeders: 890, leechers: 345, age: '1d' },
+  { name: 'Severance.S01.Complete.2160p.ATVP.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 42949672960, seeders: 423, leechers: 87, age: '9d' },
+  { name: 'Neal.Stephenson.Collection.EPUB', type: 'ebook', size: 107374182, seeders: 89, leechers: 5, age: '60d' },
+  { name: 'Oppenheimer.2023.1080p.BluRay.x264-SPARKS', type: 'movie', size: 16106127360, seeders: 567, leechers: 112, age: '4d' }
+];
+
+var INDEX_RECENT_DATA = [
+  { name: 'Shogun.S02E01.2160p.HULU.WEB-DL.DDP5.1.x265', type: 'tv_show', size: 5368709120, seeders: 1456, leechers: 234, age: '2h' },
+  { name: 'Daft.Punk.Random.Access.Memories.10th.Anniversary.FLAC', type: 'music', size: 2576980378, seeders: 345, leechers: 67, age: '4h' },
+  { name: 'Debian.12.5.0.amd64.DVD.iso', type: 'software', size: 3865470566, seeders: 678, leechers: 23, age: '6h' },
+  { name: 'The.Penguin.S01E08.Finale.2160p.MAX.WEB-DL.x265', type: 'tv_show', size: 4294967296, seeders: 892, leechers: 156, age: '8h' },
+  { name: 'Elden.Ring.Shadow.of.the.Erdtree.v1.14', type: 'game', size: 53687091200, seeders: 1234, leechers: 456, age: '10h' },
+  { name: 'Interstellar.2014.IMAX.2160p.UHD.BluRay.x265-FLAME', type: 'movie', size: 75161927680, seeders: 567, leechers: 89, age: '12h' },
+  { name: 'Brandon.Sanderson.Cosmere.Collection.EPUB.2024', type: 'ebook', size: 214748365, seeders: 123, leechers: 12, age: '14h' },
+  { name: 'Hades.II.Early.Access.v0.96', type: 'game', size: 21474836480, seeders: 456, leechers: 78, age: '16h' },
+  { name: 'True.Detective.S04.Night.Country.Complete.1080p.WEB-DL', type: 'tv_show', size: 16106127360, seeders: 345, leechers: 56, age: '18h' },
+  { name: 'Tool.Discography.1992-2019.FLAC.24bit', type: 'music', size: 21474836480, seeders: 189, leechers: 34, age: '20h' }
+];
+
+// ============================================
+// RSS data
+// ============================================
+var RSS_FEEDS = [
+  { id: 1, name: 'Linux ISOs - Latest', url: 'https://linuxtracker.org/rss.php', interval: 900, category: 'software', filter: '.*x86_64.*', enabled: true, autoDownload: false },
+  { id: 2, name: 'TV Shows - 1080p', url: 'https://indexarr.net/api/rss?cat=tv&res=1080p', interval: 600, category: 'tv_show', filter: '.*1080p.*WEB-DL.*', enabled: true, autoDownload: true },
+  { id: 3, name: 'Movies - 2160p', url: 'https://indexarr.net/api/rss?cat=movie&res=2160p', interval: 1800, category: 'movie', filter: '.*2160p.*BluRay.*', enabled: true, autoDownload: false },
+  { id: 4, name: 'Music - FLAC', url: 'https://indexarr.net/api/rss?cat=music&fmt=flac', interval: 3600, category: 'music', filter: '.*FLAC.*', enabled: false, autoDownload: false },
+  { id: 5, name: 'Games - New Releases', url: 'https://indexarr.net/api/rss?cat=game', interval: 1200, category: 'game', filter: '', enabled: true, autoDownload: true }
+];
+
+var RSS_ITEMS = [
+  { id: 1, title: 'Shogun.S02E01.2160p.HULU.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '2h ago', size: 5368709120, status: 'downloaded' },
+  { id: 2, title: 'Fedora.Workstation.40.x86_64.Live.iso', feedId: 1, feedName: 'Linux ISOs - Latest', published: '3h ago', size: 2147483648, status: 'downloaded' },
+  { id: 3, title: 'Dune.Part.Two.2024.2160p.WEB-DL.DDP5.1.Atmos.x265', feedId: 3, feedName: 'Movies - 2160p', published: '4h ago', size: 19327352832, status: 'pending' },
+  { id: 4, title: 'The.Penguin.S01E08.Finale.2160p.MAX.WEB-DL.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '5h ago', size: 4294967296, status: 'downloaded' },
+  { id: 5, title: 'Baldurs.Gate.3.v4.1.1.Hotfix.20', feedId: 5, feedName: 'Games - New Releases', published: '6h ago', size: 107374182400, status: 'pending' },
+  { id: 6, title: 'Severance.S01.Complete.2160p.ATVP.WEB-DL.DDP5.1.x265', feedId: 2, feedName: 'TV Shows - 1080p', published: '8h ago', size: 42949672960, status: 'downloaded' },
+  { id: 7, title: 'Oppenheimer.2023.2160p.BluRay.REMUX.HEVC.DTS-HD', feedId: 3, feedName: 'Movies - 2160p', published: '10h ago', size: 75161927680, status: 'pending' },
+  { id: 8, title: 'Arch.Linux.2024.03.01.x86_64.iso', feedId: 1, feedName: 'Linux ISOs - Latest', published: '12h ago', size: 858993459, status: 'downloaded' },
+  { id: 9, title: 'Elden.Ring.Shadow.of.the.Erdtree.v1.14', feedId: 5, feedName: 'Games - New Releases', published: '14h ago', size: 53687091200, status: 'downloaded' },
+  { id: 10, title: 'True.Detective.S04.Night.Country.Complete.1080p.WEB-DL', feedId: 2, feedName: 'TV Shows - 1080p', published: '16h ago', size: 16106127360, status: 'pending' },
+  { id: 11, title: 'Blade.Runner.2049.2017.2160p.UHD.BluRay.HDR.x265', feedId: 3, feedName: 'Movies - 2160p', published: '18h ago', size: 64424509440, status: 'downloaded' },
+  { id: 12, title: 'Hades.II.Early.Access.v0.96', feedId: 5, feedName: 'Games - New Releases', published: '20h ago', size: 21474836480, status: 'pending' }
+];
+
+var RSS_RULES = [
+  { id: 1, name: 'Auto-grab Shogun', regex: 'Shogun\\.S\\d+E\\d+.*2160p', feedId: 2, feedName: 'TV Shows - 1080p', category: 'tv_show', priority: 'force', enabled: true },
+  { id: 2, name: 'Linux ISOs only x86_64', regex: '.*x86_64.*\\.iso$', feedId: 1, feedName: 'Linux ISOs - Latest', category: 'software', priority: 'normal', enabled: true },
+  { id: 3, name: 'Movies - 2160p BluRay only', regex: '.*2160p.*BluRay.*REMUX', feedId: 3, feedName: 'Movies - 2160p', category: 'movie', priority: 'high', enabled: true },
+  { id: 4, name: 'Skip cam rips', regex: '.*CAM.*|.*TS.*|.*HDTS.*', feedId: 3, feedName: 'Movies - 2160p', category: 'movie', priority: 'low', enabled: false }
+];
+
+// ============================================
 // State
+// ============================================
 var torrents = JSON.parse(JSON.stringify(DUMMY_TORRENTS));
 var currentFilter = 'all';
 var searchQuery = '';
@@ -731,8 +1326,15 @@ var sortField = 'name';
 var sortDir = 1;
 var selectedId = null;
 var detailTab = 'files';
+var currentPage = 'torrents';
+var rssFeeds = JSON.parse(JSON.stringify(RSS_FEEDS));
+var rssItems = JSON.parse(JSON.stringify(RSS_ITEMS));
+var rssRules = JSON.parse(JSON.stringify(RSS_RULES));
+var nextId = 100;
 
+// ============================================
 // Format helpers
+// ============================================
 function formatBytes(b) {
   if (b === 0) return '0 B';
   var units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -769,7 +1371,448 @@ function progressClass(t) {
   return t.state;
 }
 
-// Render
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function typeLabel(type) {
+  var labels = { movie: 'Movie', tv_show: 'TV Show', music: 'Music', ebook: 'Ebook', game: 'Game', software: 'Software' };
+  return labels[type] || type;
+}
+
+// ============================================
+// Page navigation
+// ============================================
+function switchPage(page, btn) {
+  currentPage = page;
+  document.querySelectorAll('.topbar-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('page-' + page).classList.add('active');
+
+  if (page === 'index') {
+    renderIndexSearch();
+    renderIndexRecent();
+  } else if (page === 'rss') {
+    renderRssItems();
+    renderRssFeeds();
+    renderRssRules();
+    populateRssItemFeedFilter();
+  }
+}
+
+// ============================================
+// Browse Index — sub-tab switching
+// ============================================
+function switchIndexTab(tab, btn) {
+  document.querySelectorAll('#page-index .sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('#page-index .sub-page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('index-' + tab).classList.add('active');
+}
+
+function renderIndexSearch() {
+  var query = (document.getElementById('indexSearchBox').value || '').toLowerCase();
+  var typeFilter = document.getElementById('indexTypeFilter').value;
+  var resFilter = document.getElementById('indexResFilter').value;
+  var sortBy = document.getElementById('indexSortBy').value;
+
+  var results = INDEX_SEARCH_DATA.filter(function(item) {
+    if (query && item.name.toLowerCase().indexOf(query) === -1) return false;
+    if (typeFilter !== 'all' && item.type !== typeFilter) return false;
+    if (resFilter !== 'any' && item.name.indexOf(resFilter) === -1) return false;
+    return true;
+  });
+
+  if (sortBy === 'seeders') {
+    results.sort(function(a, b) { return b.seeders - a.seeders; });
+  } else if (sortBy === 'size') {
+    results.sort(function(a, b) { return b.size - a.size; });
+  } else if (sortBy === 'date') {
+    // Sort by age string (shorter = newer)
+    results.sort(function(a, b) { return parseAge(a.age) - parseAge(b.age); });
+  }
+
+  document.getElementById('indexResultsInfo').textContent = results.length + ' result' + (results.length !== 1 ? 's' : '');
+
+  var html = '';
+  results.forEach(function(item, idx) {
+    html += '<tr>';
+    html += '<td class="t-name" style="max-width:420px">' + escHtml(item.name) + '</td>';
+    html += '<td><span class="type-badge type-' + item.type + '">' + typeLabel(item.type) + '</span></td>';
+    html += '<td class="t-size">' + formatBytes(item.size) + '</td>';
+    html += '<td class="seeders">' + item.seeders + '</td>';
+    html += '<td class="leechers">' + item.leechers + '</td>';
+    html += '<td class="t-size">' + item.age + '</td>';
+    html += '<td><button class="dl-btn" onclick="downloadFromIndex(' + idx + ', \'search\')">&#10515; Download</button></td>';
+    html += '</tr>';
+  });
+
+  document.getElementById('indexSearchTable').innerHTML = html;
+}
+
+function renderIndexRecent() {
+  var html = '';
+  INDEX_RECENT_DATA.forEach(function(item, idx) {
+    html += '<tr>';
+    html += '<td class="t-name" style="max-width:420px">' + escHtml(item.name) + '</td>';
+    html += '<td><span class="type-badge type-' + item.type + '">' + typeLabel(item.type) + '</span></td>';
+    html += '<td class="t-size">' + formatBytes(item.size) + '</td>';
+    html += '<td class="seeders">' + item.seeders + '</td>';
+    html += '<td class="leechers">' + item.leechers + '</td>';
+    html += '<td class="t-size">' + item.age + '</td>';
+    html += '<td><button class="dl-btn" onclick="downloadFromIndex(' + idx + ', \'recent\')">&#10515; Download</button></td>';
+    html += '</tr>';
+  });
+  document.getElementById('indexRecentTable').innerHTML = html;
+}
+
+function parseAge(age) {
+  var num = parseInt(age);
+  if (age.indexOf('h') !== -1) return num;
+  if (age.indexOf('d') !== -1) return num * 24;
+  if (age.indexOf('m') !== -1) return num * 24 * 30;
+  return num;
+}
+
+function downloadFromIndex(idx, source) {
+  var item = source === 'search' ? INDEX_SEARCH_DATA[idx] : INDEX_RECENT_DATA[idx];
+  if (!item) return;
+
+  var newT = {
+    id: Date.now() + nextId++,
+    name: item.name,
+    size: item.size,
+    progress: 0,
+    state: 'downloading',
+    downSpeed: Math.floor(Math.random() * 15000000) + 2000000,
+    upSpeed: 0,
+    peers: item.seeders > 0 ? Math.floor(Math.random() * Math.min(item.seeders, 50)) + 1 : 0,
+    seeds: item.seeders,
+    eta: Math.floor(item.size / 8000000),
+    hash: Array.from({length: 40}, function() { return '0123456789abcdef'[Math.floor(Math.random()*16)]; }).join(''),
+    files: [{ name: item.name, size: item.size }]
+  };
+
+  torrents.unshift(newT);
+  showToast('Added: ' + item.name);
+
+  // Switch to Torrents tab
+  var torrentsBtn = document.querySelector('.topbar-tab');
+  switchPage('torrents', torrentsBtn);
+  render();
+}
+
+// ============================================
+// RSS — sub-tab switching
+// ============================================
+function switchRssTab(tab, btn) {
+  document.querySelectorAll('#page-rss .sub-tab').forEach(function(t) { t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('#page-rss .sub-page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('rss-' + tab).classList.add('active');
+}
+
+function populateRssItemFeedFilter() {
+  var select = document.getElementById('rssItemFeedFilter');
+  var currentVal = select.value;
+  var html = '<option value="all">All Feeds</option>';
+  rssFeeds.forEach(function(f) {
+    html += '<option value="' + f.id + '">' + escHtml(f.name) + '</option>';
+  });
+  select.innerHTML = html;
+  select.value = currentVal || 'all';
+}
+
+function renderRssItems() {
+  var feedFilter = document.getElementById('rssItemFeedFilter').value;
+  var filtered = rssItems.filter(function(item) {
+    if (feedFilter !== 'all' && item.feedId !== parseInt(feedFilter)) return false;
+    return true;
+  });
+
+  document.getElementById('rssItemCount').textContent = filtered.length + ' item' + (filtered.length !== 1 ? 's' : '');
+
+  var html = '';
+  filtered.forEach(function(item) {
+    var statusBadge = item.status === 'downloaded' ? 'badge-downloaded' : 'badge-pending';
+    var statusLabel = item.status === 'downloaded' ? 'Downloaded' : 'Pending';
+    html += '<tr>';
+    html += '<td class="t-name" style="max-width:380px">' + escHtml(item.title) + '</td>';
+    html += '<td style="font-size:0.82rem;color:var(--text-secondary)">' + escHtml(item.feedName) + '</td>';
+    html += '<td class="t-size">' + item.published + '</td>';
+    html += '<td class="t-size">' + formatBytes(item.size) + '</td>';
+    html += '<td><span class="' + statusBadge + '">' + statusLabel + '</span></td>';
+    html += '<td>';
+    if (item.status === 'pending') {
+      html += '<button class="dl-btn" onclick="downloadRssItem(' + item.id + ')">&#10515; Download</button>';
+    }
+    html += '</td>';
+    html += '</tr>';
+  });
+
+  document.getElementById('rssItemsTable').innerHTML = html;
+}
+
+function renderRssFeeds() {
+  document.getElementById('rssFeedCount').textContent = rssFeeds.length + ' feed' + (rssFeeds.length !== 1 ? 's' : '');
+
+  var html = '';
+  rssFeeds.forEach(function(feed) {
+    var statusBadge = feed.enabled ? 'badge-enabled' : 'badge-disabled';
+    var statusLabel = feed.enabled ? 'Enabled' : 'Disabled';
+    html += '<tr>';
+    html += '<td style="font-weight:500">' + escHtml(feed.name) + '</td>';
+    html += '<td><span class="rss-url">' + escHtml(feed.url) + '</span></td>';
+    html += '<td class="t-size">' + feed.interval + 's</td>';
+    html += '<td><span class="type-badge type-' + feed.category + '">' + typeLabel(feed.category) + '</span></td>';
+    html += '<td>' + (feed.filter ? '<span class="rss-regex">' + escHtml(feed.filter) + '</span>' : '<span style="color:var(--text-muted)">-</span>') + '</td>';
+    html += '<td><span class="' + statusBadge + '">' + statusLabel + '</span></td>';
+    html += '<td>' + (feed.autoDownload ? '<span class="badge-enabled">Yes</span>' : '<span style="color:var(--text-muted)">No</span>') + '</td>';
+    html += '<td><div class="td-actions">';
+    html += '<button class="edit-btn" onclick="editFeed(' + feed.id + ')">Edit</button>';
+    html += '<button class="delete-btn" onclick="deleteFeed(' + feed.id + ')">Delete</button>';
+    html += '</div></td>';
+    html += '</tr>';
+  });
+
+  document.getElementById('rssFeedsTable').innerHTML = html;
+}
+
+function renderRssRules() {
+  document.getElementById('rssRuleCount').textContent = rssRules.length + ' rule' + (rssRules.length !== 1 ? 's' : '');
+
+  var html = '';
+  rssRules.forEach(function(rule) {
+    var priClass = 'badge-priority-' + rule.priority;
+    var priLabel = rule.priority.charAt(0).toUpperCase() + rule.priority.slice(1);
+    var enabledBadge = rule.enabled ? 'badge-enabled' : 'badge-disabled';
+    var enabledLabel = rule.enabled ? 'Enabled' : 'Disabled';
+    html += '<tr>';
+    html += '<td style="font-weight:500">' + escHtml(rule.name) + '</td>';
+    html += '<td><span class="rss-regex">' + escHtml(rule.regex) + '</span></td>';
+    html += '<td style="font-size:0.82rem;color:var(--text-secondary)">' + escHtml(rule.feedName) + '</td>';
+    html += '<td><span class="type-badge type-' + rule.category + '">' + typeLabel(rule.category) + '</span></td>';
+    html += '<td><span class="' + priClass + '">' + priLabel + '</span></td>';
+    html += '<td><span class="' + enabledBadge + '">' + enabledLabel + '</span></td>';
+    html += '<td><div class="td-actions">';
+    html += '<button class="edit-btn" onclick="editRule(' + rule.id + ')">Edit</button>';
+    html += '<button class="delete-btn" onclick="deleteRule(' + rule.id + ')">Delete</button>';
+    html += '</div></td>';
+    html += '</tr>';
+  });
+
+  document.getElementById('rssRulesTable').innerHTML = html;
+}
+
+function downloadRssItem(id) {
+  var item = rssItems.find(function(x) { return x.id === id; });
+  if (!item) return;
+
+  item.status = 'downloaded';
+
+  var newT = {
+    id: Date.now() + nextId++,
+    name: item.title,
+    size: item.size,
+    progress: 0,
+    state: 'downloading',
+    downSpeed: Math.floor(Math.random() * 15000000) + 2000000,
+    upSpeed: 0,
+    peers: Math.floor(Math.random() * 40) + 5,
+    seeds: Math.floor(Math.random() * 200) + 20,
+    eta: Math.floor(item.size / 8000000),
+    hash: Array.from({length: 40}, function() { return '0123456789abcdef'[Math.floor(Math.random()*16)]; }).join(''),
+    files: [{ name: item.title, size: item.size }]
+  };
+
+  torrents.unshift(newT);
+  showToast('Added: ' + item.title);
+
+  var torrentsBtn = document.querySelector('.topbar-tab');
+  switchPage('torrents', torrentsBtn);
+  render();
+}
+
+// ============================================
+// Feed modal
+// ============================================
+var editingFeedId = null;
+
+function openFeedModal(feedId) {
+  editingFeedId = feedId || null;
+  document.getElementById('feedModalTitle').textContent = editingFeedId ? 'Edit Feed' : 'Add Feed';
+
+  if (editingFeedId) {
+    var feed = rssFeeds.find(function(f) { return f.id === editingFeedId; });
+    if (feed) {
+      document.getElementById('feedNameInput').value = feed.name;
+      document.getElementById('feedUrlInput').value = feed.url;
+      document.getElementById('feedIntervalInput').value = feed.interval;
+      document.getElementById('feedCategoryInput').value = feed.category;
+      document.getElementById('feedFilterInput').value = feed.filter;
+      document.getElementById('feedEnabledInput').checked = feed.enabled;
+      document.getElementById('feedAutoDownloadInput').checked = feed.autoDownload;
+    }
+  } else {
+    document.getElementById('feedNameInput').value = '';
+    document.getElementById('feedUrlInput').value = '';
+    document.getElementById('feedIntervalInput').value = '900';
+    document.getElementById('feedCategoryInput').value = 'movie';
+    document.getElementById('feedFilterInput').value = '';
+    document.getElementById('feedEnabledInput').checked = true;
+    document.getElementById('feedAutoDownloadInput').checked = false;
+  }
+
+  document.getElementById('feedModal').classList.add('open');
+  document.getElementById('feedNameInput').focus();
+}
+
+function closeFeedModal() {
+  document.getElementById('feedModal').classList.remove('open');
+  editingFeedId = null;
+}
+
+function saveFeed() {
+  var name = document.getElementById('feedNameInput').value.trim();
+  var url = document.getElementById('feedUrlInput').value.trim();
+  if (!name || !url) { showToast('Name and URL are required', true); return; }
+
+  var data = {
+    name: name,
+    url: url,
+    interval: parseInt(document.getElementById('feedIntervalInput').value) || 900,
+    category: document.getElementById('feedCategoryInput').value,
+    filter: document.getElementById('feedFilterInput').value.trim(),
+    enabled: document.getElementById('feedEnabledInput').checked,
+    autoDownload: document.getElementById('feedAutoDownloadInput').checked
+  };
+
+  if (editingFeedId) {
+    var feed = rssFeeds.find(function(f) { return f.id === editingFeedId; });
+    if (feed) {
+      Object.assign(feed, data);
+      showToast('Updated feed: ' + name);
+    }
+  } else {
+    data.id = Date.now() + nextId++;
+    rssFeeds.push(data);
+    showToast('Added feed: ' + name);
+  }
+
+  closeFeedModal();
+  renderRssFeeds();
+  populateRssItemFeedFilter();
+}
+
+function editFeed(id) {
+  openFeedModal(id);
+}
+
+function deleteFeed(id) {
+  var feed = rssFeeds.find(function(f) { return f.id === id; });
+  if (!feed) return;
+  rssFeeds = rssFeeds.filter(function(f) { return f.id !== id; });
+  showToast('Deleted feed: ' + feed.name);
+  renderRssFeeds();
+  populateRssItemFeedFilter();
+}
+
+// ============================================
+// Rule modal
+// ============================================
+var editingRuleId = null;
+
+function openRuleModal(ruleId) {
+  editingRuleId = ruleId || null;
+  document.getElementById('ruleModalTitle').textContent = editingRuleId ? 'Edit Rule' : 'Add Rule';
+
+  // Populate feed dropdown
+  var feedSelect = document.getElementById('ruleFeedInput');
+  var feedHtml = '';
+  rssFeeds.forEach(function(f) {
+    feedHtml += '<option value="' + f.id + '">' + escHtml(f.name) + '</option>';
+  });
+  feedSelect.innerHTML = feedHtml;
+
+  if (editingRuleId) {
+    var rule = rssRules.find(function(r) { return r.id === editingRuleId; });
+    if (rule) {
+      document.getElementById('ruleNameInput').value = rule.name;
+      document.getElementById('ruleRegexInput').value = rule.regex;
+      document.getElementById('ruleFeedInput').value = rule.feedId;
+      document.getElementById('ruleCategoryInput').value = rule.category;
+      document.getElementById('rulePriorityInput').value = rule.priority;
+      document.getElementById('ruleEnabledInput').checked = rule.enabled;
+    }
+  } else {
+    document.getElementById('ruleNameInput').value = '';
+    document.getElementById('ruleRegexInput').value = '';
+    document.getElementById('ruleCategoryInput').value = 'movie';
+    document.getElementById('rulePriorityInput').value = 'normal';
+    document.getElementById('ruleEnabledInput').checked = true;
+  }
+
+  document.getElementById('ruleModal').classList.add('open');
+  document.getElementById('ruleNameInput').focus();
+}
+
+function closeRuleModal() {
+  document.getElementById('ruleModal').classList.remove('open');
+  editingRuleId = null;
+}
+
+function saveRule() {
+  var name = document.getElementById('ruleNameInput').value.trim();
+  var regex = document.getElementById('ruleRegexInput').value.trim();
+  if (!name || !regex) { showToast('Name and regex are required', true); return; }
+
+  var feedId = parseInt(document.getElementById('ruleFeedInput').value);
+  var feed = rssFeeds.find(function(f) { return f.id === feedId; });
+
+  var data = {
+    name: name,
+    regex: regex,
+    feedId: feedId,
+    feedName: feed ? feed.name : 'Unknown',
+    category: document.getElementById('ruleCategoryInput').value,
+    priority: document.getElementById('rulePriorityInput').value,
+    enabled: document.getElementById('ruleEnabledInput').checked
+  };
+
+  if (editingRuleId) {
+    var rule = rssRules.find(function(r) { return r.id === editingRuleId; });
+    if (rule) {
+      Object.assign(rule, data);
+      showToast('Updated rule: ' + name);
+    }
+  } else {
+    data.id = Date.now() + nextId++;
+    rssRules.push(data);
+    showToast('Added rule: ' + name);
+  }
+
+  closeRuleModal();
+  renderRssRules();
+}
+
+function editRule(id) {
+  openRuleModal(id);
+}
+
+function deleteRule(id) {
+  var rule = rssRules.find(function(r) { return r.id === id; });
+  if (!rule) return;
+  rssRules = rssRules.filter(function(r) { return r.id !== id; });
+  showToast('Deleted rule: ' + rule.name);
+  renderRssRules();
+}
+
+// ============================================
+// Torrent page — render
+// ============================================
 function render() {
   var filtered = torrents.filter(function(t) {
     if (currentFilter !== 'all' && t.state !== currentFilter) return false;
@@ -824,13 +1867,9 @@ function render() {
   }
 }
 
-function escHtml(s) {
-  var d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
+// ============================================
 // Sort
+// ============================================
 function sortBy(field) {
   if (sortField === field) {
     sortDir *= -1;
@@ -850,7 +1889,9 @@ function sortBy(field) {
   render();
 }
 
+// ============================================
 // Filter
+// ============================================
 function setFilter(filter, btn) {
   currentFilter = filter;
   document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -858,13 +1899,17 @@ function setFilter(filter, btn) {
   render();
 }
 
+// ============================================
 // Search
+// ============================================
 document.getElementById('searchBox').addEventListener('input', function(e) {
   searchQuery = e.target.value;
   render();
 });
 
-// Select
+// ============================================
+// Select / Detail pane
+// ============================================
 function selectTorrent(id) {
   selectedId = id;
   detailTab = 'files';
@@ -938,7 +1983,9 @@ function renderDetail() {
   document.getElementById('detailContent').innerHTML = html;
 }
 
+// ============================================
 // Actions
+// ============================================
 function togglePause(id) {
   var t = torrents.find(function(x) { return x.id === id; });
   if (!t) return;
@@ -967,7 +2014,9 @@ function removeTorrent(id) {
   render();
 }
 
+// ============================================
 // Add torrent modal
+// ============================================
 function openAddModal() {
   document.getElementById('addModal').classList.add('open');
   document.getElementById('magnetInput').value = '';
@@ -1013,7 +2062,9 @@ function addTorrent() {
   render();
 }
 
+// ============================================
 // Toast
+// ============================================
 function showToast(msg, isError) {
   var toast = document.getElementById('toast');
   toast.textContent = msg;
@@ -1022,7 +2073,9 @@ function showToast(msg, isError) {
   toast._timer = setTimeout(function() { toast.className = 'toast'; }, 3000);
 }
 
+// ============================================
 // Simulation — update speeds/progress periodically
+// ============================================
 function simulate() {
   torrents.forEach(function(t) {
     if (t.state === 'downloading') {
@@ -1059,17 +2112,39 @@ function simulate() {
   render();
 }
 
-// Enter key for modal
+// ============================================
+// Event listeners
+// ============================================
+
+// Enter key for add torrent modal
 document.getElementById('magnetInput').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') addTorrent();
 });
 
-// Click outside modal to close
+// Click outside modals to close
 document.getElementById('addModal').addEventListener('click', function(e) {
   if (e.target === this) closeAddModal();
 });
+document.getElementById('feedModal').addEventListener('click', function(e) {
+  if (e.target === this) closeFeedModal();
+});
+document.getElementById('ruleModal').addEventListener('click', function(e) {
+  if (e.target === this) closeRuleModal();
+});
 
-// Initial render
+// Enter key for feed modal
+document.getElementById('feedUrlInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveFeed();
+});
+
+// Enter key for rule modal
+document.getElementById('ruleRegexInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') saveRule();
+});
+
+// ============================================
+// Initial render & simulation start
+// ============================================
 render();
 setInterval(simulate, 2000);
 </script>
