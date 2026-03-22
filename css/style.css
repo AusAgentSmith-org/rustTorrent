@@ -939,6 +939,12 @@ img {
 /* --- Desktop App Section --- */
 .desktop-section {
     padding: 80px 0;
+    text-align: center;
+}
+
+.desktop-section .download-grid,
+.desktop-section .download-card {
+    text-align: left;
 }
 
 .desktop-preview {
