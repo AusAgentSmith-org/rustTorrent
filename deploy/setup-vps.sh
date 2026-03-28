@@ -5,7 +5,7 @@
 # Prerequisites:
 #   1. rusttorrent.dev purchased and DNS pointing to VPS (46.250.255.234)
 #   2. rusttorrent.dev zone added to existing CLOUDFLARE_API_TOKEN in Cloudflare
-#   3. GitHub repo AusAgentSmith/rustTorrent_Website exists and pushed
+#   3. GitHub repo AusAgentSmith-org/rustTorrent_Website exists and pushed
 #   4. Gitea mirror of the repo created
 
 set -e
@@ -18,7 +18,7 @@ if [ -d ~/rustTorrent_Website ]; then
     echo "  Repository already exists, pulling latest..."
     cd ~/rustTorrent_Website && git pull origin main
 else
-    cd ~ && git clone https://github.com/AusAgentSmith/rustTorrent_Website.git
+    cd ~ && git clone https://github.com/AusAgentSmith-org/rustTorrent_Website.git
 fi
 
 # 2. Copy deploy script
@@ -45,7 +45,7 @@ echo "=== Setup complete (manual steps required above) ==="
 echo ""
 echo "Gitea mirror setup:"
 echo "  1. Go to gitea.ausagentsmith.com → New Migration"
-echo "  2. Source: https://github.com/AusAgentSmith/rustTorrent_Website.git"
+echo "  2. Source: https://github.com/AusAgentSmith-org/rustTorrent_Website.git"
 echo "  3. Name: rustTorrent_Website, Owner: AusAgentSmith"
 echo "  4. Mirror interval: 10 minutes"
 echo "  5. Add push webhook:"
