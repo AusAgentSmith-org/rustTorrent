@@ -229,18 +229,20 @@ impl BitVFactory for JsonSessionPersistenceStore {
     ) -> anyhow::Result<Box<dyn BitV>> {
         let h = self.to_hash(id).await?;
         let filename = self.bitv_filename(&h);
-        let tmp_filename = format!("{}.tmp", filename.to_str().context("bug")?);
+        // Use a distinct .init_tmp suffix from the DiskBackedBitV flusher (which uses .bitv.tmp)
+        // to avoid a race where an old flusher's rename steals our temp file before we rename it.
+        let tmp_filename = format!("{}.init_tmp", filename.to_str().context("bug")?);
         let mut dst = tokio::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(&tmp_filename)
             .await
-            .with_context(|| format!("error opening {filename:?}"))?;
+            .with_context(|| format!("error opening {tmp_filename:?}"))?;
         let data = crate::bitv::bitv_with_header(b.as_raw_slice());
         dst.write_all(&data)
             .await
-            .context("error writing bitslice to {filename:?}")?;
+            .with_context(|| format!("error writing bitslice to {tmp_filename:?}"))?;
         tokio::fs::rename(&tmp_filename, &filename)
             .await
             .with_context(|| format!("error renaming {tmp_filename:?} to {filename:?}"))?;
