@@ -1,0 +1,45 @@
+[package]
+name = "rtbit-desktop"
+edition = "2024"
+version = "0.0.1"
+description = "rtbit torrent client"
+authors = ["Igor Katson igor.katson@gmail.com"]
+license = ""
+repository = ""
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-build.workspace = true
+
+[dependencies]
+tauri = { workspace = true, features = ["tray-icon", "image-png"] }
+tauri-plugin-shell.workspace = true
+tauri-plugin-notification = "2"
+serde.workspace = true
+serde_json.workspace = true
+librtbit = { workspace = true, features = [
+    "tracing-subscriber-utils",
+    "http-api",
+    "webui",
+    "upnp-serve-adapter",
+    "prometheus",
+    "default-tls"
+] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+anyhow.workspace = true
+directories.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "json"] }
+tracing.workspace = true
+serde_with.workspace = true
+parking_lot.workspace = true
+gethostname.workspace = true
+metrics-exporter-prometheus.workspace = true
+librqbit-dualstack-sockets.workspace = true
+reqwest = { workspace = true }
+open = "5"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+disable-upload = ["librtbit/disable-upload"]

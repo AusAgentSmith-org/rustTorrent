@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+
+# Ensure directories exist
+mkdir -p \
+    /home/rtbit/db \
+    /home/rtbit/cache \
+    /home/rtbit/downloads \
+    /home/rtbit/completed
+
+# Set ownership (lsiown handles edge cases on various filesystems)
+lsiown abc:abc /home/rtbit
+lsiown -R abc:abc /home/rtbit/db /home/rtbit/cache
+lsiown abc:abc /home/rtbit/downloads /home/rtbit/completed

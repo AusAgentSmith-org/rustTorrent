@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  check:
+    runs-on: [self-hosted, node-b]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
+
+      - run: rustup toolchain install stable --profile minimal --component rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: cargo check
+        run: cargo check
+
+  test:
+    runs-on: [self-hosted, node-b]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
+
+      - run: rustup toolchain install stable --profile minimal
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo test
+        run: cargo test
+
+  clippy:
+    runs-on: [self-hosted, node-b]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install rustup if missing
+        run: |
+          if ! command -v rustup &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
+
+      - run: rustup toolchain install stable --profile minimal --component clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  docker:
+    runs-on: [self-hosted, node-b]
+    needs: [check, test, clippy]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      - name: Build Docker image for testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: rusttorrent-ci:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test PUID/PGID default (911:911)
+        run: |
+          docker rm -f rtbit-test-default 2>/dev/null || true
+          docker run -d --name rtbit-test-default rusttorrent-ci:latest
+          sleep 3
+          UID_VAL=$(docker exec rtbit-test-default id -u abc)
+          GID_VAL=$(docker exec rtbit-test-default id -g abc)
+          docker rm -f rtbit-test-default
+          echo "UID=$UID_VAL GID=$GID_VAL"
+          [ "$UID_VAL" = "911" ] && [ "$GID_VAL" = "911" ] || { echo "FAIL: default PUID/PGID"; exit 1; }
+
+      - name: Test PUID/PGID custom (1234:5678) and file ownership
+        run: |
+          docker rm -f rtbit-test-custom 2>/dev/null || true
+          docker run -d --name rtbit-test-custom -e PUID=1234 -e PGID=5678 rusttorrent-ci:latest
+          sleep 3
+          UID_VAL=$(docker exec rtbit-test-custom id -u abc)
+          GID_VAL=$(docker exec rtbit-test-custom id -g abc)
+          HOME_OWNER=$(docker exec rtbit-test-custom stat -c "%u:%g" /home/rtbit)
+          DL_OWNER=$(docker exec rtbit-test-custom stat -c "%u:%g" /home/rtbit/downloads)
+          docker rm -f rtbit-test-custom
+          echo "UID=$UID_VAL GID=$GID_VAL HOME=$HOME_OWNER DOWNLOADS=$DL_OWNER"
+          [ "$UID_VAL" = "1234" ] && [ "$GID_VAL" = "5678" ] || { echo "FAIL: custom PUID/PGID"; exit 1; }
+          [ "$HOME_OWNER" = "1234:5678" ] || { echo "FAIL: /home/rtbit not owned by PUID:PGID"; exit 1; }
+          [ "$DL_OWNER" = "1234:5678" ] || { echo "FAIL: downloads dir not owned by PUID:PGID"; exit 1; }
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/ausagentsmith-org/rusttorrent
+            ${{ vars.DOCKERHUB_USERNAME }}/rusttorrent
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,11 @@
+[Unit]
+Description=rtbit Bittorrent client
+After=rtbit.socket
+Requires=rtbit.socket
+
+[Service]
+EnvironmentFile=-%E/rtbit/rtbit.conf
+ExecStart=rtbit server start %h/Downloads
+
+[Install]
+Also=rtbit.socket

@@ -1,0 +1,26 @@
+services:
+  rtbit:
+    image: ghcr.io/ausagentsmith-org/rusttorrent:latest
+    container_name: rtbit
+    restart: unless-stopped
+    ports:
+      - "3030:3030"       # HTTP API + Web UI
+      - "4240:4240/tcp"   # BitTorrent TCP
+      - "4240:4240/udp"   # BitTorrent uTP
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "Australia/Sydney"
+      RTBIT_UPNP_SERVER_ENABLE: "false"
+      RTBIT_FASTRESUME: "true"
+      RTBIT_DOWNLOAD_FOLDER: "/home/rtbit/downloads"
+      RTBIT_COMPLETED_FOLDER: "/home/rtbit/completed"
+    volumes:
+      - rtbit-db:/home/rtbit/db
+      - rtbit-cache:/home/rtbit/cache
+      - /path/to/downloads:/home/rtbit/downloads
+      - /path/to/completed:/home/rtbit/completed
+
+volumes:
+  rtbit-db:
+  rtbit-cache:

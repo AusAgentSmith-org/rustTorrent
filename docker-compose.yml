@@ -1,0 +1,25 @@
+services:
+  rtbit:
+    build: .
+    container_name: rtbit
+    restart: unless-stopped
+    ports:
+      - "3030:3030"       # HTTP API + Web UI
+      - "4240:4240/tcp"   # BitTorrent TCP
+      - "4240:4240/udp"   # BitTorrent uTP
+    environment:
+      RTBIT_UPNP_SERVER_ENABLE: "false"
+      RTBIT_HTTP_API_LISTEN_ADDR: "0.0.0.0:3030"
+      RTBIT_LISTEN_PORT: "4240"
+      RTBIT_FASTRESUME: "true"
+      RTBIT_DOWNLOAD_FOLDER: "/home/rtbit/downloads"
+      RTBIT_COMPLETED_FOLDER: "/home/rtbit/completed"
+    volumes:
+      - rtbit-db:/home/rtbit/db
+      - rtbit-cache:/home/rtbit/cache
+      - ${RTBIT_DOWNLOADS:-/mnt/data3/downloads/rtbit}:/home/rtbit/downloads
+      - ${RTBIT_COMPLETED:-/mnt/data3/completed/rtbit}:/home/rtbit/completed
+
+volumes:
+  rtbit-db:
+  rtbit-cache:

@@ -1,0 +1,70 @@
+[package]
+name = "rtbit"
+version = "0.0.1"
+authors = ["Igor Katson <igor.katson@gmail.com>"]
+edition = "2024"
+description = "A bittorrent command line client and server."
+license = "Apache-2.0"
+documentation = "https://github.com/ikatson/rtbit"
+repository = "https://github.com/ikatson/rtbit"
+readme = "README.md"
+
+[lints]
+workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["default-tls", "postgres", "webui", "prometheus", "swagger"]
+openssl-vendored = ["openssl/vendored"]
+tokio-console = ["librtbit/tokio-console"]
+webui = ["librtbit/webui"]
+prometheus = ["librtbit/prometheus", "metrics-exporter-prometheus"]
+timed_existence = ["librtbit/timed_existence"]
+default-tls = ["librtbit/default-tls"]
+rust-tls = ["librtbit/rust-tls"]
+debug_slow_disk = ["librtbit/storage_middleware"]
+postgres = ["librtbit/postgres"]
+disable-upload = ["librtbit/disable-upload"]
+swagger = ["librtbit/swagger"]
+_disable_disk_write_net_benchmark = [
+    "librtbit/_disable_disk_write_net_benchmark",
+]
+
+[dependencies]
+librtbit = { workspace = true, features = [
+    "http-api",
+    "http-api-client",
+    "tracing-subscriber-utils",
+    "upnp-serve-adapter",
+    "watch",
+] }
+librtbit-core.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+console-subscriber = { workspace = true, optional = true }
+anyhow.workspace = true
+clap = { workspace = true, features = ["derive", "deprecated", "env"] }
+clap_complete.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "ansi", "fmt"] }
+regex.workspace = true
+futures.workspace = true
+parse_duration.workspace = true
+parking_lot.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
+size_format.workspace = true
+bytes.workspace = true
+openssl = { workspace = true, features = ["vendored"], optional = true }
+upnp-serve.workspace = true
+metrics-exporter-prometheus = { workspace = true, optional = true }
+libc.workspace = true
+signal-hook.workspace = true
+tokio-util.workspace = true
+gethostname.workspace = true
+url.workspace = true
+librqbit-dualstack-sockets.workspace = true
+
+[dev-dependencies]
+futures.workspace = true

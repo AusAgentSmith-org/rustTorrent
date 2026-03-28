@@ -1,0 +1,27 @@
+services:
+  rtbit:
+    image: ikatson/rtbit:v7.0.0-beta.3
+    # Host network required for several things to work:
+    # - upnp discovery for port forwarding to your router
+    # - upnp UDP multicast announce MediaServer
+    # - upnp server UDP multicast
+    network_mode: host
+    ports:
+      - 3030:3030 # HTTP API port
+      - 4240:4240 # TCP/uTP BitTorrent port
+    environment:
+      # Replace this with your LAN hostname or IP, resolvable from other devices in your LAN
+      RTBIT_UPNP_SERVER_ENABLE: "true"
+      RTBIT_UPNP_SERVER_FRIENDLY_NAME: rtbit-docker
+
+      # Replace this if you want to change the HTTP/Web UI port
+      # RTBIT_HTTP_API_LISTEN_ADDR: 0.0.0.0:3030
+    volumes:
+      - db:/home/rtbit/db
+      - cache:/home/rtbit/cache
+      # Replace /tmp/scratch with your downloads folder
+      - /tmp/scratch:/home/rtbit/downloads
+
+volumes:
+  db: {}
+  cache: {}

@@ -1,0 +1,25 @@
+[package]
+name = "librtbit-lsd"
+version = "0.1.0"
+edition = "2024"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+librqbit-dualstack-sockets.workspace = true
+tokio = { workspace = true, features = ["time"] }
+tokio-util.workspace = true
+sha1w.workspace = true
+librtbit-core.workspace = true
+rand.workspace = true
+futures.workspace = true
+bstr.workspace = true
+parking_lot.workspace = true
+httparse.workspace = true
+atoi.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tracing-subscriber.workspace = true

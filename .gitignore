@@ -1,0 +1,28 @@
+# Build artifacts
+/target
+/crates/*/target
+/crates/*/Cargo.lock
+/desktop/src-tauri/gen/
+node_modules
+
+# IDE / editor configs
+/.vscode/
+/.zed/
+/.gemini/
+.claude
+.serena/
+
+# OS files
+.DS_Store
+
+# Dev tools
+.bacon-locations
+/perf.data*
+/flamegraph.svg
+
+# Fetched test data
+/linux-torrents/
+tests/sonarr-e2e/
+.gitea/
+.env
+docker-compose.indexarr.test.yml

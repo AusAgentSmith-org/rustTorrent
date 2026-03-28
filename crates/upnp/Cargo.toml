@@ -1,0 +1,35 @@
+[package]
+name = "librtbit-upnp"
+version = "1.0.0"
+authors = ["Igor Katson <igor.katson@gmail.com>"]
+edition = "2024"
+description = "Library used by rtbit torrent client to lease port forwards on the router."
+license = "Apache-2.0"
+documentation = "https://docs.rs/librtbit-upnp"
+repository = "https://github.com/ikatson/rtbit"
+readme = "README.md"
+
+[lints]
+workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tracing.workspace = true
+anyhow.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+tokio = { workspace = true, features = ["macros"] }
+futures.workspace = true
+url.workspace = true
+network-interface.workspace = true
+httparse.workspace = true
+bstr.workspace = true
+quick-xml = { workspace = true, features = ["serialize"] }
+librqbit-dualstack-sockets.workspace = true
+socket2.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tracing-subscriber.workspace = true

@@ -1,0 +1,44 @@
+[package]
+name = "librtbit-upnp-serve"
+version = "1.0.1"
+edition = "2024"
+description = "Simple UPnP MediaServer implementation"
+license = "Apache-2.0"
+documentation = "https://docs.rs/librtbit-upnp-serve"
+repository = "https://github.com/ikatson/rtbit"
+readme = "README.md"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum = { workspace = true, features = ["tokio"] }
+tokio = { workspace = true, features = ["full"] }
+tracing.workspace = true
+bstr.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+http.workspace = true
+httparse.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+librtbit-upnp.workspace = true
+gethostname.workspace = true
+librtbit-core.workspace = true
+mime_guess.workspace = true
+url.workspace = true
+parking_lot.workspace = true
+tokio-util.workspace = true
+reqwest.workspace = true
+quick-xml = { workspace = true, features = ["serialize"] }
+network-interface.workspace = true
+futures.workspace = true
+librqbit-dualstack-sockets.workspace = true
+rand.workspace = true
+
+[dev-dependencies]
+tracing-subscriber.workspace = true
+tower-http = { workspace = true, features = ["trace"] }
+
+[[example]]
+name = "upnp-stub-server"

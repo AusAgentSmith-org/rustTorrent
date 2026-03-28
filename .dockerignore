@@ -1,0 +1,14 @@
+/.cargo
+**/target/
+**/node_modules/
+/docker
+/*.md
+/Makefile
+/LICENSE
+.git
+.github
+.gitea
+bench/
+benchv2/
+desktop/
+systemd/

@@ -1,0 +1,54 @@
+services:
+  rtbit:
+    image: ${RTBIT_IMAGE:-ausagentsmith/rusttorrent:latest}
+    container_name: sonarr-e2e-rtbit
+    restart: unless-stopped
+    ports:
+      - "${RTBIT_PORT:-3031}:3030"
+      - "${RTBIT_BT_PORT:-4241}:4241/tcp"
+      - "${RTBIT_BT_PORT:-4241}:4241/udp"
+    environment:
+      RTBIT_UPNP_SERVER_ENABLE: "false"
+      RTBIT_HTTP_API_LISTEN_ADDR: "0.0.0.0:3030"
+      RTBIT_LISTEN_PORT: "4241"
+      RTBIT_FASTRESUME: "true"
+      RTBIT_DOWNLOAD_FOLDER: "/home/rtbit/downloads"
+      RTBIT_COMPLETED_FOLDER: "/home/rtbit/completed"
+    volumes:
+      - rtbit-db:/home/rtbit/db
+      - rtbit-cache:/home/rtbit/cache
+      - ${RTBIT_DOWNLOADS:-./data/rtbit/downloads}:/home/rtbit/downloads
+      - ${RTBIT_COMPLETED:-./data/rtbit/completed}:/home/rtbit/completed
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3030/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  sonarr:
+    image: ${SONARR_IMAGE:-lscr.io/linuxserver/sonarr:develop}
+    container_name: sonarr-e2e-sonarr
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+      TZ: "${TZ:-Australia/Sydney}"
+    ports:
+      - "${SONARR_PORT:-8989}:8989"
+    volumes:
+      - sonarr-config:/config
+      - ${SONARR_TV:-./data/sonarr/tv}:/tv
+      - ${RTBIT_DOWNLOADS:-./data/rtbit/downloads}:/downloads
+      - ${RTBIT_COMPLETED:-./data/rtbit/completed}:/completed
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8989/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+volumes:
+  rtbit-db:
+  rtbit-cache:
+  sonarr-config:

@@ -1,0 +1,109 @@
+# benchv2: Rust-native BitTorrent benchmark
+#
+# All Python components replaced with a single Rust binary:
+#   benchv2 tracker    — HTTP BT tracker
+#   benchv2 mock-seed  — async mock seeder (100-1000 peers)
+#   benchv2 run        — orchestrator
+#
+# IMPORTANT: Do NOT use `restart` policies — they conflict with
+# `--abort-on-container-exit` used in run.sh.
+
+services:
+  tracker:
+    build: .
+    command: ["tracker", "--port", "6969"]
+    networks: [bench]
+
+  seeder:
+    build: ../bench/seeder
+    deploy:
+      replicas: ${MAX_SEEDERS:-10}
+    volumes:
+      - testdata:/data/testdata
+      - torrents:/data/torrents
+    networks: [bench]
+    depends_on: [tracker]
+
+  mock-seeder:
+    build: .
+    command:
+      - mock-seed
+      - --peers=${MOCK_PEERS:-100}
+      - --base-port=6900
+      - --tracker-url=http://tracker:6969/announce
+    volumes:
+      - testdata:/data/testdata
+      - torrents:/data/torrents
+    networks: [bench]
+    depends_on: [tracker]
+
+  rtbit:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command:
+      - --disable-dht
+      - --disable-dht-persistence
+      - --disable-upnp-port-forward
+      - --disable-lsd
+      - --tracker-refresh-interval
+      - "5s"
+      - --peer-connect-timeout
+      - "1s"
+      - server
+      - start
+      - /home/rtbit/downloads
+    environment:
+      - RTBIT_HTTP_API_LISTEN_ADDR=0.0.0.0:3030
+      - RTBIT_LISTEN_PORT=4240
+    volumes:
+      - downloads-rtbit:/home/rtbit/downloads
+      - rtbit-db:/home/rtbit/db
+      - rtbit-cache:/home/rtbit/cache
+    networks: [bench]
+    depends_on: [tracker]
+
+  qbittorrent:
+    image: linuxserver/qbittorrent:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - WEBUI_PORT=8080
+      - DOCKER_MODS=
+    volumes:
+      - downloads-qbt:/downloads
+      - qbt-config:/config
+    networks: [bench]
+    depends_on: [tracker]
+
+  orchestrator:
+    build: .
+    command:
+      - run
+      - --scenarios=${SCENARIOS:-quick}
+    volumes:
+      - testdata:/data/testdata
+      - torrents:/data/torrents
+      - ./results:/results
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [bench]
+    depends_on:
+      - tracker
+      - seeder
+      - mock-seeder
+      - rtbit
+      - qbittorrent
+
+networks:
+  bench:
+    driver: bridge
+
+volumes:
+  testdata:
+  torrents:
+  downloads-rtbit:
+  downloads-qbt:
+  qbt-config:
+  rtbit-db:
+  rtbit-cache:
