@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/git/db \
 
 # ---
 
-FROM lscr.io/linuxserver/baseimage-alpine:3.21
+FROM lscr.io/linuxserver/baseimage-alpine:3.23
 
 COPY --from=builder /bin/rtbit /bin/rtbit
 COPY root/ /
