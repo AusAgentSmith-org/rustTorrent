@@ -2,18 +2,6 @@
 resolver = "2"
 members = [
     "crates/rtbit",
-    "crates/librtbit",
-    "crates/buffers",
-    "crates/clone_to_owned",
-    "crates/bencode",
-    "crates/sha1w",
-    "crates/librtbit_core",
-    "crates/librtbit_lsd",
-    "crates/peer_binary_protocol",
-    "crates/dht",
-    "crates/upnp",
-    "crates/tracker_comms",
-    "crates/upnp-serve",
     "desktop/src-tauri",
 ]
 exclude = ["benchv2"]
@@ -21,17 +9,6 @@ exclude = ["benchv2"]
 # Everything except desktop
 default-members = [
     "crates/rtbit",
-    "crates/librtbit",
-    "crates/buffers",
-    "crates/clone_to_owned",
-    "crates/bencode",
-    "crates/sha1w",
-    "crates/librtbit_core",
-    "crates/peer_binary_protocol",
-    "crates/dht",
-    "crates/upnp",
-    "crates/tracker_comms",
-    "crates/upnp-serve",
 ]
 
 [workspace.lints.clippy]
@@ -57,19 +34,19 @@ inherits = "release"
 debug = true
 
 [workspace.dependencies]
-# Internal crates - keys are import names used in source code, package is the actual crate name
-librtbit = { path = "crates/librtbit", version = "0.0.1", default-features = false }
-bencode = { path = "crates/bencode", package = "librtbit-bencode", version = "3.1", default-features = false }
-buffers = { path = "crates/buffers", package = "librtbit-buffers", version = "4.2" }
-clone_to_owned = { path = "crates/clone_to_owned", package = "librtbit-clone-to-owned", version = "3" }
-librtbit-core = { path = "crates/librtbit_core", version = "5", default-features = false }
-dht = { path = "crates/dht", package = "librtbit-dht", version = "5.3.0", default-features = false }
-librtbit-lsd = { path = "crates/librtbit_lsd", version = "0.1.0", default-features = false }
-peer_binary_protocol = { path = "crates/peer_binary_protocol", package = "librtbit-peer-protocol", version = "4.3", default-features = false }
-sha1w = { path = "crates/sha1w", package = "librtbit-sha1-wrapper", version = "4.1", default-features = false }
-tracker_comms = { path = "crates/tracker_comms", package = "librtbit-tracker-comms", version = "3", default-features = false }
-librtbit-upnp = { path = "crates/upnp", version = "1" }
-upnp-serve = { path = "crates/upnp-serve", package = "librtbit-upnp-serve", version = "1", default-features = false }
+# Internal crates (git + tag) - keys are import names used in source code
+librtbit = { git = "http://100.92.54.45:3002/indexarr/librtbit.git", tag = "v0.1.0", default-features = false }
+bencode = { git = "http://100.92.54.45:3002/indexarr/librtbit-bencode.git", tag = "v0.1.0", package = "librtbit-bencode", default-features = false }
+buffers = { git = "http://100.92.54.45:3002/indexarr/librtbit-buffers.git", tag = "v0.1.0", package = "librtbit-buffers" }
+clone_to_owned = { git = "http://100.92.54.45:3002/indexarr/librtbit-clone-to-owned.git", tag = "v0.1.0", package = "librtbit-clone-to-owned" }
+librtbit-core = { git = "http://100.92.54.45:3002/indexarr/librtbit-core.git", tag = "v0.1.0", default-features = false }
+dht = { git = "http://100.92.54.45:3002/indexarr/librtbit-dht.git", tag = "v0.1.0", package = "librtbit-dht", default-features = false }
+librtbit-lsd = { git = "http://100.92.54.45:3002/indexarr/librtbit-lsd.git", tag = "v0.1.0", default-features = false }
+peer_binary_protocol = { git = "http://100.92.54.45:3002/indexarr/librtbit-peer-protocol.git", tag = "v0.1.0", package = "librtbit-peer-protocol", default-features = false }
+sha1w = { git = "http://100.92.54.45:3002/indexarr/librtbit-sha1-wrapper.git", tag = "v0.1.0", package = "librtbit-sha1-wrapper", default-features = false }
+tracker_comms = { git = "http://100.92.54.45:3002/indexarr/librtbit-tracker-comms.git", tag = "v0.1.0", package = "librtbit-tracker-comms", default-features = false }
+librtbit-upnp = { git = "http://100.92.54.45:3002/indexarr/librtbit-upnp.git", tag = "v0.1.0" }
+upnp-serve = { git = "http://100.92.54.45:3002/indexarr/librtbit-upnp-serve.git", tag = "v0.1.0", package = "librtbit-upnp-serve", default-features = false }
 
 # External crates
 anyhow = "1"
@@ -168,3 +145,41 @@ walkdir = "2"
 tauri-plugin-notification = "2"
 open = "5"
 windows = "0.62"
+
+# Local development overrides — these redirect git deps to local checkouts.
+# CI does NOT have these; it fetches the tagged commits from GitHub.
+[patch."http://100.92.54.45:3002/indexarr/librtbit.git"]
+librtbit = { path = "/home/sprooty/Working/libs/librtbit" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-bencode.git"]
+librtbit-bencode = { path = "/home/sprooty/Working/libs/librtbit-bencode" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-buffers.git"]
+librtbit-buffers = { path = "/home/sprooty/Working/libs/librtbit-buffers" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-clone-to-owned.git"]
+librtbit-clone-to-owned = { path = "/home/sprooty/Working/libs/librtbit-clone-to-owned" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-core.git"]
+librtbit-core = { path = "/home/sprooty/Working/libs/librtbit-core" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-dht.git"]
+librtbit-dht = { path = "/home/sprooty/Working/libs/librtbit-dht" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-lsd.git"]
+librtbit-lsd = { path = "/home/sprooty/Working/libs/librtbit-lsd" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-peer-protocol.git"]
+librtbit-peer-protocol = { path = "/home/sprooty/Working/libs/librtbit-peer-protocol" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-sha1-wrapper.git"]
+librtbit-sha1-wrapper = { path = "/home/sprooty/Working/libs/librtbit-sha1-wrapper" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-tracker-comms.git"]
+librtbit-tracker-comms = { path = "/home/sprooty/Working/libs/librtbit-tracker-comms" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-upnp.git"]
+librtbit-upnp = { path = "/home/sprooty/Working/libs/librtbit-upnp" }
+
+[patch."http://100.92.54.45:3002/indexarr/librtbit-upnp-serve.git"]
+librtbit-upnp-serve = { path = "/home/sprooty/Working/libs/librtbit-upnp-serve" }
