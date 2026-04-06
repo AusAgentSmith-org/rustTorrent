@@ -35,18 +35,18 @@ debug = true
 
 [workspace.dependencies]
 # Internal crates (git + tag) - keys are import names used in source code
-librtbit = { git = "http://100.92.54.45:3002/indexarr/librtbit.git", tag = "v0.1.0", default-features = false }
-bencode = { git = "http://100.92.54.45:3002/indexarr/librtbit-bencode.git", tag = "v0.1.0", package = "librtbit-bencode", default-features = false }
-buffers = { git = "http://100.92.54.45:3002/indexarr/librtbit-buffers.git", tag = "v0.1.0", package = "librtbit-buffers" }
-clone_to_owned = { git = "http://100.92.54.45:3002/indexarr/librtbit-clone-to-owned.git", tag = "v0.1.0", package = "librtbit-clone-to-owned" }
-librtbit-core = { git = "http://100.92.54.45:3002/indexarr/librtbit-core.git", tag = "v0.1.0", default-features = false }
-dht = { git = "http://100.92.54.45:3002/indexarr/librtbit-dht.git", tag = "v0.1.0", package = "librtbit-dht", default-features = false }
-librtbit-lsd = { git = "http://100.92.54.45:3002/indexarr/librtbit-lsd.git", tag = "v0.1.0", default-features = false }
-peer_binary_protocol = { git = "http://100.92.54.45:3002/indexarr/librtbit-peer-protocol.git", tag = "v0.1.0", package = "librtbit-peer-protocol", default-features = false }
-sha1w = { git = "http://100.92.54.45:3002/indexarr/librtbit-sha1-wrapper.git", tag = "v0.1.0", package = "librtbit-sha1-wrapper", default-features = false }
-tracker_comms = { git = "http://100.92.54.45:3002/indexarr/librtbit-tracker-comms.git", tag = "v0.1.0", package = "librtbit-tracker-comms", default-features = false }
-librtbit-upnp = { git = "http://100.92.54.45:3002/indexarr/librtbit-upnp.git", tag = "v0.1.0" }
-upnp-serve = { git = "http://100.92.54.45:3002/indexarr/librtbit-upnp-serve.git", tag = "v0.1.0", package = "librtbit-upnp-serve", default-features = false }
+librtbit = { version = "0.1.1", registry = "forgejo", default-features = false }
+bencode = { version = "0.1.0", registry = "forgejo", package = "librtbit-bencode", default-features = false }
+buffers = { version = "0.1.0", registry = "forgejo", package = "librtbit-buffers" }
+clone_to_owned = { version = "0.1.0", registry = "forgejo", package = "librtbit-clone-to-owned" }
+librtbit-core = { version = "0.1.1", registry = "forgejo", default-features = false }
+dht = { version = "0.1.0", registry = "forgejo", package = "librtbit-dht", default-features = false }
+librtbit-lsd = { version = "0.1.1", registry = "forgejo", default-features = false }
+peer_binary_protocol = { version = "0.1.0", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
+sha1w = { version = "0.1.0", registry = "forgejo", package = "librtbit-sha1-wrapper", default-features = false }
+tracker_comms = { version = "0.1.0", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
+librtbit-upnp = { version = "0.1.1", registry = "forgejo" }
+upnp-serve = { version = "0.1.0", registry = "forgejo", package = "librtbit-upnp-serve", default-features = false }
 
 # External crates
 anyhow = "1"
