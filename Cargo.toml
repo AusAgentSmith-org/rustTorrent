@@ -23,11 +23,9 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 debug = false
-lto = "thin"
 
 [profile.release-github]
 inherits = "release"
-lto = false
 
 [profile.release-debug]
 inherits = "release"
