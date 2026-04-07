@@ -26,3 +26,6 @@ tests/sonarr-e2e/
 .gitea/
 .env
 docker-compose.indexarr.test.yml
+
+# Codesight
+.codesight/
