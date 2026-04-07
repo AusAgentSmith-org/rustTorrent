@@ -36,17 +36,17 @@ debug = true
 [workspace.dependencies]
 # Internal crates (git + tag) - keys are import names used in source code
 librtbit = { version = "0.1.1", registry = "forgejo", default-features = false }
-bencode = { version = "0.1.0", registry = "forgejo", package = "librtbit-bencode", default-features = false }
-buffers = { version = "0.1.0", registry = "forgejo", package = "librtbit-buffers" }
-clone_to_owned = { version = "0.1.0", registry = "forgejo", package = "librtbit-clone-to-owned" }
+bencode = { version = "0.1.1", registry = "forgejo", package = "librtbit-bencode", default-features = false }
+buffers = { version = "0.1.1", registry = "forgejo", package = "librtbit-buffers" }
+clone_to_owned = { version = "0.1.1", registry = "forgejo", package = "librtbit-clone-to-owned" }
 librtbit-core = { version = "0.1.1", registry = "forgejo", default-features = false }
-dht = { version = "0.1.0", registry = "forgejo", package = "librtbit-dht", default-features = false }
+dht = { version = "0.1.1", registry = "forgejo", package = "librtbit-dht", default-features = false }
 librtbit-lsd = { version = "0.1.1", registry = "forgejo", default-features = false }
-peer_binary_protocol = { version = "0.1.0", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
-sha1w = { version = "0.1.0", registry = "forgejo", package = "librtbit-sha1-wrapper", default-features = false }
-tracker_comms = { version = "0.1.0", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
+peer_binary_protocol = { version = "0.1.1", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
+sha1w = { version = "0.1.1", registry = "forgejo", package = "librtbit-sha1-wrapper", default-features = false }
+tracker_comms = { version = "0.1.1", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
 librtbit-upnp = { version = "0.1.1", registry = "forgejo" }
-upnp-serve = { version = "0.1.0", registry = "forgejo", package = "librtbit-upnp-serve", default-features = false }
+upnp-serve = { version = "0.1.1", registry = "forgejo", package = "librtbit-upnp-serve", default-features = false }
 
 # External crates
 anyhow = "1"
