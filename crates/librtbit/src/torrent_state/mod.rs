@@ -57,6 +57,8 @@ pub use self::streaming::FileStream;
 
 // State machine transitions.
 //
+// - magnet_pending -> initializing (after magnet metadata resolved)
+// - magnet_pending -> error (resolution failed/timed out)
 // - error -> initializing
 // - initializing -> paused
 // - paused -> live
@@ -65,6 +67,8 @@ pub use self::streaming::FileStream;
 // - initializing -> error
 // - live -> error
 pub enum ManagedTorrentState {
+    /// Waiting for magnet metadata to be resolved via DHT/peers.
+    MagnetPending,
     Initializing(Arc<TorrentStateInitializing>),
     Paused(TorrentStatePaused),
     Live(Arc<TorrentStateLive>),
@@ -77,6 +81,7 @@ pub enum ManagedTorrentState {
 impl ManagedTorrentState {
     pub fn name(&self) -> &'static str {
         match self {
+            ManagedTorrentState::MagnetPending => "magnet_pending",
             ManagedTorrentState::Initializing(_) => "initializing",
             ManagedTorrentState::Paused(_) => "paused",
             ManagedTorrentState::Live(_) => "live",
@@ -317,7 +322,7 @@ impl ManagedTorrent {
         self.live()
     }
 
-    fn stop_with_error(&self, error: anyhow::Error) {
+    pub(crate) fn stop_with_error(&self, error: anyhow::Error) {
         let mut g = self.locked.write();
 
         match g.state.take() {
@@ -372,6 +377,11 @@ impl ManagedTorrent {
             match &g.state {
                 ManagedTorrentState::Live(_) => {
                     bail!("torrent is already live");
+                }
+                ManagedTorrentState::MagnetPending => {
+                    // Magnet is still resolving — nothing to start yet.
+                    // The background resolver will call start() once metadata arrives.
+                    return Ok(());
                 }
                 ManagedTorrentState::Initializing(init) => {
                     let init = init.clone();
@@ -513,6 +523,15 @@ impl ManagedTorrent {
             ManagedTorrentState::Paused(_) => {
                 bail!("torrent is already paused");
             }
+            ManagedTorrentState::MagnetPending => {
+                // Cancel the magnet resolution task, mark as paused.
+                self.shared.cancel_and_reset_token();
+                g.state =
+                    ManagedTorrentState::Error(anyhow::anyhow!("paused during magnet resolution"));
+                g.paused = true;
+                self.state_change_notify.notify_waiters();
+                Ok(())
+            }
             ManagedTorrentState::Error(_) => {
                 bail!("can't pause torrent in error state")
             }
@@ -542,6 +561,9 @@ impl ManagedTorrent {
 
         self.with_state(|s| {
             match s {
+                ManagedTorrentState::MagnetPending => {
+                    resp.state = S::MagnetPending;
+                }
                 ManagedTorrentState::Initializing(i) => {
                     resp.state = S::Initializing;
                     resp.progress_bytes = i.checked_bytes.load(Ordering::Relaxed);
@@ -590,7 +612,8 @@ impl ManagedTorrent {
             // TODO: rewrite, this polling is horrible
             loop {
                 let done = self.with_state(|s| match s {
-                    ManagedTorrentState::Initializing(_) => Ok(false),
+                    ManagedTorrentState::MagnetPending
+                    | ManagedTorrentState::Initializing(_) => Ok(false),
                     ManagedTorrentState::Error(e) => bail!("{:?}", e),
                     ManagedTorrentState::None => bail!("bug: torrent state is None"),
                     _ => Ok(true),
@@ -614,7 +637,9 @@ impl ManagedTorrent {
             // TODO: rewrite, this polling is horrible
             let live = loop {
                 let live = self.with_state(|s| match s {
-                    ManagedTorrentState::Initializing(_) | ManagedTorrentState::Paused(_) => {
+                    ManagedTorrentState::MagnetPending
+                    | ManagedTorrentState::Initializing(_)
+                    | ManagedTorrentState::Paused(_) => {
                         Ok(None)
                     }
                     ManagedTorrentState::Live(l) => Ok(Some(l.clone())),
@@ -651,6 +676,7 @@ impl ManagedTorrent {
 
         let mut g = self.locked.write();
         match &mut g.state {
+            ManagedTorrentState::MagnetPending => bail!("can't update torrent while magnet is resolving"),
             ManagedTorrentState::Initializing(_) => bail!("can't update initializing torrent"),
             ManagedTorrentState::Error(_) => {}
             ManagedTorrentState::None => {}

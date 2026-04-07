@@ -45,6 +45,8 @@ impl From<&TorrentStateLive> for LiveStats {
 
 #[derive(Clone, Copy, Serialize, Debug)]
 pub enum TorrentStatsState {
+    #[serde(rename = "magnet_pending")]
+    MagnetPending,
     #[serde(rename = "initializing")]
     Initializing,
     #[serde(rename = "live")]

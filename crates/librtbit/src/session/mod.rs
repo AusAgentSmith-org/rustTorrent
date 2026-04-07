@@ -748,54 +748,19 @@ impl Session {
             )
         };
 
-        let mut seen_peers = Vec::new();
+        // For magnets (no metadata), register immediately and resolve in the background.
+        if metadata.is_none() {
+            return self
+                .add_magnet_non_blocking(info_hash, trackers, name, opts, make_peer_rx)
+                .await;
+        }
 
-        let (metadata, peer_rx) = {
-            match metadata {
-                Some(metadata) => {
-                    let mut peer_rx = None;
-                    if !opts.paused && !opts.list_only {
-                        peer_rx = make_peer_rx();
-                    }
-                    (metadata, peer_rx)
-                }
-                None => {
-                    let peer_rx = make_peer_rx().context(
-                        "no known way to resolve peers (no DHT, no trackers, no initial_peers)",
-                    )?;
+        let metadata = metadata.unwrap();
 
-                    const DEFAULT_MAGNET_TIMEOUT_SECS: u64 = 120;
-                    let timeout_secs = opts
-                        .magnet_resolution_timeout_secs
-                        .unwrap_or(DEFAULT_MAGNET_TIMEOUT_SECS);
-
-                    let resolve_fut =
-                        self.resolve_magnet(info_hash, peer_rx, &trackers, opts.peer_opts);
-
-                    let resolved_magnet = if timeout_secs == 0 {
-                        resolve_fut.await?
-                    } else {
-                        tokio::time::timeout(Duration::from_secs(timeout_secs), resolve_fut)
-                            .await
-                            .context(format!(
-                                "magnet metadata resolution timed out after {timeout_secs}s"
-                            ))??
-                    };
-
-                    // Add back seen_peers into the peer stream, as we consumed some peers
-                    // while resolving the magnet.
-                    seen_peers = resolved_magnet.seen_peers.clone();
-                    let peer_rx = Some(
-                        merge_streams(
-                            resolved_magnet.peer_rx,
-                            futures::stream::iter(resolved_magnet.seen_peers),
-                        )
-                        .boxed(),
-                    );
-                    (resolved_magnet.metadata, peer_rx)
-                }
-            }
-        };
+        let mut peer_rx = None;
+        if !opts.paused && !opts.list_only {
+            peer_rx = make_peer_rx();
+        }
 
         trace!("Torrent metadata: {:#?}", &metadata.info.info());
 
@@ -824,7 +789,7 @@ impl Session {
                 info: metadata.info,
                 only_files,
                 output_folder,
-                seen_peers,
+                seen_peers: Vec::new(),
                 torrent_bytes: metadata.torrent_bytes,
             }));
         }
@@ -936,6 +901,264 @@ impl Session {
         Ok(AddTorrentResponse::Added(id, managed_torrent))
     }
 
+    /// Register a magnet torrent immediately in MagnetPending state
+    /// and spawn metadata resolution in the background.
+    async fn add_magnet_non_blocking(
+        self: &Arc<Self>,
+        info_hash: Id20,
+        trackers: Vec<url::Url>,
+        name: Option<String>,
+        mut opts: AddTorrentOptions,
+        make_peer_rx: impl FnOnce() -> Option<PeerStream>,
+    ) -> anyhow::Result<AddTorrentResponse> {
+        let storage_factory = opts
+            .storage_factory
+            .take()
+            .or_else(|| self.default_storage_factory.as_ref().map(|f| f.clone_box()))
+            .unwrap_or_else(|| FilesystemStorageFactory::default().boxed());
+
+        let id = if let Some(id) = opts.preferred_id {
+            id
+        } else if let Some(p) = self.persistence.as_ref() {
+            p.next_id().await?
+        } else {
+            self.next_id
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        };
+
+        let output_folder = match (opts.output_folder.clone(), opts.sub_folder.clone()) {
+            (Some(o), None) => PathBuf::from(o),
+            (None, Some(s)) => self.output_folder.read().join(s),
+            (Some(_), Some(_)) => bail!("you can't provide both output_folder and sub_folder"),
+            (None, None) => {
+                // Use magnet name as subfolder if available, otherwise just the base folder
+                let sub = name
+                    .as_deref()
+                    .map(PathBuf::from)
+                    .unwrap_or_default();
+                self.output_folder.read().join(sub)
+            }
+        };
+
+        let managed_torrent = {
+            let mut g = self.db.write();
+            let existing = g.torrents.get(&id).map(|t| (id, t.clone())).or_else(|| {
+                g.get_by_info_hash(info_hash)
+                    .map(|(eid, t)| (eid, t.clone()))
+            });
+            if let Some((id, handle)) = existing {
+                return Ok(AddTorrentResponse::AlreadyManaged(id, handle));
+            }
+
+            let span = debug_span!(parent: self.rs(), "torrent", id);
+            let peer_opts = self.merge_peer_opts(opts.peer_opts);
+            let minfo = Arc::new(ManagedTorrentShared {
+                id,
+                span,
+                info_hash,
+                trackers: trackers.iter().cloned().collect(),
+                spawner: self.spawner.clone(),
+                peer_id: self.peer_id,
+                storage_factory,
+                options: ManagedTorrentOptions {
+                    force_tracker_interval: opts.force_tracker_interval,
+                    peer_connect_timeout: peer_opts.connect_timeout,
+                    peer_read_write_timeout: peer_opts.read_write_timeout,
+                    allow_overwrite: opts.overwrite,
+                    output_folder,
+                    ratelimits: opts.ratelimits,
+                    initial_peers: opts.initial_peers.clone().unwrap_or_default(),
+                    peer_limit: opts.peer_limit.or(self.peer_limit),
+                    #[cfg(feature = "disable-upload")]
+                    _disable_upload: self._disable_upload,
+                },
+                connector: self.connector.clone(),
+                session: Arc::downgrade(self),
+                magnet_name: name,
+                web_seed_urls: Vec::new(),
+                category: RwLock::new(opts.category.clone()),
+                cancellation_token: parking_lot::Mutex::new(self.cancellation_token.child_token()),
+            });
+
+            let handle = Arc::new(ManagedTorrent {
+                locked: RwLock::new(ManagedTorrentLocked {
+                    paused: opts.paused,
+                    state: ManagedTorrentState::MagnetPending,
+                    only_files: opts.only_files.clone(),
+                }),
+                state_change_notify: Notify::new(),
+                shared: minfo,
+                metadata: ArcSwapOption::new(None),
+            });
+
+            g.add_torrent(handle.clone(), id);
+            handle
+        };
+
+        if let Some(p) = self.persistence.as_ref()
+            && let Err(e) = p.store(id, &managed_torrent).await
+        {
+            self.db.write().remove_torrent(&id);
+            return Err(e);
+        }
+
+        info!(
+            ?id,
+            ?info_hash,
+            "added magnet torrent (resolving metadata in background)"
+        );
+
+        // Spawn background magnet resolution
+        let session = Arc::clone(self);
+        let handle_clone = managed_torrent.clone();
+        let trackers_clone = trackers.clone();
+        let peer_rx = make_peer_rx();
+        let paused = opts.paused;
+        let token = managed_torrent.shared.child_token();
+
+        const DEFAULT_MAGNET_TIMEOUT_SECS: u64 = 120;
+        let timeout_secs = opts
+            .magnet_resolution_timeout_secs
+            .unwrap_or(DEFAULT_MAGNET_TIMEOUT_SECS);
+
+        spawn_with_cancel(
+            debug_span!(parent: managed_torrent.shared.span.clone(), "magnet_resolve"),
+            "magnet_resolve",
+            token,
+            async move {
+                let peer_rx = match peer_rx {
+                    Some(rx) => rx,
+                    None => {
+                        let err = anyhow::anyhow!(
+                            "no known way to resolve peers (no DHT, no trackers, no initial_peers)"
+                        );
+                        handle_clone.stop_with_error(err);
+                        return Ok(());
+                    }
+                };
+
+                let resolve_fut = session.resolve_magnet(
+                    info_hash,
+                    peer_rx,
+                    &trackers_clone,
+                    opts.peer_opts,
+                );
+
+                let resolved = if timeout_secs == 0 {
+                    resolve_fut.await
+                } else {
+                    tokio::time::timeout(Duration::from_secs(timeout_secs), resolve_fut)
+                        .await
+                        .unwrap_or_else(|_| {
+                            Err(anyhow::anyhow!(
+                                "magnet metadata resolution timed out after {timeout_secs}s"
+                            ))
+                        })
+                };
+
+                match resolved {
+                    Ok(resolved_magnet) => {
+                        let metadata = Arc::new(resolved_magnet.metadata);
+                        handle_clone.metadata.store(Some(metadata.clone()));
+
+                        // Compute only_files now that we have metadata
+                        let only_files = compute_only_files(
+                            &metadata.info,
+                            opts.only_files,
+                            opts.only_files_regex,
+                            false,
+                        )
+                        .unwrap_or(None);
+
+                        // Recompute output folder if it was based on magnet name
+                        if opts.output_folder.is_none() && opts.sub_folder.is_none() {
+                            // Don't modify — the shared options output_folder is already set
+                        }
+
+                        // Create storage and transition to Initializing
+                        let init_result = session.spawner.block_in_place(|| {
+                            handle_clone
+                                .shared
+                                .storage_factory
+                                .create_and_init(handle_clone.shared(), &metadata)
+                        });
+
+                        match init_result {
+                            Ok(files) => {
+                                let initializing = Arc::new(TorrentStateInitializing::new(
+                                    handle_clone.shared.clone(),
+                                    metadata.clone(),
+                                    only_files.clone(),
+                                    files,
+                                    false,
+                                ));
+
+                                {
+                                    let mut g = handle_clone.locked.write();
+                                    g.state =
+                                        ManagedTorrentState::Initializing(initializing);
+                                    g.only_files = only_files;
+                                }
+                                handle_clone.state_change_notify.notify_waiters();
+
+                                // Update persistence with metadata
+                                if let Some(p) = session.persistence.as_ref() {
+                                    if let Err(e) =
+                                        p.update_metadata(id, &handle_clone).await
+                                    {
+                                        warn!(?id, "error updating persistence after magnet resolve: {e:#}");
+                                    }
+                                }
+
+                                // Rebuild peer stream from seen peers
+                                let peer_rx = Some(
+                                    merge_streams(
+                                        resolved_magnet.peer_rx,
+                                        futures::stream::iter(
+                                            resolved_magnet.seen_peers,
+                                        ),
+                                    )
+                                    .boxed(),
+                                );
+
+                                if let Err(e) =
+                                    handle_clone.start(peer_rx, paused)
+                                {
+                                    warn!(?id, "error starting torrent after magnet resolve: {e:#}");
+                                    handle_clone.stop_with_error(e);
+                                }
+
+                                if let Some(name) = metadata.info.name() {
+                                    info!(?id, ?name, "magnet resolved, torrent started");
+                                }
+
+                                // Spawn completion watcher if needed
+                                if session.completed_folder.read().is_some() {
+                                    session.spawn_completion_watcher(
+                                        id,
+                                        handle_clone,
+                                    );
+                                }
+                            }
+                            Err(e) => {
+                                warn!(?id, "error creating storage after magnet resolve: {e:#}");
+                                handle_clone.stop_with_error(e);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!(?id, ?info_hash, "magnet resolution failed: {e:#}");
+                        handle_clone.stop_with_error(e);
+                    }
+                }
+
+                Ok(())
+            },
+        );
+
+        Ok(AddTorrentResponse::Added(id, managed_torrent))
+    }
+
     pub fn get(&self, id: TorrentIdOrHash) -> Option<ManagedTorrentHandle> {
         let db = self.db.read();
         match id {
@@ -970,10 +1193,20 @@ impl Session {
             debug!("error pausing torrent before deletion: {e:#}")
         }
 
-        let metadata = removed
-            .metadata
-            .load_full()
-            .context("torrent metadata was not loaded")?;
+        let metadata = removed.metadata.load_full();
+
+        // MagnetPending torrents have no metadata or storage — just clean up persistence.
+        if metadata.is_none() {
+            if let Some(p) = self.persistence.as_ref() {
+                if let Err(e) = p.delete(id).await {
+                    error!(?id, "error deleting torrent from persistence database: {e:#}");
+                } else {
+                    debug!(?id, "deleted torrent from persistence database");
+                }
+            }
+            return Ok(());
+        }
+        let metadata = metadata.unwrap();
 
         let storage = removed
             .with_state_mut(|s| match s.take() {
