@@ -44,8 +44,10 @@ fn main() {
     {
         let webui_dir = Path::new("webui");
         let webui_src_dir = webui_dir.join("src");
+        let webui_assets_dir = webui_dir.join("assets");
 
         println!("cargo:rerun-if-changed={}", webui_src_dir.to_str().unwrap());
+        println!("cargo:rerun-if-changed={}", webui_assets_dir.to_str().unwrap());
 
         // Run "npm install && npm run build" in the webui directory
         for cmd in ["npm install", "npm run build"] {
