@@ -75,3 +75,14 @@ steps:
       - rustup target add x86_64-pc-windows-gnu
       - cargo build --profile release-github -p rtbit --target x86_64-pc-windows-gnu --no-default-features --features default-tls
       - ls -lh target/x86_64-pc-windows-gnu/release-github/rtbit.exe
+
+  - name: build-and-push
+    image: woodpeckerci/plugin-docker-buildx
+    settings:
+      repo: repo.indexarr.net/indexarr/rusttorrent
+      registry: repo.indexarr.net
+      username:
+        from_secret: git_auth_token
+      password:
+        from_secret: git_auth_token
+      tag: latest
