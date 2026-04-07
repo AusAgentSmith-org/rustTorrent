@@ -1291,7 +1291,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1498,7 +1498,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2513,7 +2513,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.61.2",
 ]
 
 [[package]]
@@ -3051,7 +3051,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "7598e5bc2b0ba90388b928a09f8b0bcebdb5d660111f0aa08c8b1046f48b35b7"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3131,7 +3133,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-bencode"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "3c7026c019e7aae5fbd1c9dc41f83648cc165f4be740dfe13496e4a248a5176b"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -3146,7 +3150,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-buffers"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "5d32ad9f98e44df8995837f15628133a0dfcc604bc003b6298d1e238e0ceb4c7"
 dependencies = [
  "bytes",
  "librtbit-clone-to-owned",
@@ -3156,14 +3162,18 @@ dependencies = [
 
 [[package]]
 name = "librtbit-clone-to-owned"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "652077f668126ff93bf2c61fbfc88a38b60b9e50c1edc440a72c2a9a5b614459"
 dependencies = [
  "bytes",
 ]
 
 [[package]]
 name = "librtbit-core"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "a329ebdc01c714f9dd5770da35ac495314936208bd77a240cc58577bc2040fb9"
 dependencies = [
  "anyhow",
  "bytes",
@@ -3191,7 +3201,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-dht"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "87a8ed0f41f3fd9ced66c8a5c7affbd6f09f60ce8396d12bfd7450f24b241bb4"
 dependencies = [
  "anyhow",
  "aws-lc-rs",
@@ -3222,7 +3234,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-lsd"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "e343ed3d48f06854246568069fb068d9c91ed0289cc5036ddde1b61e9b777bc4"
 dependencies = [
  "anyhow",
  "atoi",
@@ -3241,7 +3255,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-peer-protocol"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "6ef2407db9077a7420649e606a1ae2281c6a77bdb9a235a056fe467d1dfbfee7"
 dependencies = [
  "anyhow",
  "bitvec",
@@ -3260,7 +3276,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-sha1-wrapper"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "db142701a46374113e30dd0b39ec0f0c6fca5fe7481e0108b8178914173d52f5"
 dependencies = [
  "assert_cfg",
  "aws-lc-rs",
@@ -3269,7 +3287,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-tracker-comms"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "53a6c3b3c1b15d8475401b179818a0113bd8f39569d71fbc5a8ee9c6bba3d70d"
 dependencies = [
  "anyhow",
  "async-stream",
@@ -3296,7 +3316,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-upnp"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "23ef5c0beced2be6c42d0ac5aec6f6e6deb8a2d261665e4188692206c2da29b7"
 dependencies = [
  "anyhow",
  "bstr",
@@ -3316,7 +3338,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit-upnp-serve"
-version = "0.1.0"
+version = "0.1.1"
+source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
+checksum = "2712d2a411717dbe6799ca6c271ca51899ff92073189bdfb3050b6ba87d5a497"
 dependencies = [
  "anyhow",
  "axum",
@@ -3792,7 +3816,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4124,7 +4148,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d8fae84b431384b68627d0f9b3b1245fcf9f46f6c0e3dc902e9dce64edd1967"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
@@ -4747,7 +4771,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5232,7 +5256,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -6437,7 +6461,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -7558,7 +7582,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -8533,3 +8557,51 @@ dependencies = [
  "syn 2.0.117",
  "winnow 0.7.15",
 ]
+
+[[patch.unused]]
+name = "librtbit"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-core"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-tracker-comms"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-sha1-wrapper"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-buffers"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-upnp-serve"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-upnp"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-lsd"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-dht"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-peer-protocol"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-bencode"
+version = "0.1.1"
+
+[[patch.unused]]
+name = "librtbit-clone-to-owned"
+version = "0.1.1"

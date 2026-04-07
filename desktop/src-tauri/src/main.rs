@@ -273,11 +273,11 @@ async fn start_engine(
     let health_url = format!("http://{listen_addr}/stats");
     for _ in 0..50 {
         tokio::time::sleep(Duration::from_millis(100)).await;
-        if let Ok(resp) = reqwest::get(&health_url).await {
-            if resp.status().is_success() {
-                info!("HTTP server ready on {listen_addr}");
-                return Ok((api, listen_addr, config_filename));
-            }
+        if let Ok(resp) = reqwest::get(&health_url).await
+            && resp.status().is_success()
+        {
+            info!("HTTP server ready on {listen_addr}");
+            return Ok((api, listen_addr, config_filename));
         }
     }
 
@@ -368,11 +368,11 @@ fn setup_tray(app: &AppHandle) -> anyhow::Result<()> {
             }
         })
         .on_tray_icon_event(|tray, event| {
-            if matches!(event, tauri::tray::TrayIconEvent::Click { .. }) {
-                if let Some(window) = tray.app_handle().get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
+            if matches!(event, tauri::tray::TrayIconEvent::Click { .. })
+                && let Some(window) = tray.app_handle().get_webview_window("main")
+            {
+                let _ = window.show();
+                let _ = window.set_focus();
             }
         })
         .build(&app_handle)?;
