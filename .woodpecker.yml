@@ -71,7 +71,7 @@ steps:
       - git config --global url."http://x-access-token:$GIT_AUTH_TOKEN@100.92.54.45:3002/".insteadOf "http://100.92.54.45:3002/"
       - printf '[registries.forgejo]\nindex = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"\ncredential-provider = "cargo:token"\n\n[registry]\ndefault = "forgejo"\n' > $CARGO_HOME/config.toml
       - printf '[registries.forgejo]\ntoken = "Bearer %s"\n' "$GIT_AUTH_TOKEN" > $CARGO_HOME/credentials.toml
-      - apt-get update && apt-get install -y gcc-mingw-w64-x86-64
+      - apt-get update && apt-get install -y gcc-mingw-w64-x86-64 nasm
       - rustup target add x86_64-pc-windows-gnu
       - cargo build --profile release-github -p rtbit --target x86_64-pc-windows-gnu --no-default-features --features default-tls
       - ls -lh target/x86_64-pc-windows-gnu/release-github/rtbit.exe
