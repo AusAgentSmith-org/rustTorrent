@@ -1336,9 +1336,15 @@ img {
     cursor: default;
 }
 .docker-pull {
-    font-family: monospace;
-    font-size: 0.8rem;
-    word-break: break-all;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre;
+    color: var(--text-secondary, #b0b8c4);
+    background: rgba(0,0,0,0.2);
+    padding: 8px 10px;
+    border-radius: 4px;
 }
 .download-checksums {
     text-align: center;

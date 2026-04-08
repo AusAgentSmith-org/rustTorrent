@@ -453,7 +453,10 @@
                     </div>
                     <div class="download-info">
                         <span class="download-platform">Docker</span>
-                        <span class="download-type docker-pull">docker pull ghcr.io/ausagentsmith-org/rusttorrent:alpha</span>
+                        <pre class="docker-pull">docker run -d --name rusttorrent \
+  -p 3030:3030 -p 4240:4240 \
+  -v ~/downloads:/downloads \
+  ghcr.io/ausagentsmith-org/rusttorrent:alpha</pre>
                     </div>
                 </div>
             </div>
