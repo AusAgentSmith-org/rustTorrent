@@ -92,20 +92,19 @@ steps:
       - echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
       - chmod 600 ~/.ssh/id_ed25519
       - ssh-keyscan -H 100.92.4.57 >> ~/.ssh/known_hosts 2>/dev/null
-      - TAG=$(echo "$CI_COMMIT_REF" | sed 's|refs/tags/||')
-      - echo "Publishing release $TAG"
-      - SSH="ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57"
-      - DEST="root@100.92.4.57:/root/downloads/rusttorrent"
-      # Rename binaries with version and platform
-      - cp target/release-github/rtbit "rtbit-${TAG}-linux-x86_64"
-      - cp target/x86_64-pc-windows-gnu/release-github/rtbit.exe "rtbit-${TAG}-windows-x86_64.exe"
-      # Generate checksums
-      - sha256sum rtbit-${TAG}-* > "SHA256SUMS-${TAG}.txt"
-      # Upload versioned release
-      - $SSH "mkdir -p /root/downloads/rusttorrent/${TAG}"
-      - scp -o StrictHostKeyChecking=accept-new rtbit-${TAG}-* SHA256SUMS-${TAG}.txt ${DEST}/${TAG}/
-      # Update latest/ symlinks
-      - $SSH "rm -rf /root/downloads/rusttorrent/latest && ln -s /root/downloads/rusttorrent/${TAG} /root/downloads/rusttorrent/latest"
+      - |
+        set -e
+        TAG=$(echo "$CI_COMMIT_REF" | sed 's|refs/tags/||')
+        echo "Publishing release $TAG"
+        REMOTE="root@100.92.4.57"
+        SSHOPTS="-o StrictHostKeyChecking=accept-new"
+        cp target/release-github/rtbit "rtbit-${TAG}-linux-x86_64"
+        cp target/x86_64-pc-windows-gnu/release-github/rtbit.exe "rtbit-${TAG}-windows-x86_64.exe"
+        sha256sum rtbit-${TAG}-* > "SHA256SUMS-${TAG}.txt"
+        ssh $SSHOPTS $REMOTE "mkdir -p /root/downloads/rusttorrent/${TAG}"
+        scp $SSHOPTS rtbit-${TAG}-* SHA256SUMS-${TAG}.txt ${REMOTE}:/root/downloads/rusttorrent/${TAG}/
+        ssh $SSHOPTS $REMOTE "rm -rf /root/downloads/rusttorrent/latest && ln -s /root/downloads/rusttorrent/${TAG} /root/downloads/rusttorrent/latest"
+        echo "Published: https://dl.rusttorrent.dev/latest/"
 
   - name: build-and-push
     image: woodpeckerci/plugin-docker-buildx
