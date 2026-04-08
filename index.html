@@ -555,16 +555,21 @@
                         <span class="terminal-title">Download</span>
                     </div>
                     <div class="terminal-body">
-                        <div class="terminal-line terminal-output">Download the installer for your platform from GitHub Releases:</div>
+                        <div class="terminal-line terminal-output">Download the latest alpha binary for your platform:</div>
                         <div class="terminal-line">&nbsp;</div>
-                        <div class="terminal-line"><span class="terminal-success">Windows</span> &nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64-setup.exe" style="color:var(--blue);">.exe</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64_en-US.msi" style="color:var(--blue);">.msi</a></div>
-                        <div class="terminal-line"><span class="terminal-success">macOS</span> &nbsp;&nbsp;&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64.dmg" style="color:var(--blue);">Intel .dmg</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_aarch64.dmg" style="color:var(--blue);">Apple Silicon .dmg</a></div>
-                        <div class="terminal-line"><span class="terminal-success">Linux</span> &nbsp;&nbsp;&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.deb" style="color:var(--blue);">.deb</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop-0.0.1-1.x86_64.rpm" style="color:var(--blue);">.rpm</a> &nbsp;|&nbsp; <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.AppImage" style="color:var(--blue);">.AppImage</a></div>
+                        <div class="terminal-line"><span class="terminal-success">Linux</span> &nbsp;&nbsp;&nbsp; <a href="https://dl.rusttorrent.dev/latest/" style="color:var(--blue);">x86_64 binary</a></div>
+                        <div class="terminal-line"><span class="terminal-success">Windows</span> &nbsp; <a href="https://dl.rusttorrent.dev/latest/" style="color:var(--blue);">x86_64 .exe</a></div>
+                        <div class="terminal-line">&nbsp;</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> chmod +x rtbit-*-linux-x86_64</div>
+                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./rtbit-*-linux-x86_64 server start ~/Downloads</div>
+                        <div class="terminal-line terminal-output">
+                            <span class="terminal-success">&#10003;</span> Web UI available at <span class="terminal-link">http://localhost:3030</span>
+                        </div>
                     </div>
                 </div>
                 <div class="start-notes">
-                    <p><strong>System tray:</strong> rustTorrent runs in the system tray with speed indicators</p>
-                    <p><strong>Web UI:</strong> The desktop app opens the same React web UI at <code>localhost:3030</code></p>
+                    <p><strong>All files:</strong> <a href="https://dl.rusttorrent.dev/latest/">dl.rusttorrent.dev/latest/</a> (includes SHA256 checksums)</p>
+                    <p><strong>Web UI:</strong> Access the React web UI at <code>localhost:3030</code> after starting</p>
                 </div>
             </div>
 
