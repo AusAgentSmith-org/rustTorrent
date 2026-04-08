@@ -42,7 +42,7 @@ dht = { version = "0.1.1", registry = "forgejo", package = "librtbit-dht", defau
 librtbit-lsd = { version = "0.1.1", registry = "forgejo", default-features = false }
 peer_binary_protocol = { version = "0.1.1", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
 sha1w = { version = "0.1.1", registry = "forgejo", package = "librtbit-sha1-wrapper", default-features = false }
-tracker_comms = { version = "0.1.1", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
+tracker_comms = { version = "0.1.2", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
 librtbit-upnp = { version = "0.1.1", registry = "forgejo" }
 upnp-serve = { version = "0.1.1", registry = "forgejo", package = "librtbit-upnp-serve", default-features = false }
 
