@@ -1305,3 +1305,43 @@ img {
         align-items: center;
     }
 }
+
+/* Alpha branding */
+.alpha-banner .alpha-card {
+    border-color: #d29922;
+    background: rgba(210, 153, 34, 0.08);
+}
+.alpha-banner .alpha-icon {
+    color: #d29922;
+}
+.btn-large {
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.download-section {
+    padding: 80px 0;
+}
+.download-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+}
+.download-card-primary {
+    border-color: var(--rust-accent, #ce422b) !important;
+    background: rgba(206, 66, 43, 0.06) !important;
+}
+.download-card-docker {
+    cursor: default;
+}
+.docker-pull {
+    font-family: monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+.download-checksums {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.9rem;
+}
