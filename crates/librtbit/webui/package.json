@@ -27,7 +27,7 @@
     "@types/lodash.sortby": "^4.7.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^5",
+    "@vitejs/plugin-react": "^6",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
