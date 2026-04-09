@@ -7,7 +7,7 @@ COPY src/ src/
 RUN cargo build --release && \
     ./target/release/benchv2 --help > /dev/null
 
-FROM alpine:3.21
+FROM alpine:3.23
 RUN apk add --no-cache ca-certificates curl
 COPY --from=builder /app/target/release/benchv2 /usr/local/bin/benchv2
 ENTRYPOINT ["benchv2"]
