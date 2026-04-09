@@ -81,7 +81,7 @@ steps:
       - ls -lh target/x86_64-pc-windows-gnu/release-github/rtbit.exe
 
   - name: publish-release
-    image: alpine:3.21
+    image: alpine:3.23
     when:
       - event: tag
     environment:
