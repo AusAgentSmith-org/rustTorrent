@@ -152,6 +152,19 @@ steps:
       - DST_CREDS="--dest-creds=AusAgentSmith:$GH_TOKEN"
       - for tag in $CI_COMMIT_TAG latest alpha; do skopeo copy $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag"; done
 
+  - name: push-github
+    image: alpine/git
+    when:
+      - event: push
+        branch: main
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+    commands:
+      - git remote add github "https://x-access-token:$GH_TOKEN@github.com/AusAgentSmith-org/rustTorrent.git" 2>/dev/null || true
+      - git push github HEAD:main --force
+      - git push github --tags --force 2>/dev/null || true
+
   - name: discord-success
     image: alpine/curl
     environment:
