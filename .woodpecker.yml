@@ -152,6 +152,49 @@ steps:
       - DST_CREDS="--dest-creds=AusAgentSmith:$GH_TOKEN"
       - for tag in $CI_COMMIT_TAG latest alpha; do skopeo copy $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag"; done
 
+  - name: github-release
+    image: alpine:3.23
+    when:
+      - event: tag
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+    commands:
+      - apk add --no-cache git curl jq
+      - |
+        TAG="$CI_COMMIT_TAG"
+        REPO="AusAgentSmith-org/rustTorrent"
+        echo "Creating GitHub release $TAG on $REPO"
+
+        git remote add github "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" 2>/dev/null || true
+        git push github "refs/tags/$TAG" --force
+
+        BODY="## Downloads\n\n"
+        BODY="$BODY- **Linux x86_64**: \`rtbit-${TAG}-linux-x86_64\`\n"
+        BODY="$BODY- **Windows x86_64**: \`rtbit-${TAG}-windows-x86_64.exe\`\n"
+        BODY="$BODY- **Debian/Ubuntu**: \`rtbit-${TAG}-amd64.deb\`\n"
+        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:${TAG}\`\n"
+        BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-${TAG}.txt\`"
+
+        RELEASE_ID=$(curl -sf -X POST \
+          -H "Authorization: token $GH_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"tag_name\":\"$TAG\",\"name\":\"rustTorrent $TAG\",\"body\":\"$(echo -e "$BODY")\",\"draft\":false,\"prerelease\":true}" \
+          "https://api.github.com/repos/$REPO/releases" | jq -r '.id')
+
+        echo "Release created: ID=$RELEASE_ID"
+
+        for file in "rtbit-${TAG}-linux-x86_64" "rtbit-${TAG}-windows-x86_64.exe" "rtbit-${TAG}-amd64.deb" "SHA256SUMS-${TAG}.txt"; do
+          [ -f "$file" ] || continue
+          echo "Uploading $file"
+          curl -sf -X POST \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$file" \
+            "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=$file" > /dev/null
+        done
+        echo "GitHub release $TAG complete"
+
   - name: push-github
     image: alpine/git
     when:
