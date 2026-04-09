@@ -100,13 +100,11 @@ steps:
       - |
         set -e
         TAG="$CI_COMMIT_TAG"
-        echo "Tag is: $TAG"
-        ls -la rtbit-*
-        sha256sum rtbit-${TAG}-* > "SHA256SUMS-${TAG}.txt"
-        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "mkdir -p /root/downloads/rusttorrent/${TAG}"
-        scp -o StrictHostKeyChecking=accept-new rtbit-${TAG}-* "SHA256SUMS-${TAG}.txt" root@100.92.4.57:/root/downloads/rusttorrent/${TAG}/
-        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "cd /root/downloads/rusttorrent/${TAG} && ln -sf rtbit-${TAG}-linux-x86_64 rtbit-linux-x86_64 && ln -sf rtbit-${TAG}-windows-x86_64.exe rtbit-windows-x86_64.exe"
-        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "ln -sfn ${TAG} /root/downloads/rusttorrent/latest"
+        sha256sum rtbit-$TAG-* > "SHA256SUMS-$TAG.txt"
+        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "mkdir -p /root/downloads/rusttorrent/$TAG"
+        scp -o StrictHostKeyChecking=accept-new rtbit-$TAG-* "SHA256SUMS-$TAG.txt" root@100.92.4.57:/root/downloads/rusttorrent/$TAG/
+        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "cd /root/downloads/rusttorrent/$TAG && ln -sf rtbit-$TAG-linux-x86_64 rtbit-linux-x86_64 && ln -sf rtbit-$TAG-windows-x86_64.exe rtbit-windows-x86_64.exe"
+        ssh -o StrictHostKeyChecking=accept-new root@100.92.4.57 "ln -sfn $TAG /root/downloads/rusttorrent/latest"
       - echo "Published https://dl.rusttorrent.dev/latest/"
 
   - name: build-and-push
