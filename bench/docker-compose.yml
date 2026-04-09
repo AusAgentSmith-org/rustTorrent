@@ -108,7 +108,7 @@ services:
 
   # ── Metrics: cAdvisor ──────────────────────────────────────────────────
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.55.1
     privileged: true
     volumes:
       - /:/rootfs:ro
