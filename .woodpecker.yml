@@ -3,6 +3,7 @@ when:
     branch: main
   - event: tag
   - event: manual
+  - event: pull_request
 
 steps:
   - name: fmt
@@ -64,6 +65,9 @@ steps:
       - cargo build --profile release-github -p rtbit --no-default-features --features default-tls
       - ls -lh target/release-github/rtbit
       - if [ -n "$CI_COMMIT_TAG" ]; then cargo install cargo-deb --registry crates-io && cargo deb -p rtbit --no-build --no-strip --profile release-github -o target/release-github/rtbit_amd64.deb && ls -lh target/release-github/rtbit_amd64.deb; fi
+    when:
+      - event: push
+        branch: main
 
   - name: build-windows
     image: rust:1.88-bookworm
@@ -79,6 +83,9 @@ steps:
       - if [ -n "$CI_COMMIT_TAG" ]; then export CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 CARGO_PROFILE_RELEASE_STRIP=symbols; fi
       - cargo build --profile release-github -p rtbit --target x86_64-pc-windows-gnu --no-default-features --features default-tls
       - ls -lh target/x86_64-pc-windows-gnu/release-github/rtbit.exe
+    when:
+      - event: push
+        branch: main
 
   - name: publish-release
     image: alpine:3.23
