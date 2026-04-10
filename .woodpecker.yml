@@ -4,7 +4,7 @@ when:
 
 steps:
   - name: deploy
-    image: alpine:3.21
+    image: alpine:3.23
     environment:
       DEPLOY_SSH_KEY:
         from_secret: deploy_ssh_key
