@@ -138,12 +138,24 @@ steps:
         BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\`\n"
         BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
 
-        RELEASE_ID=$(curl -sf -X POST \
+        # Delete existing release by tag if present (idempotent retry)
+        EXISTING_ID=$(curl -s -H "Authorization: token $FORGEJO_TOKEN" \
+          "$API/repos/$REPO/releases/tags/$TAG" | jq -r '.id // empty')
+        if [ -n "$EXISTING_ID" ]; then
+          echo "Deleting existing release ID=$EXISTING_ID"
+          curl -s -X DELETE -H "Authorization: token $FORGEJO_TOKEN" \
+            "$API/repos/$REPO/releases/$EXISTING_ID"
+        fi
+
+        RELEASE_ID=$(curl -s -X POST \
           -H "Authorization: token $FORGEJO_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"tag_name\":\"$TAG\",\"name\":\"rustTorrent $TAG\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":true}" \
           "$API/repos/$REPO/releases" | jq -r '.id')
 
+        if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+          echo "ERROR: Failed to create Forgejo release"; exit 1
+        fi
         echo "Forgejo release created: ID=$RELEASE_ID"
 
         for file in "rtbit-$TAG-linux-x86_64" "rtbit-$TAG-windows-x86_64.exe" "rtbit-$TAG-amd64.deb" "SHA256SUMS-$TAG.txt"; do
@@ -222,12 +234,26 @@ steps:
         BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\`\n"
         BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
 
-        RELEASE_ID=$(curl -sf -X POST \
+        # Delete existing release by tag if present (idempotent retry)
+        EXISTING_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+          "https://api.github.com/repos/$REPO/releases/tags/$TAG" | jq -r '.id // empty')
+        if [ -n "$EXISTING_ID" ]; then
+          echo "Deleting existing GitHub release ID=$EXISTING_ID"
+          curl -s -X DELETE -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/releases/$EXISTING_ID"
+          curl -s -X DELETE -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/git/refs/tags/$TAG" || true
+        fi
+
+        RELEASE_ID=$(curl -s -X POST \
           -H "Authorization: token $GH_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"rustTorrent $TAG\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":true}" \
           "https://api.github.com/repos/$REPO/releases" | jq -r '.id')
 
+        if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+          echo "ERROR: Failed to create GitHub release"; exit 1
+        fi
         echo "Release created: ID=$RELEASE_ID"
 
         for file in "rtbit-$TAG-linux-x86_64" "rtbit-$TAG-windows-x86_64.exe" "rtbit-$TAG-amd64.deb" "SHA256SUMS-$TAG.txt"; do
