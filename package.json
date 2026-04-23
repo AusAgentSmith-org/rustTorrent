@@ -12,6 +12,6 @@
     "lint:fix": "npm run lint:fix --workspace=crates/librtbit/webui"
   },
   "devDependencies": {
-    "prettier": "^3.7"
+    "prettier": "^3.8"
   }
 }
