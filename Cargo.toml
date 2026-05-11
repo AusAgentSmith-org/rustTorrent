@@ -157,3 +157,9 @@ librtbit-sha1-wrapper = { path = "../libs/librtbit-sha1-wrapper" }
 librtbit-tracker-comms = { path = "../libs/librtbit-tracker-comms" }
 librtbit-upnp         = { path = "../libs/librtbit-upnp" }
 librtbit-upnp-serve   = { path = "../libs/librtbit-upnp-serve" }
+
+[patch.crates-io]
+librtbit-bencode      = { path = "../libs/librtbit-bencode" }
+librtbit-buffers      = { path = "../libs/librtbit-buffers" }
+librtbit-clone-to-owned = { path = "../libs/librtbit-clone-to-owned" }
+librtbit-sha1-wrapper = { path = "../libs/librtbit-sha1-wrapper" }
