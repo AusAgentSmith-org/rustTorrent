@@ -34,10 +34,10 @@ debug = true
 [workspace.dependencies]
 # Internal crates (git + tag) - keys are import names used in source code
 librtbit = { version = "0.1.2", registry = "forgejo", default-features = false }
-bencode = { version = "0.1.3", registry = "forgejo", package = "librtbit-bencode", default-features = false }
+bencode = { version = "0.1.4", registry = "forgejo", package = "librtbit-bencode", default-features = false }
 buffers = { version = "0.1.2", registry = "forgejo", package = "librtbit-buffers" }
 clone_to_owned = { version = "0.1.1", registry = "forgejo", package = "librtbit-clone-to-owned" }
-librtbit-core = { version = "0.1.3", registry = "forgejo", default-features = false }
+librtbit-core = { version = "0.1.4", registry = "forgejo", default-features = false }
 dht = { version = "0.1.2", registry = "forgejo", package = "librtbit-dht", default-features = false }
 librtbit-lsd = { version = "0.1.1", registry = "forgejo", default-features = false }
 peer_binary_protocol = { version = "0.1.2", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
