@@ -37,6 +37,11 @@ Tag releases publish artifacts to the download host, create a Forgejo release,
 push the multi-arch Docker image to Forgejo, copy it to GHCR, then create the
 GitHub release.
 
+The Docker image must keep `org.opencontainers.image.source` set to
+`https://github.com/AusAgentSmith-org/rustTorrent`. GitHub uses that OCI source
+metadata to associate the GHCR container package with the public repository so
+it appears on `https://github.com/AusAgentSmith-org/rustTorrent/packages`.
+
 ## Auth and Permission Notes
 
 Use `/home/AusAgentSmith/Working/docs/AUTH-VALIDATION.md` before touching Forgejo,
