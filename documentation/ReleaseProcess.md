@@ -59,16 +59,27 @@ Known permission failure modes:
 ## v0.1.0-beta.1 Outcome
 
 Woodpecker pipeline 71 published the Forgejo release and download artifacts on
-2026-06-12:
+2026-06-12. The initial GHCR and GitHub release stages failed because the
+Woodpecker `gh_release_token` secret no longer had usable GitHub/GHCR access.
+The token was rotated into Infisical `cicd/prod` as `GITHUB_PAT` and
+`GH_RELEASE_TOKEN`, and the Woodpecker repo secret `gh_release_token` was
+updated with `manual`, `push`, and `tag` event access.
 
 - Forgejo release ID: `416`
-- Linux x86_64, Windows x86_64, Debian amd64, and SHA256 assets: published
+- GitHub release ID: `338417179`
+- Linux x86_64, Windows x86_64, Debian amd64, and SHA256 assets: published to
+  Forgejo and GitHub
 - Forgejo Docker image: published for `linux/amd64` and `linux/arm64`
-- GHCR copy: blocked by `403 Forbidden` from the destination bearer-token
-  request
-- GitHub release: skipped because the preceding GHCR step failed
+- GHCR image: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.1`,
+  `latest`, and `beta` published for `linux/amd64` and `linux/arm64`
+- GitHub mirror: `main` at `6536f32`, release tag `v0.1.0-beta.1` dereferences
+  to `6d040d0`
+- GitHub issues `#11` through `#15`: closed with direct links to the `librtbit`
+  implementation commit and the rustTorrent release-integration commit
 
-The public GHCR and GitHub release stages require token rotation before they can
-be retried successfully.
+The PAT used for the repair was provided in chat. Rotate it again after the
+release repair is complete, then update Infisical `GITHUB_PAT` /
+`GH_RELEASE_TOKEN` and the Woodpecker `gh_release_token` secret with the
+replacement value.
 
 Do not print tokens, use `set -x`, or write credentials to repo files.
