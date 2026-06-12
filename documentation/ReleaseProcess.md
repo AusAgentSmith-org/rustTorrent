@@ -72,8 +72,8 @@ updated with `manual`, `push`, and `tag` event access.
 - Forgejo Docker image: published for `linux/amd64` and `linux/arm64`
 - GHCR image: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.1`,
   `latest`, and `beta` published for `linux/amd64` and `linux/arm64`
-- GitHub mirror: `main` at `6536f32`, release tag `v0.1.0-beta.1` dereferences
-  to `6d040d0`
+- GitHub mirror: release tag `v0.1.0-beta.1` dereferences to the release-prep
+  commit `6d040d0`; release follow-up documentation is on `main`
 - GitHub issues `#11` through `#15`: closed with direct links to the `librtbit`
   implementation commit and the rustTorrent release-integration commit
 
