@@ -31,6 +31,11 @@ RUN --mount=type=cache,target=/usr/local/cargo/git/db \
 
 FROM lscr.io/linuxserver/baseimage-alpine:3.21
 
+LABEL org.opencontainers.image.source="https://github.com/AusAgentSmith-org/rustTorrent"
+LABEL org.opencontainers.image.url="https://github.com/AusAgentSmith-org/rustTorrent"
+LABEL org.opencontainers.image.title="rustTorrent"
+LABEL org.opencontainers.image.description="A modern BitTorrent client written in Rust"
+
 COPY --from=builder /bin/rtbit /bin/rtbit
 COPY root/ /
 
