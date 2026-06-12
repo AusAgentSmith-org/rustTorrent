@@ -7,7 +7,7 @@ when:
 
 steps:
   - name: fmt
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -23,7 +23,7 @@ steps:
       - cargo fmt --all -- --check
 
   - name: check
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -39,7 +39,7 @@ steps:
       - sccache --show-stats
 
   - name: test
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -54,7 +54,7 @@ steps:
       - cargo test --workspace --exclude rtbit-desktop --no-default-features --features default-tls
 
   - name: clippy
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -70,7 +70,7 @@ steps:
       - cargo clippy --workspace --exclude rtbit-desktop --no-default-features --features default-tls -- -D warnings
 
   - name: build-linux
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -92,7 +92,7 @@ steps:
       - event: tag
 
   - name: build-windows
-    image: rust:1.88-bookworm
+    image: rust:1.95-bookworm
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -160,7 +160,7 @@ steps:
         BODY="$BODY- **Linux x86_64**: \`rtbit-$TAG-linux-x86_64\`\n"
         BODY="$BODY- **Windows x86_64**: \`rtbit-$TAG-windows-x86_64.exe\`\n"
         BODY="$BODY- **Debian/Ubuntu**: \`rtbit-$TAG-amd64.deb\`\n"
-        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\`\n"
+        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\` (linux/amd64, linux/arm64)\n"
         BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
 
         # Delete existing release by tag if present (idempotent retry)
@@ -204,7 +204,7 @@ steps:
         from_secret: git_auth_token
       password:
         from_secret: git_auth_token
-      tag: latest
+      tag: ["latest", "${CI_COMMIT_SHA}"]
       build_args_from_env:
         - PLUGIN_PASSWORD
 
@@ -219,7 +219,8 @@ steps:
         from_secret: git_auth_token
       password:
         from_secret: git_auth_token
-      tag: ["${CI_COMMIT_TAG}", latest]
+      platforms: linux/amd64,linux/arm64
+      tag: ["${CI_COMMIT_TAG}", latest, beta]
       build_args_from_env:
         - PLUGIN_PASSWORD
 
@@ -236,7 +237,7 @@ steps:
       - SRC="docker://repo.indexarr.net/indexarr/rusttorrent:$CI_COMMIT_TAG"
       - SRC_CREDS="--src-creds=$FORGEJO_TOKEN:$FORGEJO_TOKEN"
       - DST_CREDS="--dest-creds=AusAgentSmith:$GH_TOKEN"
-      - for tag in $CI_COMMIT_TAG latest alpha; do skopeo copy $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag"; done
+      - for tag in $CI_COMMIT_TAG latest beta; do skopeo copy --all $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag"; done
 
   - name: github-release
     image: alpine:3.23
@@ -256,7 +257,7 @@ steps:
         BODY="$BODY- **Linux x86_64**: \`rtbit-$TAG-linux-x86_64\`\n"
         BODY="$BODY- **Windows x86_64**: \`rtbit-$TAG-windows-x86_64.exe\`\n"
         BODY="$BODY- **Debian/Ubuntu**: \`rtbit-$TAG-amd64.deb\`\n"
-        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\`\n"
+        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\` (linux/amd64, linux/arm64)\n"
         BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
 
         # Delete existing release by tag if present (idempotent retry)
