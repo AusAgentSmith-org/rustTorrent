@@ -44,15 +44,31 @@ Woodpecker, Infisical, GitHub, GHCR, or Komodo state.
 
 Known permission failure modes:
 
-- If `mydevenv2-agent-auth check` reports `INFISICAL_CLIENT_ID is not
-configured`, the running MyDevEnv2 container has not picked up the Komodo
-  stack env values. Redeploy `prod-mydevenv2` from outside the active session;
-  restarting the current container terminates the agent session.
+- If the auth check reports a missing `INFISICAL_CLIENT_ID`, the running
+  MyDevEnv2 container has not picked up the Komodo stack env values. Redeploy
+  `prod-mydevenv2` from outside the active session; restarting the current
+  container terminates the agent session.
 - Woodpecker API calls must use numeric repo IDs. Owner/name pipeline endpoints
   can return the frontend HTML with HTTP 200 and do no useful work.
 - GHCR copy and GitHub release steps use the Woodpecker `gh_release_token`
-  secret. If GitHub validation returns `401`, rotate `GITHUB_PAT` /
-  `GH_RELEASE_TOKEN` in Infisical `cicd`, then refresh the Woodpecker
-  `gh_release_token` secret before tagging a release.
+  secret. If GitHub validation returns `401` or GHCR returns `403`, rotate
+  `GITHUB_PAT` / `GH_RELEASE_TOKEN` in Infisical `cicd`, then refresh the
+  Woodpecker `gh_release_token` secret before tagging a release. The token
+  needs repository release access and GHCR package write access.
+
+## v0.1.0-beta.1 Outcome
+
+Woodpecker pipeline 71 published the Forgejo release and download artifacts on
+2026-06-12:
+
+- Forgejo release ID: `416`
+- Linux x86_64, Windows x86_64, Debian amd64, and SHA256 assets: published
+- Forgejo Docker image: published for `linux/amd64` and `linux/arm64`
+- GHCR copy: blocked by `403 Forbidden` from the destination bearer-token
+  request
+- GitHub release: skipped because the preceding GHCR step failed
+
+The public GHCR and GitHub release stages require token rotation before they can
+be retried successfully.
 
 Do not print tokens, use `set -x`, or write credentials to repo files.
