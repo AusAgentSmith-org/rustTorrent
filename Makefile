@@ -1,13 +1,15 @@
 all:
 
+WEBUI_DIR ?= ../libs/librtbit/webui
+
 @PHONY: webui-deps
 webui-deps:
 	cd desktop && npm install
-	cd crates/librtbit/webui && npm install
+	cd $(WEBUI_DIR) && npm install
 
 @PHONY: webui-dev
 webui-dev: webui-deps
-	cd crates/librtbit/webui && \
+	cd $(WEBUI_DIR) && \
 	npm run dev
 
 # NOTE: on LG TV using hostname is unstable for some reason, use IP address.
