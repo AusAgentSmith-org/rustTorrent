@@ -3145,9 +3145,9 @@ dependencies = [
 
 [[package]]
 name = "librtbit"
-version = "0.1.3"
+version = "0.1.4"
 source = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
-checksum = "eb6f6a3f635278ffc831f6da894a79850b2da6ed6c25779bb0b09422bdef8d2b"
+checksum = "89031956a6544ae661d7fb54474bc4eb36ff8d50ab14ace56b9e8e95d4a07257"
 dependencies = [
  "anyhow",
  "arc-swap",
