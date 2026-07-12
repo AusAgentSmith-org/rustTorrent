@@ -1,0 +1,48 @@
+[package]
+name = "librtbit-dht"
+version = "0.1.3"
+edition = "2024"
+description = "Kademlia DHT implementation for the rtbit BitTorrent client"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[features]
+default = ["sha1-crypto-hash"]
+sha1-crypto-hash = ["sha1w/sha1-crypto-hash", "librtbit-core/sha1-crypto-hash"]
+sha1-ring = ["sha1w/sha1-ring", "librtbit-core/sha1-ring"]
+
+[dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "sync"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+serde = "1"
+serde_derive = "1"
+leaky-bucket = "1.1"
+serde_json = "1"
+buffers.workspace = true
+bencode.workspace = true
+clone_to_owned.workspace = true
+librtbit-core.workspace = true
+sha1w.workspace = true
+anyhow = "1"
+parking_lot = "0.12"
+tracing = "0.1"
+backon = { version = "1.6", features = ["tokio-sleep"] }
+futures = "0.3"
+rand = "0.10"
+indexmap = "2"
+dashmap = { version = "6", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tokio-util = "0.7"
+bytes = "1"
+librqbit-dualstack-sockets = "0.7"
+thiserror = "2"
+aws-lc-rs = "1.17"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

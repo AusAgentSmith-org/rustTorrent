@@ -1,0 +1,36 @@
+[package]
+name = "librtbit-tracker-comms"
+version = "0.1.5"
+edition = "2024"
+description = "HTTP and UDP tracker communication for the rtbit BitTorrent client"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[dependencies]
+tokio = "1"
+anyhow = "1"
+futures = "0.3"
+async-stream = "0.3"
+buffers.workspace = true
+librtbit-core.workspace = true
+bencode.workspace = true
+byteorder = "1"
+serde = "1"
+serde_derive = "1"
+urlencoding = "2"
+rand = "0.10"
+tracing = "0.1"
+reqwest = { version = "0.13", default-features = false, features = ["json"] }
+url = { version = "2", default-features = false }
+parking_lot = "0.12"
+tokio-util = "0.7"
+librqbit-dualstack-sockets = "0.7"
+backon = "1.6"
+itertools = "0.14"
+serde_with = "3"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

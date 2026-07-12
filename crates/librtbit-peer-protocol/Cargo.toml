@@ -1,0 +1,35 @@
+[package]
+name = "librtbit-peer-protocol"
+version = "0.1.3"
+edition = "2024"
+description = "BitTorrent peer wire protocol implementation for the rtbit client"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[dependencies]
+serde = "1"
+serde_derive = "1"
+byteorder = "1"
+buffers.workspace = true
+bencode.workspace = true
+clone_to_owned.workspace = true
+librtbit-core.workspace = true
+bitvec = "1"
+anyhow = "1"
+bytes = "1"
+itertools = "0.14"
+thiserror = "2"
+tracing = "0.1"
+
+[dev-dependencies]
+criterion = "0.8"
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

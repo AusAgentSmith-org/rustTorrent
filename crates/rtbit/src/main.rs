@@ -1075,7 +1075,6 @@ async fn start_http_api(
     });
     #[cfg(not(target_os = "linux"))]
     let systemd_listener = None;
-    let http_api = HttpApi::new(api, Some(http_api_opts));
     let listener = match systemd_listener {
         Some(listener) => listener,
         None => TcpListener::bind_tcp(listen_addr, Default::default())
@@ -1083,6 +1082,8 @@ async fn start_http_api(
     };
 
     let listen_addr = listener.bind_addr();
+    http_api_opts.web_ui_port = Some(listen_addr.port());
+    let http_api = HttpApi::new(api, Some(http_api_opts));
     info!("started HTTP API at http://{listen_addr}");
 
     let mut upnp_server = {

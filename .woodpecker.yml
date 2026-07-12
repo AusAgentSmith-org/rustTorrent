@@ -69,6 +69,22 @@ steps:
       - rustup component add clippy
       - cargo clippy --workspace --exclude rtbit-desktop --no-default-features --features default-tls -- -D warnings
 
+  - name: webui
+    image: node:24-bookworm
+    commands:
+      - cd crates/librtbit/webui
+      - npm ci --no-audit --no-fund
+      - npm test
+      - npm run lint
+      - npm run build
+
+  - name: gui-e2e
+    image: mcr.microsoft.com/playwright:v1.61.1-noble
+    commands:
+      - cd crates/librtbit/webui
+      - npm ci --no-audit --no-fund
+      - npm run test:e2e
+
   - name: build-linux
     image: rust:1.95-bookworm
     environment:

@@ -1,0 +1,32 @@
+[package]
+name = "rusttorrent-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+bencode = { path = "../crates/librtbit-bencode", package = "librtbit-bencode" }
+peer_binary_protocol = { path = "../crates/librtbit-peer-protocol", package = "librtbit-peer-protocol" }
+dht = { path = "../crates/librtbit-dht", package = "librtbit-dht" }
+
+[[bin]]
+name = "bencode"
+path = "fuzz_targets/bencode.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "peer_message"
+path = "fuzz_targets/peer_message.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "dht_message"
+path = "fuzz_targets/dht_message.rs"
+test = false
+doc = false
