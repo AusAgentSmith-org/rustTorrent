@@ -14,8 +14,9 @@ members = [
     "crates/librtbit-upnp",
     "crates/librtbit-upnp-serve",
     "crates/rtbit",
+    "desktop/src-tauri",
 ]
-exclude = ["benchv2", "desktop", "fuzz"]
+exclude = ["benchv2", "fuzz"]
 
 # Everything except desktop
 default-members = [
