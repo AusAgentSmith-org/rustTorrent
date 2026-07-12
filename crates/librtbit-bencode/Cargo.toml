@@ -1,0 +1,24 @@
+[package]
+name = "librtbit-bencode"
+version = "0.1.5"
+edition = "2024"
+description = "Bencode serialization and deserialization using Serde"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_derive = "1"
+buffers.workspace = true
+clone_to_owned.workspace = true
+bytes = "1"
+atoi = "3"
+thiserror = "2"
+arrayvec = "0.7"
+anyhow = "1"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

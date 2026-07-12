@@ -1,0 +1,33 @@
+[package]
+name = "librtbit-upnp"
+version = "0.1.2"
+edition = "2024"
+description = "UPnP port forwarding client for the rtbit BitTorrent client"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[dependencies]
+tracing = "0.1"
+anyhow = "1"
+reqwest = { version = "0.13", default-features = false }
+serde = "1"
+serde_derive = "1"
+tokio = { version = "1", features = ["macros"] }
+futures = "0.3"
+url = { version = "2", default-features = false }
+network-interface = "2"
+httparse = "1"
+bstr = "1"
+quick-xml = { version = "0.40", features = ["serialize"] }
+librqbit-dualstack-sockets = "0.7"
+socket2 = "0.6"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

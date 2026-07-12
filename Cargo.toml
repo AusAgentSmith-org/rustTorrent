@@ -1,10 +1,21 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/librtbit",
+    "crates/librtbit-bencode",
+    "crates/librtbit-buffers",
+    "crates/librtbit-clone-to-owned",
+    "crates/librtbit-core",
+    "crates/librtbit-dht",
+    "crates/librtbit-lsd",
+    "crates/librtbit-peer-protocol",
+    "crates/librtbit-sha1-wrapper",
+    "crates/librtbit-tracker-comms",
+    "crates/librtbit-upnp",
+    "crates/librtbit-upnp-serve",
     "crates/rtbit",
-    "desktop/src-tauri",
 ]
-exclude = ["benchv2"]
+exclude = ["benchv2", "desktop", "fuzz"]
 
 # Everything except desktop
 default-members = [
@@ -32,19 +43,20 @@ inherits = "release"
 debug = true
 
 [workspace.dependencies]
-# Internal crates (git + tag) - keys are import names used in source code
-librtbit = { version = "0.1.4", registry = "forgejo", default-features = false }
-bencode = { version = "0.1.5", registry = "forgejo", package = "librtbit-bencode", default-features = false }
-buffers = { version = "0.1.2", registry = "forgejo", package = "librtbit-buffers" }
-clone_to_owned = { version = "0.1.1", registry = "forgejo", package = "librtbit-clone-to-owned" }
-librtbit-core = { version = "0.1.5", registry = "forgejo", default-features = false }
-dht = { version = "0.1.3", registry = "forgejo", package = "librtbit-dht", default-features = false }
-librtbit-lsd = { version = "0.1.2", registry = "forgejo", default-features = false }
-peer_binary_protocol = { version = "0.1.3", registry = "forgejo", package = "librtbit-peer-protocol", default-features = false }
-sha1w = { version = "0.1.2", registry = "forgejo", package = "librtbit-sha1-wrapper", default-features = false }
-tracker_comms = { version = "0.1.5", registry = "forgejo", package = "librtbit-tracker-comms", default-features = false }
-librtbit-upnp = { version = "0.1.2", registry = "forgejo" }
-upnp-serve = { version = "0.1.2", registry = "forgejo", package = "librtbit-upnp-serve", default-features = false }
+# Internal crates. Version-plus-path keeps publishing metadata while making this
+# monorepo's sources authoritative for all local builds.
+librtbit = { version = "0.1.5", path = "crates/librtbit", default-features = false }
+bencode = { version = "0.1.5", path = "crates/librtbit-bencode", package = "librtbit-bencode", default-features = false }
+buffers = { version = "0.1.2", path = "crates/librtbit-buffers", package = "librtbit-buffers" }
+clone_to_owned = { version = "0.1.1", path = "crates/librtbit-clone-to-owned", package = "librtbit-clone-to-owned" }
+librtbit-core = { version = "0.1.5", path = "crates/librtbit-core", default-features = false }
+dht = { version = "0.1.3", path = "crates/librtbit-dht", package = "librtbit-dht", default-features = false }
+librtbit-lsd = { version = "0.1.2", path = "crates/librtbit-lsd", default-features = false }
+peer_binary_protocol = { version = "0.1.3", path = "crates/librtbit-peer-protocol", package = "librtbit-peer-protocol", default-features = false }
+sha1w = { version = "0.1.2", path = "crates/librtbit-sha1-wrapper", package = "librtbit-sha1-wrapper", default-features = false }
+tracker_comms = { version = "0.1.5", path = "crates/librtbit-tracker-comms", package = "librtbit-tracker-comms", default-features = false }
+librtbit-upnp = { version = "0.1.2", path = "crates/librtbit-upnp" }
+upnp-serve = { version = "0.1.2", path = "crates/librtbit-upnp-serve", package = "librtbit-upnp-serve", default-features = false }
 
 # External crates
 anyhow = "1"

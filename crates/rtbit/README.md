@@ -2,18 +2,18 @@
 
 A modern BitTorrent client written in Rust. Fast, lightweight, and built for self-hosters.
 
-Benchmarked at up to **15x faster** than qBittorrent with throughput exceeding **16 Gbps**. Desktop app, clean web UI, full HTTP API, and runs anywhere Docker does.
+In controlled local throughput benchmarks, rustTorrent reached up to **15x the throughput** of qBittorrent and exceeded **16 Gbps**. These are LAN/disk-path results, not claims about public-swarm performance. Desktop app, clean web UI, full HTTP API, and runs anywhere Docker does.
 
 **Website:** [rusttorrent.dev](https://rusttorrent.dev/) | **Live Demo:** [rusttorrent.dev/demo](https://rusttorrent.dev/demo/)
 
 ## Features
 
-- **Blazing Fast** -- Up to 15x faster than qBittorrent in benchmarks. Peaks at 16+ Gbps throughput with async I/O powered by Tokio and efficient multi-core utilization
+- **High local throughput** -- Up to 15x qBittorrent throughput in the documented LAN/disk benchmarks, peaking above 16 Gbps with Tokio-based async I/O
 - **Web UI** -- Clean, responsive React + TypeScript interface. Manage torrents from any browser, desktop or mobile. Dark mode included
 - **Desktop App** -- Native application for Windows, macOS, and Linux powered by Tauri. System tray integration, lightweight, and auto-updates
 - **HTTP API** -- Full REST API with Swagger documentation. Add torrents, check status, stream files, and manage everything programmatically
 - **Docker Ready** -- Official multi-stage Docker image. Minimal scratch-based container with only the binary. One command to deploy
-- **DHT & Trackers** -- Full DHT support (BEP-5), HTTP and UDP trackers, peer exchange, and UPnP port forwarding for maximum connectivity
+- **DHT & Trackers** -- DHT including BEP-5 peer-wire port exchange, HTTP and UDP announces, peer exchange, and UPnP port forwarding
 - **Magnet Links** -- Add torrents via magnet links or .torrent files. Metadata is resolved automatically from the swarm
 - **File Streaming** -- Stream media files directly from incomplete torrents via the HTTP API. Perfect for watching videos while they download
 - **Indexarr Integration** -- Browse and search the [Indexarr](https://indexarr.net/) torrent index directly from the web UI

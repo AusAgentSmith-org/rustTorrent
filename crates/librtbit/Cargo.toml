@@ -1,0 +1,145 @@
+[package]
+name = "librtbit"
+version = "0.1.5"
+edition = "2024"
+description = "Core BitTorrent client library for the rtbit torrent client"
+license = "MIT"
+repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+
+[features]
+default = ["default-tls", "http-api-client"]
+
+tokio-console = ["console-subscriber", "tokio/tracing"]
+http-api = ["axum", "tower-http", "rss"]
+http-api-client = []
+# RSS feed support. Pulls rusqlite (bundled SQLite) for the feed/rule store; gated
+# so consumers that link SQLite themselves (e.g. via sqlx) don't hit a duplicate
+# `links = "sqlite3"` native-library conflict. `http-api` enables it (the RSS
+# routes need it). Off by default; library-only consumers opt in explicitly.
+rss = ["dep:rusqlite"]
+upnp-serve-adapter = ["upnp-serve"]
+webui = []
+timed_existence = []
+default-tls = [
+    "reqwest/native-tls",
+    "sha1w/sha1-crypto-hash",
+    "librtbit-core/sha1-crypto-hash",
+    "dht/sha1-crypto-hash",
+]
+miri = []
+prometheus = ["metrics-exporter-prometheus"]
+rust-tls = ["reqwest/rustls", "sha1w/sha1-ring", "librtbit-core/sha1-ring", "dht/sha1-ring"]
+storage_middleware = ["lru"]
+storage_examples = []
+tracing-subscriber-utils = ["tracing-subscriber"]
+postgres = ["sqlx", "home"]
+async-bt = ["async-backtrace"]
+watch = ["notify"]
+disable-upload = []
+swagger = ["utoipa", "utoipa-axum", "utoipa-swagger-ui"]
+_disable_disk_write_net_benchmark = []
+_disable_reconnect_test = []
+
+[dependencies]
+# Internal workspace crates
+bencode.workspace = true
+tracker_comms.workspace = true
+buffers.workspace = true
+librtbit-core.workspace = true
+librtbit-lsd.workspace = true
+clone_to_owned.workspace = true
+peer_binary_protocol.workspace = true
+sha1w.workspace = true
+dht.workspace = true
+librtbit-upnp.workspace = true
+upnp-serve = { workspace = true, optional = true }
+
+# External deps
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "macros", "postgres"], optional = true }
+home = { version = "0.5", optional = true }
+chrono = { version = "0.4", features = ["serde"] }
+feed-rs = "2"
+# Only used by the optional `rss` feature. Optional so SQLite isn't linked twice
+# when a consumer (e.g. crossseed via sqlx) already links it — see the `rss`
+# feature note above.
+rusqlite = { version = "0.39", features = ["bundled"], optional = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "io-util"] }
+governor = "0.10"
+console-subscriber = { version = "0.5", optional = true }
+axum = { version = "0.8", optional = true, features = ["multipart"] }
+tower-http = { version = "0.6", features = ["cors", "trace"], optional = true }
+tokio-stream = "0.1"
+serde = { version = "1", features = ["rc"] }
+serde_derive = "1"
+serde_json = "1"
+serde_urlencoded = "0.7"
+anyhow = "1"
+itertools = "0.14"
+http = "1"
+regex = "1"
+reqwest = { version = "0.13", default-features = false, features = ["json", "query", "socks", "stream"] }
+urlencoding = "2"
+byteorder = "1"
+bincode = "2"
+bitvec = "1"
+crc32fast = "1"
+parking_lot = "0.12"
+tracing = "0.1"
+size_format = "1"
+rand = "0.10"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["json", "fmt", "env-filter"], optional = true }
+uuid = { version = "1", features = ["v4"] }
+futures = "0.3"
+url = { version = "2", default-features = false, features = ["serde"] }
+hex = "0.4"
+backon = "1.6"
+dashmap = "6"
+base64 = "0.22"
+serde_with = "3"
+tokio-util = { version = "0.7", features = ["io"] }
+metrics-exporter-prometheus = { version = "0.18", default-features = false, optional = true }
+bytes = "1"
+rlimit = "0.11"
+async-stream = "0.3"
+memmap2 = "0.9"
+lru = { version = "0.18", optional = true }
+mime_guess = { version = "2", default-features = false }
+tokio-socks = "0.5"
+async-trait = "0.1"
+async-backtrace = { version = "0.2", optional = true }
+notify = { version = "8", optional = true }
+walkdir = "2"
+arc-swap = "1.9"
+intervaltree = "0.2"
+async-compression = { version = "0.4", features = ["tokio", "gzip"] }
+librqbit-utp = { version = "0.7", features = ["export-metrics"] }
+axum-extra = { version = "0.12", features = ["query"] }
+librqbit-dualstack-sockets = { version = "0.7", features = ["axum"] }
+socket2 = "0.6"
+nix = { version = "0.31", features = ["uio"] }
+thiserror = "2"
+utoipa = { version = "5", optional = true }
+utoipa-axum = { version = "0.2", optional = true }
+utoipa-swagger-ui = { version = "9", features = ["axum"], optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32", "Win32_System", "Win32_System_IO", "Win32_System_Ioctl"] }
+
+[build-dependencies]
+anyhow = "1"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std"] }
+tokio-test = "0.4"
+tempfile = "3"
+pollster = "0.4"
+
+[[example]]
+name = "simulate_traffic"
+required-features = ["http-api", "webui", "tracing-subscriber-utils", "prometheus", "swagger"]
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[lints.rust]
+unused = "warn"

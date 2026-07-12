@@ -29,3 +29,7 @@ docker-compose.indexarr.test.yml
 
 # Codesight
 .codesight/
+
+# Local architecture review used for the uplift implementation
+/upliftv2.md
+/fuzz/target/

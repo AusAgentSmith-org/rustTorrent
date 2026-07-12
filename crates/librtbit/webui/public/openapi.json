@@ -1,0 +1,765 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "rtbit API",
+    "description": "REST API for rtbit BitTorrent client",
+    "version": "7.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "API root",
+        "description": "List all available API endpoints. Returns server version.",
+        "tags": ["General"],
+        "responses": {
+          "200": {
+            "description": "API info and available endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": { "type": "string" },
+                    "version": { "type": "string" },
+                    "apis": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Session stats",
+        "description": "Global session statistics including speeds, peer counts, and uptime.",
+        "tags": ["General"],
+        "responses": {
+          "200": {
+            "description": "Session statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionStats" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stream_logs": {
+      "get": {
+        "summary": "Stream logs",
+        "description": "Server-sent event stream of JSON log lines.",
+        "tags": ["General"],
+        "responses": {
+          "200": {
+            "description": "SSE log stream",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rust_log": {
+      "post": {
+        "summary": "Set RUST_LOG",
+        "description": "Dynamically change the RUST_LOG filter for debugging.",
+        "tags": ["General"],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": { "type": "string" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "RUST_LOG updated" }
+        }
+      }
+    },
+    "/dht/stats": {
+      "get": {
+        "summary": "DHT stats",
+        "description": "Distributed Hash Table statistics.",
+        "tags": ["DHT"],
+        "responses": {
+          "200": {
+            "description": "DHT statistics",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dht/table": {
+      "get": {
+        "summary": "DHT routing table",
+        "description": "Current DHT routing table entries.",
+        "tags": ["DHT"],
+        "responses": {
+          "200": {
+            "description": "DHT routing table",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents": {
+      "get": {
+        "summary": "List torrents",
+        "description": "List all torrents. Optionally include stats for each torrent.",
+        "tags": ["Torrents"],
+        "parameters": [
+          {
+            "name": "with_stats",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Include stats for each torrent"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of torrents",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ListTorrentsResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add torrent",
+        "description": "Add a torrent. Body can be a .torrent file, magnet URI, or HTTP URL. Use query params for options.",
+        "tags": ["Torrents"],
+        "parameters": [
+          { "name": "overwrite", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "output_folder", "in": "query", "schema": { "type": "string" } },
+          { "name": "sub_folder", "in": "query", "schema": { "type": "string" } },
+          { "name": "only_files", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated file indices" },
+          { "name": "only_files_regex", "in": "query", "schema": { "type": "string" } },
+          { "name": "paused", "in": "query", "schema": { "type": "boolean" }, "description": "Start in paused state" },
+          { "name": "list_only", "in": "query", "schema": { "type": "boolean" }, "description": "List files without adding" },
+          { "name": "is_url", "in": "query", "schema": { "type": "boolean" }, "description": "Interpret body as URL" },
+          { "name": "peer_connect_timeout", "in": "query", "schema": { "type": "integer" } },
+          { "name": "peer_read_write_timeout", "in": "query", "schema": { "type": "integer" } },
+          { "name": "initial_peers", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated socket addresses" }
+        ],
+        "requestBody": {
+          "description": ".torrent file contents, magnet URI, or HTTP URL",
+          "content": {
+            "application/octet-stream": {
+              "schema": { "type": "string", "format": "binary" }
+            },
+            "text/plain": {
+              "schema": { "type": "string" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Torrent added",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddTorrentResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/limits": {
+      "get": {
+        "summary": "Get rate limits",
+        "description": "Get current upload/download rate limits.",
+        "tags": ["Torrents"],
+        "responses": {
+          "200": {
+            "description": "Current limits",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LimitsConfig" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Set rate limits",
+        "description": "Update upload/download rate limits.",
+        "tags": ["Torrents"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LimitsConfig" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Limits updated" }
+        }
+      }
+    },
+    "/torrents/playlist": {
+      "get": {
+        "summary": "Global playlist",
+        "description": "Generate M3U8 playlist for all streamable files across all torrents.",
+        "tags": ["Torrents"],
+        "responses": {
+          "200": {
+            "description": "M3U8 playlist",
+            "content": {
+              "application/x-mpegurl": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/resolve_magnet": {
+      "post": {
+        "summary": "Resolve magnet",
+        "description": "Resolve a magnet link to torrent metadata bytes.",
+        "tags": ["Torrents"],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": { "type": "string" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Torrent file bytes",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/create": {
+      "post": {
+        "summary": "Create torrent",
+        "description": "Create a .torrent from a local folder and start seeding.",
+        "tags": ["Torrents"],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": { "type": "string", "description": "Path to local folder" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Torrent created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddTorrentResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}": {
+      "get": {
+        "summary": "Torrent details",
+        "description": "Get details for a specific torrent including file list.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Torrent details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TorrentDetails" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/stats/v1": {
+      "get": {
+        "summary": "Torrent stats",
+        "description": "Get statistics for a torrent including progress, speeds, and peer info.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Torrent statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TorrentStats" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/stats": {
+      "get": {
+        "summary": "Torrent stats (v0)",
+        "description": "Legacy torrent stats endpoint. Prefer /stats/v1.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Torrent statistics",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/peer_stats": {
+      "get": {
+        "summary": "Peer stats",
+        "description": "Per-peer statistics for a torrent.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["live", "dead", "all"] },
+            "description": "Filter peers by state"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Peer statistics",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PeerStatsSnapshot" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/peer_stats/prometheus": {
+      "get": {
+        "summary": "Peer stats (Prometheus)",
+        "description": "Per-peer statistics in Prometheus format.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/haves": {
+      "get": {
+        "summary": "Torrent haves bitfield",
+        "description": "Binary bitfield of pieces the client has.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bitfield",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/metadata": {
+      "get": {
+        "summary": "Download .torrent file",
+        "description": "Download the torrent metadata file.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Torrent file",
+            "content": {
+              "application/x-bittorrent": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/playlist": {
+      "get": {
+        "summary": "Torrent playlist",
+        "description": "Generate M3U8 playlist for streamable files in this torrent.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "M3U8 playlist",
+            "content": {
+              "application/x-mpegurl": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/torrents/{id}/stream/{file_id}": {
+      "get": {
+        "summary": "Stream file",
+        "description": "Stream a file from the torrent. Supports Range header for seeking.",
+        "tags": ["Torrent"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/octet-stream": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial content (range request)"
+          }
+        }
+      }
+    },
+    "/torrents/{id}/pause": {
+      "post": {
+        "summary": "Pause torrent",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": { "description": "Torrent paused" }
+        }
+      }
+    },
+    "/torrents/{id}/start": {
+      "post": {
+        "summary": "Start/resume torrent",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": { "description": "Torrent started" }
+        }
+      }
+    },
+    "/torrents/{id}/forget": {
+      "post": {
+        "summary": "Forget torrent",
+        "description": "Remove torrent from list but keep downloaded files.",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": { "description": "Torrent forgotten" }
+        }
+      }
+    },
+    "/torrents/{id}/delete": {
+      "post": {
+        "summary": "Delete torrent",
+        "description": "Remove torrent and delete downloaded files.",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "responses": {
+          "200": { "description": "Torrent deleted" }
+        }
+      }
+    },
+    "/torrents/{id}/update_only_files": {
+      "post": {
+        "summary": "Update file selection",
+        "description": "Change which files to download. Post JSON with only_files array.",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "only_files": {
+                    "type": "array",
+                    "items": { "type": "integer" }
+                  }
+                },
+                "required": ["only_files"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "File selection updated" }
+        }
+      }
+    },
+    "/torrents/{id}/add_peers": {
+      "post": {
+        "summary": "Add peers",
+        "description": "Add peers to a torrent. Body is newline-delimited socket addresses.",
+        "tags": ["Torrent Actions"],
+        "parameters": [
+          { "$ref": "#/components/parameters/torrentId" }
+        ],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": { "type": "string", "description": "Newline-delimited socket addresses" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Peers added" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "torrentId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Torrent ID (integer) or info hash (hex string)",
+        "schema": { "type": "string" }
+      }
+    },
+    "schemas": {
+      "SessionStats": {
+        "type": "object",
+        "properties": {
+          "counters": {
+            "type": "object",
+            "properties": {
+              "fetched_bytes": { "type": "integer" },
+              "uploaded_bytes": { "type": "integer" },
+              "blocked_incoming": { "type": "integer" },
+              "blocked_outgoing": { "type": "integer" }
+            }
+          },
+          "peers": { "$ref": "#/components/schemas/AggregatePeerStats" },
+          "download_speed": { "$ref": "#/components/schemas/Speed" },
+          "upload_speed": { "$ref": "#/components/schemas/Speed" },
+          "uptime_seconds": { "type": "number" }
+        }
+      },
+      "Speed": {
+        "type": "object",
+        "properties": {
+          "mbps": { "type": "number" },
+          "human_readable": { "type": "string" }
+        }
+      },
+      "AggregatePeerStats": {
+        "type": "object",
+        "properties": {
+          "queued": { "type": "integer" },
+          "connecting": { "type": "integer" },
+          "live": { "type": "integer" },
+          "seen": { "type": "integer" },
+          "dead": { "type": "integer" },
+          "not_needed": { "type": "integer" }
+        }
+      },
+      "ListTorrentsResponse": {
+        "type": "object",
+        "properties": {
+          "torrents": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TorrentListItem" }
+          }
+        }
+      },
+      "TorrentListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "info_hash": { "type": "string" },
+          "name": { "type": "string", "nullable": true },
+          "output_folder": { "type": "string" },
+          "total_pieces": { "type": "integer" },
+          "stats": { "$ref": "#/components/schemas/TorrentStats" }
+        }
+      },
+      "TorrentDetails": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "nullable": true },
+          "info_hash": { "type": "string" },
+          "files": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TorrentFile" }
+          },
+          "total_pieces": { "type": "integer" },
+          "output_folder": { "type": "string" }
+        }
+      },
+      "TorrentFile": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "components": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "length": { "type": "integer" },
+          "included": { "type": "boolean" },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "symlink": { "type": "boolean" },
+              "hidden": { "type": "boolean" },
+              "padding": { "type": "boolean" },
+              "executable": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "TorrentStats": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": ["initializing", "live", "paused", "error"]
+          },
+          "error": { "type": "string", "nullable": true },
+          "file_progress": {
+            "type": "array",
+            "items": { "type": "number" }
+          },
+          "progress_bytes": { "type": "integer" },
+          "finished": { "type": "boolean" },
+          "total_bytes": { "type": "integer" },
+          "live": { "$ref": "#/components/schemas/LiveTorrentStats" }
+        }
+      },
+      "LiveTorrentStats": {
+        "type": "object",
+        "properties": {
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "have_bytes": { "type": "integer" },
+              "downloaded_and_checked_bytes": { "type": "integer" },
+              "downloaded_and_checked_pieces": { "type": "integer" },
+              "fetched_bytes": { "type": "integer" },
+              "uploaded_bytes": { "type": "integer" },
+              "initially_needed_bytes": { "type": "integer" },
+              "remaining_bytes": { "type": "integer" },
+              "total_bytes": { "type": "integer" },
+              "total_piece_download_ms": { "type": "integer" },
+              "peer_stats": { "$ref": "#/components/schemas/AggregatePeerStats" }
+            }
+          },
+          "download_speed": { "$ref": "#/components/schemas/Speed" },
+          "upload_speed": { "$ref": "#/components/schemas/Speed" },
+          "time_remaining": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "human_readable": { "type": "string" },
+              "duration": {
+                "type": "object",
+                "properties": {
+                  "secs": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "AddTorrentResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "nullable": true },
+          "details": { "$ref": "#/components/schemas/TorrentDetails" },
+          "output_folder": { "type": "string" },
+          "seen_peers": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "PeerStatsSnapshot": {
+        "type": "object",
+        "properties": {
+          "peers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "counters": { "type": "object" },
+                "state": { "type": "string" },
+                "conn_kind": { "type": "string", "nullable": true }
+              }
+            }
+          }
+        }
+      },
+      "LimitsConfig": {
+        "type": "object",
+        "properties": {
+          "upload_bps": { "type": "integer", "nullable": true },
+          "download_bps": { "type": "integer", "nullable": true }
+        }
+      }
+    }
+  }
+}
