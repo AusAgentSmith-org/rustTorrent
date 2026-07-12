@@ -1,88 +1,117 @@
 # rustTorrent
 
-A modern BitTorrent client written in Rust. Fast, lightweight, and built for self-hosters.
+A modern, self-hostable BitTorrent client written in Rust — a single small binary with a
+clean web UI, a full HTTP API, and qBittorrent-compatible endpoints for the tools you
+already run.
 
-In controlled local throughput benchmarks, rustTorrent reached up to **15x the throughput** of qBittorrent and exceeded **16 Gbps**. These are LAN/disk-path results, not claims about public-swarm performance. Desktop app, clean web UI, full HTTP API, and runs anywhere Docker does.
+> **Alpha software.** rustTorrent is under active development. Expect bugs, breaking
+> changes, and incomplete features. [Report issues](https://repo.indexarr.net/indexarr/rustTorrent/issues).
 
-**Website:** [rusttorrent.dev](https://rusttorrent.dev/) | **Live Demo:** [rusttorrent.dev/demo](https://rusttorrent.dev/demo/)
+**Website:** [rusttorrent.dev](https://rusttorrent.dev/) ·
+**Live demo:** [rusttorrent.dev/demo](https://rusttorrent.dev/demo/) ·
+**Discord:** [discord.gg/pu6chSqpnJ](https://discord.gg/pu6chSqpnJ)
 
 ## Features
 
-- **High local throughput** -- Up to 15x qBittorrent throughput in the documented LAN/disk benchmarks, peaking above 16 Gbps with Tokio-based async I/O
-- **Web UI** -- Clean, responsive React + TypeScript interface. Manage torrents from any browser, desktop or mobile. Dark mode included
-- **Desktop App** -- Native application for Windows, macOS, and Linux powered by Tauri. System tray integration, lightweight, and auto-updates
-- **HTTP API** -- Full REST API with Swagger documentation. Add torrents, check status, stream files, and manage everything programmatically
-- **Docker Ready** -- Official multi-stage Docker image. Minimal scratch-based container with only the binary. One command to deploy
-- **DHT & Trackers** -- DHT including BEP-5 peer-wire port exchange, HTTP and UDP announces, peer exchange, and UPnP port forwarding
-- **Magnet Links** -- Add torrents via magnet links or .torrent files. Metadata is resolved automatically from the swarm
-- **File Streaming** -- Stream media files directly from incomplete torrents via the HTTP API. Perfect for watching videos while they download
-- **Indexarr Integration** -- Browse and search the [Indexarr](https://indexarr.net/) torrent index directly from the web UI
-- **Memory Safe** -- Rust's ownership model ensures no buffer overflows, data races, or use-after-free bugs
-- **Arr Stack Compatible** -- Works with Sonarr, Radarr, Prowlarr, and other *arr applications
+- **Web UI** — responsive React + TypeScript interface with a compact table view, detail
+  panes, and dark mode. Works from any browser, desktop or mobile.
+- **HTTP API** — everything the UI does is an API call: add torrents, query state, select
+  files, stream content. Swagger documentation included.
+- **qBittorrent-compatible API** — speaks the qBittorrent WebUI protocol, so Sonarr,
+  Radarr, and other *arr applications connect without adapters.
+- **Full peer discovery** — DHT, HTTP and UDP trackers, peer exchange, local service
+  discovery, and UPnP port forwarding. Magnet links resolve metadata straight from the
+  swarm.
+- **Streaming** — play media files directly from incomplete torrents over HTTP.
+- **RSS automation** — subscribe to feeds with filter rules and download new releases
+  automatically.
+- **Indexarr integration** — browse and search the [Indexarr](https://indexarr.net/)
+  torrent index from inside the web UI.
+- **Docker ready** — multi-stage build producing a minimal scratch-based image.
+- **Desktop app** — native Tauri application for Windows, macOS, and Linux with system
+  tray integration.
+- **Memory safe** — written entirely in Rust; the bencode, DHT, and peer-protocol parsers
+  are additionally fuzz-tested.
 
-## Performance
-
-Benchmarked head-to-head against qBittorrent across six real-world scenarios:
-
-| Scenario | Result |
-|----------|--------|
-| 8 GB, 1 file, 3 peers | ~1x (even) |
-| 16 GB, 1 file, 3 peers | 2.5x faster |
-| 8 GB, 10 files, 3 peers | 2.6x faster |
-| 8 GB, 100 files, 3 peers | **14.7x faster** |
-| 8 GB, 1 file, 100 peers | 2.6x faster |
-| 8 GB, 1 file, 500 peers | 2.4x faster |
-
-All benchmarks run in Docker containers on identical hardware with direct peer-to-peer transfers. Full methodology and scripts available in the `benchv2/` directory.
-
-## Getting Started
-
-### Desktop
-
-Download the installer for your platform from [GitHub Releases](https://github.com/AusAgentSmith-org/rustTorrent/releases/tag/desktop-latest):
-
-- **Windows** -- [.exe](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64-setup.exe) | [.msi](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64_en-US.msi)
-- **macOS** -- [Intel .dmg](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_x64.dmg) | [Apple Silicon .dmg](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_aarch64.dmg)
-- **Linux** -- [.deb](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.deb) | [.rpm](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop-0.0.1-1.x86_64.rpm) | [.AppImage](https://github.com/AusAgentSmith-org/rustTorrent/releases/download/desktop-latest/rtbit-desktop_0.0.1_amd64.AppImage)
+## Quick start
 
 ### Docker
 
 ```bash
-git clone https://github.com/AusAgentSmith-org/rustTorrent.git
+docker run -d --name rusttorrent \
+  -p 3030:3030 -p 4240:4240 \
+  -v ~/downloads:/downloads \
+  ghcr.io/ausagentsmith-org/rusttorrent:alpha
+```
+
+Or build from the repository:
+
+```bash
+git clone https://repo.indexarr.net/indexarr/rustTorrent.git
 cd rustTorrent
 docker compose up --build -d
 ```
 
-**Ports:** 3030 (Web UI + API), 4240 (BitTorrent TCP + uTP)
+**Ports:** `3030` (web UI + API), `4240` (BitTorrent TCP + uTP).
 
-### From Source
+### Prebuilt binaries
+
+Static binaries for Linux and Windows, with SHA256 checksums, are published at
+[dl.rusttorrent.dev/latest](https://dl.rusttorrent.dev/latest/):
 
 ```bash
-git clone https://github.com/AusAgentSmith-org/rustTorrent.git
-cd rustTorrent
-cargo build --release --features webui
-./target/release/rtbit server start
+curl -LO https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64
+chmod +x rtbit-linux-x86_64
+./rtbit-linux-x86_64 server start ~/Downloads
 ```
 
-Requires Rust 1.75+ and npm (for the webui feature).
+The web UI comes up at [http://localhost:3030](http://localhost:3030).
 
-Web UI available at [http://localhost:3030](http://localhost:3030)
+### From source
 
-## Architecture
+```bash
+git clone https://repo.indexarr.net/indexarr/rustTorrent.git
+cd rustTorrent
+cargo build --release
+./target/release/rtbit server start ~/Downloads
+```
 
-| Layer | Components |
-|-------|------------|
-| **Core Library** | librtbit, Session Manager, Torrent State Machine, Pluggable Storage |
-| **Networking** | DHT (BEP-5), Peer Wire Protocol, HTTP/UDP Trackers, UPnP |
-| **Frontend** | React 18, TypeScript, Tailwind CSS, Zustand, Vite |
-| **Infrastructure** | Tokio Async Runtime, Axum HTTP Server, Docker (scratch), Multi-stage Build |
+Requires a recent stable Rust (CI builds with 1.95) and Node.js/npm for the bundled web
+UI. See [docs/TESTING.md](docs/TESTING.md) for running the test suites.
+
+## Configuration
+
+Most behaviour is configurable from the web UI's settings dialog or via CLI flags
+(`rtbit --help`). Selected environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `RTBIT_INDEXARR_ENABLED` | Enable the Indexarr browse/search integration (`true`/`1`) |
+| `RTBIT_INDEXARR_URL` | Base URL of your Indexarr instance |
+| `RTBIT_INDEXARR_API_KEY` | API key, injected server-side (never sent to the browser) |
+
+See [documentation/IndexarrRustTorrentIntegration.md](documentation/IndexarrRustTorrentIntegration.md)
+for the full integration guide.
+
+## Repository layout
+
+| Path | Contents |
+|------|----------|
+| `crates/rtbit` | CLI binary and server entry point |
+| `crates/librtbit` | Core session, torrent state machine, storage, HTTP API, web UI |
+| `crates/librtbit-*` | Protocol building blocks: bencode, DHT, peer protocol, trackers, UPnP, LSD |
+| `desktop/` | Tauri desktop application |
+| `fuzz/` | Fuzz targets for the protocol parsers |
+| `docs/` | Architecture notes, testing guide, fork provenance |
 
 ## Attribution
 
-rustTorrent is a fork of [rqbit](https://github.com/ikatson/rqbit), originally created by **Igor Katson**. The original project is licensed under the **Apache License 2.0**.
-
-We are grateful for Igor's work in building a high-quality BitTorrent client in Rust. rustTorrent builds upon that foundation with additional features and modifications.
+rustTorrent is a permanent hard fork of [rqbit](https://github.com/ikatson/rqbit) by
+**Igor Katson**, licensed under Apache 2.0. The original copyright and license notices
+are preserved; see [docs/FORK_PROVENANCE.md](docs/FORK_PROVENANCE.md) for details of what
+was imported and when. We're grateful for Igor's work — rustTorrent builds on that
+foundation.
 
 ## License
 
-Apache 2.0 -- See [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).
