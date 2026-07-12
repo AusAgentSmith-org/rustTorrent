@@ -3,634 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="rustTorrent - A fast, modern BitTorrent client written in Rust with a web UI, HTTP API, and Docker support.">
+    <meta name="description" content="rustTorrent — a modern, self-hostable BitTorrent client written in Rust. Web UI, HTTP API, qBittorrent-compatible endpoints, streaming, and Docker support.">
     <meta name="keywords" content="rusttorrent, bittorrent, torrent client, rust, webui, docker, http api, self-hosted">
-    <title>rustTorrent - A Modern BitTorrent Client in Rust</title>
+    <title>rustTorrent — A Modern BitTorrent Client in Rust</title>
     <link rel="icon" href="img/logo.png" type="image/png">
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 <body>
 
     <!-- Navigation -->
-    <nav class="navbar" id="navbar">
-        <div class="container nav-container">
-            <a href="#" class="nav-brand">
-                <img src="img/logo.png" alt="rustTorrent" class="nav-logo-img" width="28" height="28">
-                <span class="nav-logo-text">rust</span><span class="nav-logo-accent">Torrent</span>
+    <header class="nav" id="nav">
+        <div class="wrap nav-inner">
+            <a href="#top" class="brand">
+                <img src="img/logo.png" alt="" width="24" height="24">
+                <span>rust<em>Torrent</em></span>
             </a>
-            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
-                <span></span>
-                <span></span>
-                <span></span>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span><span></span>
             </button>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="#home">Home</a></li>
-                <li><a href="#features">Features</a></li>
-                <li><a href="#download">Download</a></li>
-                <li><a href="#benchmarks">Benchmarks</a></li>
-                <li><a href="#demo-section">Demo</a></li>
-                <li><a href="#getting-started">Get Started</a></li>
-                <li><a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a></li>
-                <li><a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener">Discord</a></li>
-            </ul>
+            <nav class="nav-links" id="navLinks">
+                <a href="#features">Features</a>
+                <a href="#start">Get started</a>
+                <a href="#indexarr">Indexarr</a>
+                <a href="demo/">Demo</a>
+                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener">Discord</a>
+                <a href="#start" class="nav-cta">Download</a>
+            </nav>
         </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="container">
-            <div class="hero-content">
-                <img src="img/logo.png" alt="rustTorrent" class="hero-logo" width="120" height="120">
-                <h1 class="hero-title"><span class="rust-text">rust</span>Torrent</h1>
-                <p class="hero-subtitle">A Modern BitTorrent Client Written in Rust</p>
-                <p class="hero-description">
-                    Fast, lightweight, and built for self-hosters. Benchmarked at up to <strong>15x faster</strong> than qBittorrent
-                    with throughput exceeding <strong>16 Gbps</strong>. Desktop app, clean web UI, full HTTP API, and runs anywhere Docker does.
+    <main id="top">
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="wrap">
+                <p class="hero-status"><span class="dot"></span> Alpha &mdash; under active development</p>
+                <h1>A BitTorrent client,<br>rebuilt in Rust.</h1>
+                <p class="hero-lede">
+                    rustTorrent is a self-hostable torrent client with a clean web UI,
+                    a full HTTP API, and qBittorrent-compatible endpoints for your
+                    existing tools. One small binary. Runs anywhere Docker does.
                 </p>
-                <div class="hero-badges">
-                    <span class="badge badge-rust">Rust</span>
-                    <span class="badge badge-ts">React + TypeScript</span>
-                    <span class="badge badge-docker">Docker</span>
-                    <span class="badge badge-api">HTTP API</span>
-                    <span class="badge badge-desktop">Desktop App</span>
+                <div class="hero-actions">
+                    <a class="btn btn-solid" href="#start">Get started</a>
+                    <a class="btn btn-ghost" href="demo/">Try the live demo</a>
                 </div>
-                <div class="hero-buttons">
-                    <a href="#download" class="btn btn-primary btn-large">Download Alpha</a>
-                    <a href="demo/" class="btn btn-outline">Live Demo</a>
-                    <a href="https://github.com/AusAgentSmith-org/rustTorrent" class="btn btn-outline" target="_blank" rel="noopener">GitHub</a>
-                </div>
+                <p class="hero-meta">
+                    <code>docker run ghcr.io/ausagentsmith-org/rusttorrent:alpha</code>
+                    <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:alpha" aria-label="Copy Docker command">copy</button>
+                </p>
             </div>
-        </div>
-    </section>
 
-    <!-- Alpha Warning Banner -->
-    <section class="status-banner alpha-banner">
-        <div class="container">
-            <div class="status-card alpha-card">
-                <div class="status-icon alpha-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div class="status-text">
-                    <strong>Alpha Software</strong>
-                    <span>rustTorrent is in early alpha. Expect bugs, breaking changes, and incomplete features. Not recommended for production use. <a href="https://github.com/AusAgentSmith-org/rustTorrent/issues" target="_blank">Report issues on GitHub</a>.</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="container">
-            <h2 class="section-title">Features</h2>
-            <p class="section-subtitle">Built for performance and simplicity</p>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                        </svg>
+            <!-- Stylised UI vignette -->
+            <div class="wrap">
+                <div class="vignette" aria-hidden="true">
+                    <div class="vig-bar">
+                        <span class="vig-dot"></span><span class="vig-dot"></span><span class="vig-dot"></span>
+                        <span class="vig-url">localhost:3030</span>
                     </div>
-                    <h3>Blazing Fast</h3>
-                    <p>Up to 15x faster than qBittorrent in benchmarks. Peaks at 16+ Gbps throughput with async I/O powered by Tokio and efficient multi-core utilization.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <line x1="8" y1="21" x2="16" y2="21"/>
-                            <line x1="12" y1="17" x2="12" y2="21"/>
-                        </svg>
-                    </div>
-                    <h3>Web UI</h3>
-                    <p>Clean, responsive React + TypeScript interface. Manage torrents from any browser &mdash; desktop or mobile. Dark mode included.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M18 20V10M12 20V4M6 20v-6"/>
-                        </svg>
-                    </div>
-                    <h3>HTTP API</h3>
-                    <p>Full REST API with Swagger documentation. Add torrents, check status, stream files, and manage everything programmatically.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M22 12H2M22 12l-4-4m4 4l-4 4M2 12l4-4m-4 4l4 4"/>
-                        </svg>
-                    </div>
-                    <h3>DHT &amp; Trackers</h3>
-                    <p>Full DHT support (BEP-5), HTTP and UDP trackers, peer exchange, and UPnP port forwarding for maximum connectivity.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                            <polyline points="22,6 12,13 2,6"/>
-                        </svg>
-                    </div>
-                    <h3>Magnet Links</h3>
-                    <p>Add torrents via magnet links or .torrent files. Metadata is resolved automatically from the swarm when using magnets.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                            <path d="M8 21h8M12 17v4"/>
-                        </svg>
-                    </div>
-                    <h3>Desktop App</h3>
-                    <p>Native desktop application for Windows, macOS, and Linux powered by Tauri. System tray integration, lightweight, and auto-updates.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                        </svg>
-                    </div>
-                    <h3>Docker Ready</h3>
-                    <p>Official multi-stage Docker image. Minimal scratch-based container with only the binary. One command to deploy.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <circle cx="11" cy="11" r="8"/>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                    </div>
-                    <h3>Indexarr Integration</h3>
-                    <p>Browse and search the <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a> torrent index directly from the web UI. Search, preview, and download &mdash; all without leaving rustTorrent.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                        </svg>
-                    </div>
-                    <h3>File Streaming</h3>
-                    <p>Stream media files directly from incomplete torrents via the HTTP API. Perfect for watching videos while they download.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                    </div>
-                    <h3>Memory Safe</h3>
-                    <p>Rust's ownership model ensures no buffer overflows, data races, or use-after-free bugs. Safe by default.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Architecture Section -->
-    <section class="architecture" id="architecture">
-        <div class="container">
-            <h2 class="section-title">Architecture</h2>
-            <p class="section-subtitle">A modular Rust workspace with clean separation of concerns</p>
-            <div class="arch-grid">
-                <div class="arch-card">
-                    <div class="arch-label">Core Library</div>
-                    <div class="arch-items">
-                        <span>librtbit</span>
-                        <span>Session Manager</span>
-                        <span>Torrent State Machine</span>
-                        <span>Pluggable Storage</span>
-                    </div>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-label">Networking</div>
-                    <div class="arch-items">
-                        <span>DHT (BEP-5)</span>
-                        <span>Peer Wire Protocol</span>
-                        <span>HTTP/UDP Trackers</span>
-                        <span>UPnP</span>
-                    </div>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-label">Frontend</div>
-                    <div class="arch-items">
-                        <span>React 18</span>
-                        <span>TypeScript</span>
-                        <span>Tailwind CSS</span>
-                        <span>Zustand</span>
-                        <span>Vite</span>
-                    </div>
-                </div>
-                <div class="arch-card">
-                    <div class="arch-label">Infrastructure</div>
-                    <div class="arch-items">
-                        <span>Tokio Async Runtime</span>
-                        <span>Axum HTTP Server</span>
-                        <span>Docker (scratch)</span>
-                        <span>Multi-stage Build</span>
+                    <div class="vig-rows">
+                        <div class="vig-row">
+                            <span class="vig-name">ubuntu-24.04-desktop-amd64.iso</span>
+                            <span class="vig-track"><span style="width:76%"></span></span>
+                            <span class="vig-val">76%</span>
+                            <span class="vig-state is-down">downloading</span>
+                        </div>
+                        <div class="vig-row">
+                            <span class="vig-name">open-dataset-2026-q2.tar.zst</span>
+                            <span class="vig-track"><span style="width:31%"></span></span>
+                            <span class="vig-val">31%</span>
+                            <span class="vig-state is-down">downloading</span>
+                        </div>
+                        <div class="vig-row">
+                            <span class="vig-name">cc-music-collection</span>
+                            <span class="vig-track"><span class="done" style="width:100%"></span></span>
+                            <span class="vig-val">100%</span>
+                            <span class="vig-state is-seed">seeding</span>
+                        </div>
+                        <div class="vig-row">
+                            <span class="vig-name">firmware-archive-v8</span>
+                            <span class="vig-track"><span style="width:56%"></span></span>
+                            <span class="vig-val">56%</span>
+                            <span class="vig-state is-paused">paused</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Benchmarks Section -->
-    <section class="benchmarks" id="benchmarks">
-        <div class="container">
-            <h2 class="section-title">Performance</h2>
-            <p class="section-subtitle">Benchmarked head-to-head against qBittorrent across six real-world scenarios</p>
-
-            <!-- Headline Stats -->
-            <div class="bench-stats">
-                <div class="bench-stat">
-                    <span class="bench-stat-value">15x</span>
-                    <span class="bench-stat-label">Faster (100 files)</span>
-                </div>
-                <div class="bench-stat">
-                    <span class="bench-stat-value">16.4 Gbps</span>
-                    <span class="bench-stat-label">Peak throughput</span>
-                </div>
-                <div class="bench-stat">
-                    <span class="bench-stat-value">2.4&ndash;15x</span>
-                    <span class="bench-stat-label">Faster in 5 of 6 scenarios</span>
-                </div>
-            </div>
-
-            <!-- Highlighted Charts -->
-            <div class="bench-highlight">
-                <div class="bench-chart-card">
-                    <img src="img/benchmarks/cross_scenario.svg" alt="Cross-scenario speed comparison: rustTorrent vs qBittorrent" loading="lazy">
-                </div>
-                <div class="bench-chart-card">
-                    <img src="img/benchmarks/dashboard.svg" alt="Benchmark dashboard: duration, speed, CPU, and memory across all scenarios" loading="lazy">
-                </div>
-            </div>
-
-            <!-- All Scenarios -->
-            <h3 class="bench-detail-title">Detailed Scenario Breakdowns</h3>
-            <p class="bench-detail-subtitle">Click a scenario to see the full comparison and time-series data</p>
-
-            <div class="bench-scenarios">
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 3 peers</span>
-                        <span class="bench-scenario-badge bench-scenario-badge-neutral">0.94x &mdash; even</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz8g_f1_3p_comparison.svg" alt="8GB 1 file 3 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz8g_f1_3p_timeseries.svg" alt="8GB 1 file 3 peers timeseries" loading="lazy">
+        <!-- Features -->
+        <section class="section" id="features">
+            <div class="wrap">
+                <p class="eyebrow">Features</p>
+                <h2>Everything a modern client needs.<br>Nothing it doesn&rsquo;t.</h2>
+                <div class="feat-grid">
+                    <div class="feat">
+                        <span class="feat-n">01</span>
+                        <h3>Web UI</h3>
+                        <p>A responsive React interface with a compact table view, detail panes, and dark mode. Manage torrents from any browser, desktop or mobile.</p>
                     </div>
-                </details>
-
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">16 GB &middot; 1 file &middot; 3 peers</span>
-                        <span class="bench-scenario-badge">2.46x faster</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz16g_f1_3p_comparison.svg" alt="16GB 1 file 3 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz16g_f1_3p_timeseries.svg" alt="16GB 1 file 3 peers timeseries" loading="lazy">
+                    <div class="feat">
+                        <span class="feat-n">02</span>
+                        <h3>HTTP API</h3>
+                        <p>Every action in the UI is an API call you can make yourself &mdash; add torrents, query state, select files, and stream content programmatically.</p>
                     </div>
-                </details>
-
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">8 GB &middot; 10 files &middot; 3 peers</span>
-                        <span class="bench-scenario-badge">2.60x faster</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz8g_f10_3p_comparison.svg" alt="8GB 10 files 3 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz8g_f10_3p_timeseries.svg" alt="8GB 10 files 3 peers timeseries" loading="lazy">
+                    <div class="feat">
+                        <span class="feat-n">03</span>
+                        <h3>qBittorrent-compatible endpoints</h3>
+                        <p>Speaks the qBittorrent WebUI API, so tools like Sonarr and Radarr connect without special adapters.</p>
                     </div>
-                </details>
-
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">8 GB &middot; 100 files &middot; 3 peers</span>
-                        <span class="bench-scenario-badge bench-scenario-badge-best">14.68x faster</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz8g_f100_3p_comparison.svg" alt="8GB 100 files 3 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz8g_f100_3p_timeseries.svg" alt="8GB 100 files 3 peers timeseries" loading="lazy">
+                    <div class="feat">
+                        <span class="feat-n">04</span>
+                        <h3>Full peer discovery</h3>
+                        <p>DHT, HTTP and UDP trackers, peer exchange, local service discovery, and UPnP port forwarding &mdash; magnets resolve straight from the swarm.</p>
                     </div>
-                </details>
-
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 100 peers</span>
-                        <span class="bench-scenario-badge">2.60x faster</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz8g_f1_100p_comparison.svg" alt="8GB 1 file 100 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz8g_f1_100p_timeseries.svg" alt="8GB 1 file 100 peers timeseries" loading="lazy">
+                    <div class="feat">
+                        <span class="feat-n">05</span>
+                        <h3>Stream while you download</h3>
+                        <p>Play media straight out of incomplete torrents over HTTP, with sequential piece prioritisation doing the work behind the scenes.</p>
                     </div>
-                </details>
-
-                <details class="bench-scenario">
-                    <summary>
-                        <span class="bench-scenario-name">8 GB &middot; 1 file &middot; 500 peers</span>
-                        <span class="bench-scenario-badge">2.40x faster</span>
-                    </summary>
-                    <div class="bench-scenario-charts">
-                        <img src="img/benchmarks/sz8g_f1_500p_comparison.svg" alt="8GB 1 file 500 peers comparison" loading="lazy">
-                        <img src="img/benchmarks/sz8g_f1_500p_timeseries.svg" alt="8GB 1 file 500 peers timeseries" loading="lazy">
+                    <div class="feat">
+                        <span class="feat-n">06</span>
+                        <h3>RSS automation</h3>
+                        <p>Subscribe to feeds, filter with rules, and let new releases start downloading on their own.</p>
                     </div>
-                </details>
-            </div>
-
-            <p class="bench-methodology">
-                All benchmarks run in Docker containers on identical hardware with direct peer-to-peer transfers.
-                Metrics collected via Docker stats API. Full methodology and scripts available on
-                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>.
-            </p>
-        </div>
-    </section>
-
-    <!-- Demo Section -->
-    <section class="demo-section" id="demo-section">
-        <div class="container">
-            <h2 class="section-title">See It in Action</h2>
-            <p class="section-subtitle">Interactive demo with simulated torrent data</p>
-            <div class="demo-preview">
-                <div class="demo-bar">
-                    <div class="demo-dots"><span></span><span></span><span></span></div>
-                    <div class="demo-url">localhost:3030</div>
-                </div>
-                <div class="demo-body">
-                    <div class="demo-header-row">
-                        <span class="demo-title-text">rustTorrent</span>
-                        <span class="demo-stats-text">4 active &middot; 2 seeding &middot; 1 paused</span>
+                    <div class="feat">
+                        <span class="feat-n">07</span>
+                        <h3>Small and self-contained</h3>
+                        <p>A single static binary built on Tokio async I/O. The Docker image is a scratch container with just the binary inside.</p>
                     </div>
-                    <table class="demo-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Size</th>
-                                <th>Progress</th>
-                                <th>Speed</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="demo-name">project-alpha-v2.3.iso</td>
-                                <td>4.2 GB</td>
-                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:73%"></div></div><span class="demo-pct">73%</span></td>
-                                <td class="demo-speed">12.4 MB/s</td>
-                                <td><span class="demo-status demo-status-live">Downloading</span></td>
-                            </tr>
-                            <tr>
-                                <td class="demo-name">open-dataset-2024-q3.tar.gz</td>
-                                <td>18.7 GB</td>
-                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:31%"></div></div><span class="demo-pct">31%</span></td>
-                                <td class="demo-speed">8.1 MB/s</td>
-                                <td><span class="demo-status demo-status-live">Downloading</span></td>
-                            </tr>
-                            <tr>
-                                <td class="demo-name">creative-commons-music-pack</td>
-                                <td>892 MB</td>
-                                <td><div class="demo-progress"><div class="demo-progress-bar demo-complete" style="width:100%"></div></div><span class="demo-pct">100%</span></td>
-                                <td class="demo-speed demo-upload">2.3 MB/s</td>
-                                <td><span class="demo-status demo-status-seed">Seeding</span></td>
-                            </tr>
-                            <tr>
-                                <td class="demo-name">firmware-update-bundle-v8.1</td>
-                                <td>1.1 GB</td>
-                                <td><div class="demo-progress"><div class="demo-progress-bar" style="width:56%"></div></div><span class="demo-pct">56%</span></td>
-                                <td class="demo-speed demo-paused">&mdash;</td>
-                                <td><span class="demo-status demo-status-paused">Paused</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="feat">
+                        <span class="feat-n">08</span>
+                        <h3>Desktop app</h3>
+                        <p>A native Tauri app for Windows, macOS, and Linux with system-tray integration, for people who prefer a window to a browser tab.</p>
+                    </div>
+                    <div class="feat">
+                        <span class="feat-n">09</span>
+                        <h3>Memory safe by construction</h3>
+                        <p>Written entirely in Rust: no buffer overflows, no data races, no use-after-free. The protocol parsers are additionally fuzz-tested.</p>
+                    </div>
                 </div>
             </div>
-            <div class="demo-cta">
-                <a href="demo/" class="btn btn-primary">Open Interactive Demo</a>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Download Section -->
-    <section class="download-section" id="download">
-        <div class="container">
-            <h2 class="section-title">Download</h2>
-            <p class="section-subtitle">Alpha builds — Linux and Windows. Docker image available.</p>
+        <!-- Get started -->
+        <section class="section section-alt" id="start">
+            <div class="wrap">
+                <p class="eyebrow">Get started</p>
+                <h2>Running in under a minute.</h2>
 
-            <div class="download-hero-grid">
-                <a href="https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64" class="download-card download-card-primary" id="dl-linux" data-file-prefix="rtbit" data-file-suffix="linux-x86_64">
-                    <div class="download-icon">
-                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12.504 0c-.155 0-.311.003-.467.013A11.18 11.18 0 005.8 2.544a.643.643 0 00.18 1.16 10.81 10.81 0 013.89.842.642.642 0 00.679-.09 8.59 8.59 0 011.836-1.14.644.644 0 00.047-1.074A4.363 4.363 0 0012.504 0zM8.416 5.228a.643.643 0 00-.636.328 7.7 7.7 0 00-.974 3.74c0 4.27 3.467 7.728 7.744 7.728a7.76 7.76 0 005.084-1.9.642.642 0 00-.162-1.054 6.928 6.928 0 01-4.922-6.63.643.643 0 00-.37-.557 9.666 9.666 0 00-5.764-1.655z"/></svg>
-                    </div>
-                    <div class="download-info">
-                        <span class="download-platform">Linux x86_64</span>
-                        <span class="download-type dl-version">Static binary</span>
-                    </div>
-                </a>
-                <a href="https://dl.rusttorrent.dev/latest/rtbit-windows-x86_64.exe" class="download-card" id="dl-windows" data-file-prefix="rtbit" data-file-suffix="windows-x86_64.exe">
-                    <div class="download-icon">
-                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-                    </div>
-                    <div class="download-info">
-                        <span class="download-platform">Windows x86_64</span>
-                        <span class="download-type dl-version">.exe binary</span>
-                    </div>
-                </a>
-                <div class="download-card download-card-docker">
-                    <div class="download-icon">
-                        <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.186m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.186.186 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.185-.186H5.136a.186.186 0 00-.186.185v1.888c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.186v1.887c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288z"/></svg>
-                    </div>
-                    <div class="download-info">
-                        <span class="download-platform">Docker</span>
-                        <pre class="docker-pull">docker run -d --name rusttorrent \
+                <div class="tabs" role="tablist">
+                    <button class="tab active" data-pane="docker" role="tab">Docker</button>
+                    <button class="tab" data-pane="linux" role="tab">Linux</button>
+                    <button class="tab" data-pane="windows" role="tab">Windows</button>
+                </div>
+
+                <div class="pane active" id="pane-docker">
+                    <div class="code">
+                        <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:alpha" aria-label="Copy">copy</button>
+<pre>docker run -d --name rusttorrent \
   -p 3030:3030 -p 4240:4240 \
   -v ~/downloads:/downloads \
   ghcr.io/ausagentsmith-org/rusttorrent:alpha</pre>
                     </div>
+                    <p class="pane-note">Port <code>3030</code> serves the web UI and API; <code>4240</code> handles BitTorrent TCP and uTP. Mount your download directory at <code>/downloads</code>.</p>
                 </div>
-            </div>
 
-            <div class="download-checksums">
-                <a href="https://dl.rusttorrent.dev/latest/" target="_blank">All files + SHA256 checksums</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Indexarr Integration Section -->
-    <section class="indexarr-section" id="indexarr">
-        <div class="container">
-            <h2 class="section-title">Indexarr Integration</h2>
-            <p class="section-subtitle">Browse the community torrent index without leaving rustTorrent</p>
-            <div class="indexarr-content">
-                <div class="indexarr-features">
-                    <div class="indexarr-feature">
-                        <h3>Browse &amp; Search</h3>
-                        <p>Search the full <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a> torrent index directly from the rustTorrent web UI. Filter by category, browse recent uploads, and find content across the decentralized network.</p>
+                <div class="pane" id="pane-linux">
+                    <div class="code">
+                        <button class="copy" data-copy="curl -LO https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64 && chmod +x rtbit-linux-x86_64 && ./rtbit-linux-x86_64 server start ~/Downloads" aria-label="Copy">copy</button>
+<pre>curl -LO https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64
+chmod +x rtbit-linux-x86_64
+./rtbit-linux-x86_64 server start ~/Downloads</pre>
                     </div>
-                    <div class="indexarr-feature">
-                        <h3>One-Click Downloads</h3>
-                        <p>Click any result to resolve metadata, select files, and start downloading &mdash; all within the same interface. No copy-pasting magnet links.</p>
-                    </div>
-                    <div class="indexarr-feature">
-                        <h3>Simple Setup</h3>
-                        <p>Point rustTorrent at your Indexarr instance with three environment variables. The integration proxies all requests server-side &mdash; your API key never reaches the browser.</p>
-                    </div>
+                    <p class="pane-note">A single static binary &mdash; no runtime dependencies. The web UI comes up at <code>localhost:3030</code>.</p>
                 </div>
-                <div class="indexarr-preview">
-                    <div class="demo-bar">
-                        <div class="demo-dots"><span></span><span></span><span></span></div>
-                        <div class="demo-url">rustTorrent &mdash; Browse Index</div>
-                    </div>
-                    <div class="demo-body" style="padding: 16px;">
-                        <div style="display:flex;gap:8px;margin-bottom:12px;">
-                            <div style="flex:1;height:32px;background:var(--bg-tertiary);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;padding:0 12px;color:var(--text-muted);font-size:0.85rem;">Search torrents...</div>
-                            <div style="height:32px;padding:0 16px;background:var(--rust);border-radius:6px;display:flex;align-items:center;color:#fff;font-size:0.85rem;font-weight:600;">Search</div>
-                        </div>
-                        <div style="display:flex;gap:8px;margin-bottom:12px;">
-                            <span style="padding:4px 10px;background:var(--rust);color:#fff;border-radius:4px;font-size:0.75rem;">All</span>
-                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">Movies</span>
-                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">TV</span>
-                            <span style="padding:4px 10px;background:var(--bg-tertiary);color:var(--text-secondary);border-radius:4px;font-size:0.75rem;">Music</span>
-                        </div>
-                        <table class="demo-table" style="font-size:0.8rem;">
-                            <thead><tr><th>Name</th><th>Category</th><th>Size</th><th></th></tr></thead>
-                            <tbody>
-                                <tr><td class="demo-name">Big.Buck.Bunny.2008.4K.BluRay</td><td><span style="color:var(--blue);">Movie</span></td><td>8.1 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
-                                <tr><td class="demo-name">Sintel.2010.1080p.Surround</td><td><span style="color:var(--blue);">Movie</span></td><td>4.3 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
-                                <tr><td class="demo-name">Tears.of.Steel.2012.4K</td><td><span style="color:var(--blue);">Movie</span></td><td>6.7 GB</td><td><span style="color:var(--green);cursor:pointer;">Download</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Getting Started Section -->
-    <section class="getting-started" id="getting-started">
-        <div class="container">
-            <h2 class="section-title">Getting Started</h2>
-            <div class="start-tabs">
-                <button class="start-tab active" data-tab="desktop" onclick="switchTab('desktop')">Desktop</button>
-                <button class="start-tab" data-tab="docker" onclick="switchTab('docker')">Docker</button>
-            </div>
-
-            <div class="start-pane" id="pane-docker">
-                <div class="terminal">
-                    <div class="terminal-bar">
-                        <div class="terminal-dots"><span></span><span></span><span></span></div>
-                        <span class="terminal-title">Terminal</span>
+                <div class="pane" id="pane-windows">
+                    <div class="code">
+                        <button class="copy" data-copy="https://dl.rusttorrent.dev/latest/rtbit-windows-x86_64.exe" aria-label="Copy">copy</button>
+<pre>rtbit-windows-x86_64.exe server start %USERPROFILE%\Downloads</pre>
                     </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line"><span class="terminal-prompt">$</span> docker pull ghcr.io/ausagentsmith-org/rusttorrent:alpha</div>
-                        <div class="terminal-line"><span class="terminal-prompt">$</span> docker run -d --name rusttorrent \</div>
-                        <div class="terminal-line">    -p 3030:3030 -p 4240:4240 \</div>
-                        <div class="terminal-line">    -v ~/downloads:/downloads \</div>
-                        <div class="terminal-line">    ghcr.io/ausagentsmith-org/rusttorrent:alpha</div>
-                        <div class="terminal-line terminal-output">
-                            <span class="terminal-success">&#10003;</span> Pulling image from GHCR...<br>
-                            <span class="terminal-success">&#10003;</span> Starting rusttorrent container<br>
-                            <span class="terminal-success">&#10003;</span> Web UI available at <span class="terminal-link">http://localhost:3030</span>
-                        </div>
-                    </div>
+                    <p class="pane-note">Download the <a href="https://dl.rusttorrent.dev/latest/rtbit-windows-x86_64.exe">Windows binary</a>, then run it from a terminal. The web UI comes up at <code>localhost:3030</code>.</p>
                 </div>
-                <div class="start-notes">
-                    <p><strong>Ports:</strong> 3030 (Web UI + API), 4240 (BitTorrent TCP + uTP)</p>
-                    <p><strong>Downloads:</strong> Mount your download directory with <code>-v /path/to/downloads:/downloads</code></p>
-                </div>
-            </div>
 
-            <div class="start-pane" id="pane-desktop">
-                <div class="terminal">
-                    <div class="terminal-bar">
-                        <div class="terminal-dots"><span></span><span></span><span></span></div>
-                        <span class="terminal-title">Download</span>
-                    </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line terminal-output">Download the latest alpha binary for your platform:</div>
-                        <div class="terminal-line">&nbsp;</div>
-                        <div class="terminal-line"><span class="terminal-success">Linux</span> &nbsp;&nbsp;&nbsp; <a href="https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64" style="color:var(--blue);">x86_64 binary</a></div>
-                        <div class="terminal-line"><span class="terminal-success">Windows</span> &nbsp; <a href="https://dl.rusttorrent.dev/latest/rtbit-windows-x86_64.exe" style="color:var(--blue);">x86_64 .exe</a></div>
-                        <div class="terminal-line">&nbsp;</div>
-                        <div class="terminal-line"><span class="terminal-prompt">$</span> chmod +x rtbit-*-linux-x86_64</div>
-                        <div class="terminal-line"><span class="terminal-prompt">$</span> ./rtbit-*-linux-x86_64 server start ~/Downloads</div>
-                        <div class="terminal-line terminal-output">
-                            <span class="terminal-success">&#10003;</span> Web UI available at <span class="terminal-link">http://localhost:3030</span>
-                        </div>
-                    </div>
+                <div class="dl-row">
+                    <a class="dl" id="dl-linux" href="https://dl.rusttorrent.dev/latest/rtbit-linux-x86_64">
+                        <span class="dl-os">Linux x86_64</span>
+                        <span class="dl-v dl-version">static binary</span>
+                    </a>
+                    <a class="dl" id="dl-windows" href="https://dl.rusttorrent.dev/latest/rtbit-windows-x86_64.exe">
+                        <span class="dl-os">Windows x86_64</span>
+                        <span class="dl-v dl-version">.exe binary</span>
+                    </a>
+                    <a class="dl" href="https://dl.rusttorrent.dev/latest/" target="_blank" rel="noopener">
+                        <span class="dl-os">All builds</span>
+                        <span class="dl-v">+ SHA256 checksums</span>
+                    </a>
                 </div>
-                <div class="start-notes">
-                    <p><strong>All files:</strong> <a href="https://dl.rusttorrent.dev/latest/">dl.rusttorrent.dev/latest/</a> (includes SHA256 checksums)</p>
-                    <p><strong>Web UI:</strong> Access the React web UI at <code>localhost:3030</code> after starting</p>
-                </div>
-            </div>
 
-        </div>
-    </section>
-
-    <!-- Attribution Section -->
-    <section class="attribution" id="attribution">
-        <div class="container">
-            <div class="attribution-card">
-                <h2>Attribution</h2>
-                <p>
-                    rustTorrent is based on <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener">rqbit</a>
-                    by Igor Katson, licensed under Apache 2.0.
+                <p class="alpha-note">
+                    <strong>Alpha software.</strong> Expect bugs, breaking changes, and incomplete
+                    features &mdash; not recommended for anything you can&rsquo;t afford to re-download.
+                    <a href="https://github.com/AusAgentSmith-org/rustTorrent/issues" target="_blank" rel="noopener">Report issues on GitHub</a>.
                 </p>
             </div>
-        </div>
-    </section>
+        </section>
+
+        <!-- Indexarr -->
+        <section class="section" id="indexarr">
+            <div class="wrap">
+                <p class="eyebrow">Integration</p>
+                <h2>Built to pair with Indexarr.</h2>
+                <div class="split">
+                    <div>
+                        <p>
+                            Point rustTorrent at an <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a>
+                            instance and the torrent index appears inside the web UI: search, filter by
+                            category, and start downloads with one click &mdash; no copy-pasting magnet links.
+                        </p>
+                        <p>
+                            Setup is three environment variables. All index requests are proxied
+                            server-side, so your API key never reaches the browser.
+                        </p>
+                    </div>
+                    <div class="code code-static">
+<pre>RTBIT_INDEXARR_URL=https://indexarr.example
+RTBIT_INDEXARR_API_KEY=&lt;key&gt;
+RTBIT_INDEXARR_ENABLED=true</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo CTA -->
+        <section class="section section-alt" id="demo">
+            <div class="wrap demo-cta">
+                <div>
+                    <p class="eyebrow">Demo</p>
+                    <h2>See the UI before you install anything.</h2>
+                    <p>The live demo runs the real web interface against simulated torrent data, right in your browser.</p>
+                </div>
+                <a class="btn btn-solid" href="demo/">Open the demo</a>
+            </div>
+        </section>
+
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container footer-inner">
-            <div class="footer-left">
-                <span class="footer-brand"><span class="rust-text">rust</span>Torrent</span>
-                <span class="footer-sep">&mdash;</span>
-                <span>Based on <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener">rqbit</a> by Igor Katson, Apache 2.0</span>
+        <div class="wrap footer-grid">
+            <div>
+                <p class="brand"><span>rust<em>Torrent</em></span></p>
+                <p class="footer-attr">
+                    Based on <a href="https://github.com/ikatson/rqbit" target="_blank" rel="noopener">rqbit</a>
+                    by Igor Katson, licensed under Apache&nbsp;2.0.
+                </p>
             </div>
-            <div class="footer-right">
-                <a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener" aria-label="Discord">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>
-                </a>
-                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener" aria-label="GitHub">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                </a>
+            <nav class="footer-links">
+                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener">Discord</a>
+                <a href="https://dl.rusttorrent.dev/latest/" target="_blank" rel="noopener">Downloads</a>
+                <a href="demo/">Demo</a>
+            </nav>
+            <div class="footer-related">
+                <span>Also by AusAgentSmith</span>
+                <a href="https://www.rustnzb.dev/" target="_blank" rel="noopener">rustnzb</a>
+                <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a>
             </div>
-        </div>
-        <div class="container footer-related">
-            Also by AusAgentSmith &middot; <a href="https://www.rustnzb.dev/" target="_blank" rel="noopener">rustnzb</a> &middot; <a href="https://indexarr.net/" target="_blank" rel="noopener">Indexarr</a>
         </div>
     </footer>
 
-    <script src="js/main.js"></script>
-    <script>
-    (function() {
-        var BASE = 'https://dl.rusttorrent.dev/latest/';
-        fetch(BASE).then(function(r) { return r.text(); }).then(function(html) {
-            var m = html.match(/rtbit-(v[\d.]+-[a-z]+\.\d+)-linux-x86_64/);
-            if (!m) return;
-            var ver = m[1];
-            document.querySelectorAll('.dl-version').forEach(function(el) {
-                el.textContent = ver;
-            });
-            var linux = document.getElementById('dl-linux');
-            if (linux) linux.href = BASE + 'rtbit-' + ver + '-linux-x86_64';
-            var win = document.getElementById('dl-windows');
-            if (win) win.href = BASE + 'rtbit-' + ver + '-windows-x86_64.exe';
-        }).catch(function() {});
-    })();
-    </script>
+    <script src="js/main.js?v=3"></script>
 </body>
 </html>
