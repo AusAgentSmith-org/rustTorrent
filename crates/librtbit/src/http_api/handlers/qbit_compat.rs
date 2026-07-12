@@ -441,15 +441,10 @@ async fn h_torrents_info(
 
             // qBittorrent treats an empty category and "uncategorized" as the
             // uncategorized bucket; otherwise category matching is exact.
-            if let Some(ref requested) = query.category {
-                let matches = match requested.as_str() {
-                    "all" => true,
-                    "uncategorized" | "" => category.is_empty(),
-                    value => category == value,
-                };
-                if !matches {
-                    return None;
-                }
+            if let Some(ref requested) = query.category
+                && !matches_category(requested, &category)
+            {
+                return None;
             }
 
             // Apply filter
@@ -624,6 +619,14 @@ async fn h_torrents_info(
     }
 
     axum::Json(torrents)
+}
+
+fn matches_category(requested: &str, category: &str) -> bool {
+    match requested {
+        "all" => true,
+        "uncategorized" | "" => category.is_empty(),
+        value => category == value,
+    }
 }
 
 #[derive(Deserialize)]
@@ -1210,6 +1213,19 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
 
 #[cfg(test)]
 mod tests {
+    use super::matches_category;
+
+    #[test]
+    fn category_filter_supports_qbittorrent_special_values() {
+        assert!(matches_category("all", "Linux ISOs"));
+        assert!(matches_category("all", ""));
+        assert!(matches_category("uncategorized", ""));
+        assert!(matches_category("", ""));
+        assert!(!matches_category("uncategorized", "Linux ISOs"));
+        assert!(matches_category("Linux ISOs", "Linux ISOs"));
+        assert!(!matches_category("linux isos", "Linux ISOs"));
+    }
+
     #[test]
     fn test_eta_overflow_safety() {
         // Simulate: very large remaining bytes / very small download speed

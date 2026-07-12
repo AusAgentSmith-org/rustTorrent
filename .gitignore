@@ -33,3 +33,5 @@ docker-compose.indexarr.test.yml
 # Local architecture review used for the uplift implementation
 /upliftv2.md
 /fuzz/target/
+/crates/librtbit/webui/playwright-report/
+/crates/librtbit/webui/test-results/

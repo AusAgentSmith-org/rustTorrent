@@ -7,6 +7,8 @@
     "dev:mock": "vite --port 3032 --open /mock.html",
     "build": "tsc --noEmit && vite build && node post-build",
     "test": "node --test src/helper/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "preview": "vite preview",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix"
@@ -23,9 +25,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.3.0",
     "@types/lodash.debounce": "^4.0.9",
     "@types/lodash.sortby": "^4.7.9",
+    "@types/node": "^26.1.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",

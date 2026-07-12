@@ -282,7 +282,7 @@ function generateLiveStats(
 
 // Generate torrent stats
 function generateTorrentStats(id: number): TorrentStats {
-  const state = generateState(id);
+  const state = torrentStates.get(id) ?? generateState(id);
   const totalBytes = generateTotalBytes(id);
   const progressBytes = getProgressBytes(id, totalBytes, state);
   const finished = progressBytes >= totalBytes;

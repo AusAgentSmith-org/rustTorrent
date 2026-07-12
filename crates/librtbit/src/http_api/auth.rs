@@ -271,6 +271,68 @@ pub async fn h_auth_setup(
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn token_refresh_rotates_and_logout_revokes() {
+        let store = TokenStore::new();
+        let original = store.create_tokens();
+        assert!(store.validate_access_token(&original.access_token));
+
+        let replacement = store
+            .refresh(&original.refresh_token)
+            .expect("valid refresh token");
+        assert!(store.refresh(&original.refresh_token).is_none());
+        assert!(store.validate_access_token(&replacement.access_token));
+
+        store.revoke_refresh_token(&replacement.refresh_token);
+        assert!(store.refresh(&replacement.refresh_token).is_none());
+    }
+
+    #[test]
+    fn credentials_persist_validate_and_use_private_permissions() {
+        let temp = tempfile::tempdir().expect("temporary directory");
+        let credentials = StoredCredentials {
+            username: "test-user".into(),
+            password: "correct horse battery staple".into(),
+        };
+        let store = CredentialStore::new(temp.path().to_path_buf());
+        assert!(!store.has_credentials());
+        store
+            .set_credentials(credentials.clone())
+            .expect("write credentials");
+        assert!(store.validate(&credentials.username, &credentials.password));
+        assert!(!store.validate(&credentials.username, "wrong"));
+        assert!(!store.validate("wrong", &credentials.password));
+
+        let reloaded = CredentialStore::new(temp.path().to_path_buf());
+        assert!(reloaded.validate(&credentials.username, &credentials.password));
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(temp.path().join("credentials.json"))
+                .expect("credential metadata")
+                .permissions()
+                .mode()
+                & 0o777;
+            assert_eq!(mode, 0o600);
+        }
+    }
+
+    #[test]
+    fn malformed_credentials_file_fails_closed() {
+        let temp = tempfile::tempdir().expect("temporary directory");
+        std::fs::write(temp.path().join("credentials.json"), "not json")
+            .expect("write malformed credentials");
+        let store = CredentialStore::new(temp.path().to_path_buf());
+        assert!(!store.has_credentials());
+        assert!(!store.validate("anything", "anything"));
+    }
+}
+
 // --- Change Credentials ---
 
 #[derive(Deserialize)]
