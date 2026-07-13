@@ -254,6 +254,14 @@ impl Api {
                         files: None,
                         stats: None,
                         category: mgr.shared().category.read().clone(),
+                        added_on: Some(mgr.shared().added_on),
+                        trackers: Some(
+                            mgr.shared()
+                                .trackers
+                                .iter()
+                                .map(|t| t.to_string())
+                                .collect(),
+                        ),
                     };
                     if opts.with_stats {
                         r.stats = Some(mgr.stats());
@@ -564,6 +572,18 @@ impl Api {
         Ok(mgr.stats())
     }
 
+    pub fn api_tracker_status(&self, idx: TorrentIdOrHash) -> Result<TrackerStatusResponse> {
+        let mgr = self.mgr_handle(idx)?;
+        let registry = &mgr.shared().tracker_status;
+        // Make sure every configured tracker shows up, even before any announce.
+        for t in mgr.shared().trackers.iter() {
+            registry.ensure(t.as_str());
+        }
+        Ok(TrackerStatusResponse {
+            trackers: registry.snapshot(),
+        })
+    }
+
     pub fn api_dump_haves(&self, idx: TorrentIdOrHash) -> Result<(BF, u32)> {
         let mgr = self.mgr_handle(idx)?;
         Ok(mgr.with_chunk_tracker(|chunks| {
@@ -637,6 +657,13 @@ pub struct TorrentListResponse {
     pub total: usize,
 }
 
+#[derive(Serialize)]
+#[cfg_attr(feature = "swagger", derive(utoipa::ToSchema))]
+pub struct TrackerStatusResponse {
+    #[cfg_attr(feature = "swagger", schema(value_type = Vec<Object>))]
+    pub trackers: Vec<tracker_comms::TrackerStatus>,
+}
+
 #[derive(Serialize, Deserialize)]
 #[cfg_attr(feature = "swagger", derive(utoipa::ToSchema))]
 pub struct TorrentDetailsResponseFile {
@@ -671,6 +698,12 @@ pub struct TorrentDetailsResponse {
     pub stats: Option<TorrentStats>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    /// Unix timestamp of when the torrent was added to the session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub added_on: Option<u64>,
+    /// Announce URLs configured for this torrent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trackers: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -723,6 +756,8 @@ fn make_torrent_details(
         total_pieces,
         stats: None,
         category,
+        added_on: None,
+        trackers: None,
     })
 }
 

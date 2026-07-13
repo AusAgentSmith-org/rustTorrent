@@ -19,6 +19,8 @@ import {
   TorrentLimits,
   TorrentStats,
   TorrentListItem,
+  TrackerStatusEntry,
+  TrackerStatusResponse,
   LiveTorrentStats,
   TorrentFile,
   RssFeedConfig,
@@ -69,6 +71,32 @@ const TORRENT_NAMES = [
 
 // File name templates
 const FILE_EXTENSIONS = [".iso", ".img", ".tar.gz", ".zip", ".qcow2"];
+
+// Deliberately fictional tracker hosts for the public demo
+const MOCK_TRACKER_URLS = [
+  "udp://tracker.demo-open.example:6969/announce",
+  "https://announce.publicbits.example:443/announce",
+  "udp://tr.linuxmirror.example:2710/announce",
+  "https://tracker.datasets.example/announce",
+  "udp://open.seedhub.example:6969/announce",
+];
+
+// Assign 1-3 deterministic trackers per torrent
+function generateTrackers(id: number): string[] {
+  const rand = seededRandom(id * 6659);
+  const count = 1 + Math.floor(rand() * 3);
+  const urls = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    urls.add(MOCK_TRACKER_URLS[Math.floor(rand() * MOCK_TRACKER_URLS.length)]);
+  }
+  return Array.from(urls);
+}
+
+function generateAddedOn(id: number): number {
+  const rand = seededRandom(id * 7717);
+  // Added sometime in the last 90 days
+  return Math.floor(Date.now() / 1000 - rand() * 90 * 86400);
+}
 
 // Generate deterministic random number from seed
 function seededRandom(seed: number): () => number {
@@ -300,6 +328,8 @@ function generateTorrentListItem(
     name: generateTorrentName(id),
     output_folder: `/downloads/torrent_${id}`,
     total_pieces: totalPieces,
+    added_on: generateAddedOn(id),
+    trackers: generateTrackers(id),
   };
 
   const category = torrentCategories.get(id);
@@ -317,6 +347,21 @@ function generateTorrentListItem(
 // Store for tracking torrent state changes
 const torrentStates = new Map<number, TorrentState>();
 const deletedTorrents = new Set<number>();
+
+// Mock alternative speed limits state
+const mockAltSpeed = {
+  enabled: false,
+  config: {
+    download_rate: 2 * 1024 * 1024,
+    upload_rate: 512 * 1024,
+  } as AltSpeedConfig,
+  schedule: {
+    enabled: false,
+    start_minutes: 22 * 60,
+    end_minutes: 6 * 60,
+    days: 127,
+  } as AltSpeedSchedule,
+};
 
 // Store stable peer data per torrent
 interface PeerData {
@@ -632,6 +677,60 @@ export const MockAPI: RtbitAPI & { getVersion: () => Promise<string> } = {
     };
   },
 
+  getTrackerStatus: async (index: number): Promise<TrackerStatusResponse> => {
+    await new Promise((r) => setTimeout(r, 20 + Math.random() * 40));
+
+    if (deletedTorrents.has(index)) {
+      throw { text: "Torrent not found", status: 404 };
+    }
+
+    const state = torrentStates.get(index) ?? generateState(index);
+    const urls = generateTrackers(index);
+    const rand = seededRandom(index * 8447);
+
+    const trackers: TrackerStatusEntry[] = urls.map((url, i) => {
+      // One tracker per some torrents is erroring, for variety
+      const erroring = rand() < 0.15;
+      if (state !== "live") {
+        return {
+          url,
+          state: "not_contacted",
+          seeders: null,
+          leechers: null,
+          peers_returned: null,
+          last_announce_unix: null,
+          interval_secs: null,
+          last_error: null,
+        };
+      }
+      if (erroring) {
+        return {
+          url,
+          state: "error",
+          seeders: null,
+          leechers: null,
+          peers_returned: null,
+          last_announce_unix: null,
+          interval_secs: null,
+          last_error: "tracker responded with 502 Bad Gateway",
+        };
+      }
+      return {
+        url,
+        state: "working",
+        seeders: Math.floor(rand() * 500) + 5,
+        leechers: Math.floor(rand() * 200),
+        peers_returned: Math.floor(rand() * 50) + 1,
+        last_announce_unix:
+          Math.floor(Date.now() / 1000) - Math.floor(rand() * 600) - i * 30,
+        interval_secs: 1800,
+        last_error: null,
+      };
+    });
+
+    return { trackers };
+  },
+
   getTorrentStats: async (index: number): Promise<TorrentStats> => {
     await new Promise((r) => setTimeout(r, 10 + Math.random() * 30));
 
@@ -852,20 +951,27 @@ export const MockAPI: RtbitAPI & { getVersion: () => Promise<string> } = {
     }
   },
 
-  // Alt speed
+  // Alt speed (stateful in mock so the turtle toggle works in the demo)
   getAltSpeed: async (): Promise<AltSpeedStatus> => {
     return {
-      enabled: false,
-      config: { download_rate: null, upload_rate: null },
-      schedule: { enabled: false, start_minutes: 0, end_minutes: 0, days: 0 },
+      enabled: mockAltSpeed.enabled,
+      config: { ...mockAltSpeed.config },
+      schedule: { ...mockAltSpeed.schedule },
     };
   },
-  toggleAltSpeed: async (): Promise<void> => {},
-  setAltSpeedConfig: async (_config: AltSpeedConfig): Promise<void> => {},
-  getSpeedSchedule: async (): Promise<AltSpeedSchedule> => {
-    return { enabled: false, start_minutes: 0, end_minutes: 0, days: 0 };
+  toggleAltSpeed: async (enabled: boolean): Promise<void> => {
+    await new Promise((r) => setTimeout(r, 30));
+    mockAltSpeed.enabled = enabled;
   },
-  setSpeedSchedule: async (_schedule: AltSpeedSchedule): Promise<void> => {},
+  setAltSpeedConfig: async (config: AltSpeedConfig): Promise<void> => {
+    mockAltSpeed.config = { ...config };
+  },
+  getSpeedSchedule: async (): Promise<AltSpeedSchedule> => {
+    return { ...mockAltSpeed.schedule };
+  },
+  setSpeedSchedule: async (schedule: AltSpeedSchedule): Promise<void> => {
+    mockAltSpeed.schedule = { ...schedule };
+  },
 
   // Seed limits
   getSeedLimits: async (): Promise<SeedLimitsConfig> => {

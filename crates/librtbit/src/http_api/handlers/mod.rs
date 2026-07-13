@@ -6,6 +6,7 @@ pub(crate) mod other;
 pub(crate) mod playlist;
 pub(crate) mod qbit_compat;
 pub(crate) mod rss;
+pub(crate) mod speed;
 pub(crate) mod streaming;
 pub(crate) mod torrents;
 
@@ -56,6 +57,7 @@ async fn h_api_root(parts: Parts) -> impl IntoResponse {
             "GET /torrents/{id_or_infohash}/haves": "The bitfield of have pieces",
             "GET /torrents/{id_or_infohash}/playlist": "Generate M3U8 playlist for this torrent",
             "GET /torrents/{id_or_infohash}/stats/v1": "Torrent stats",
+            "GET /torrents/{id_or_infohash}/trackers": "Per-tracker announce status",
             "GET /torrents/{id_or_infohash}/peer_stats": "Per peer stats",
             "GET /torrents/{id_or_infohash}/peer_stats/prometheus": "Per peer stats in prometheus format",
             "GET /torrents/{id_or_infohash}/stream/{file_idx}": "Stream a file. Accepts Range header to seek.",
@@ -91,6 +93,7 @@ pub fn make_api_router(state: ApiState) -> Router {
         .route("/torrents/{id}/metadata", get(torrents::h_metadata))
         .route("/torrents/{id}/stats", get(torrents::h_torrent_stats_v0))
         .route("/torrents/{id}/stats/v1", get(torrents::h_torrent_stats_v1))
+        .route("/torrents/{id}/trackers", get(torrents::h_torrent_trackers))
         .route("/torrents/{id}/peer_stats", get(torrents::h_peer_stats))
         .route(
             "/torrents/{id}/peer_stats/prometheus",
@@ -108,6 +111,8 @@ pub fn make_api_router(state: ApiState) -> Router {
             get(streaming::h_torrent_stream_file),
         )
         .route("/torrents/limits", get(configure::h_get_session_ratelimits))
+        .route("/speed/alt", get(speed::h_get_alt_speed))
+        .route("/speed/schedule", get(speed::h_get_speed_schedule))
         .route("/torrents/categories", get(torrents::h_list_categories))
         .route("/session/folders", get(configure::h_get_folders))
         .route("/fs/browse", get(configure::h_browse_directory));
@@ -158,7 +163,10 @@ pub fn make_api_router(state: ApiState) -> Router {
                 "/torrents/{id}/set_category",
                 post(torrents::h_set_torrent_category),
             )
-            .route("/session/folders", post(configure::h_set_folders));
+            .route("/session/folders", post(configure::h_set_folders))
+            .route("/speed/alt", post(speed::h_toggle_alt_speed))
+            .route("/speed/alt/config", post(speed::h_set_alt_speed_config))
+            .route("/speed/schedule", post(speed::h_set_speed_schedule));
     }
 
     // Indexarr integration proxy endpoints

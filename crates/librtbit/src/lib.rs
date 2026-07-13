@@ -41,6 +41,7 @@ macro_rules! aframe {
 #[macro_use]
 mod stat_gen;
 
+pub mod alt_speed;
 pub mod api;
 mod api_error;
 mod bitv;

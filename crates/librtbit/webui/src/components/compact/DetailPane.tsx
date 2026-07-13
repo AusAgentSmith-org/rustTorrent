@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { APIContext } from "../../context";
 import { loopUntilSuccess } from "../../helper/loopUntilSuccess";
 import { useUIStore } from "../../stores/uiStore";
@@ -154,6 +154,11 @@ const DetailPaneContent: React.FC<DetailPaneContentProps> = ({
   const statsResponse = torrent?.stats ?? null;
 
   const logsUrl = API.getStreamLogsUrl();
+  const torrentInfoHash = torrent?.info_hash ?? "";
+  const logFilter = useMemo(
+    () => ({ id: torrentId, infoHash: torrentInfoHash }),
+    [torrentId, torrentInfoHash],
+  );
 
   return (
     <>
@@ -170,9 +175,9 @@ const DetailPaneContent: React.FC<DetailPaneContentProps> = ({
       {activeTab === "trackers" && <TrackersTab torrent={torrent ?? null} />}
       {activeTab === "speed" && <SpeedTab torrent={torrent ?? null} />}
       {activeTab === "logs" && (
-        <div className="h-full">
+        <div className="h-full p-2">
           {logsUrl ? (
-            <LogStream url={logsUrl} maxLines={500} />
+            <LogStream url={logsUrl} maxLines={500} torrentFilter={logFilter} />
           ) : (
             <p className="text-tertiary p-3">Log streaming not available</p>
           )}

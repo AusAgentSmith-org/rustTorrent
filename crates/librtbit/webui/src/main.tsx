@@ -98,13 +98,13 @@ const RootWithVersion = () => {
   }, []);
 
   useEffect(() => {
-    document.title = `Rust Torrent - ↓ ${downloadSpeed}`;
+    document.title = `RustTorrent - ↓ ${downloadSpeed}`;
   }, [downloadSpeed]);
 
   return (
     <APIContext.Provider value={API}>
       <AuthGate>
-        <RtbitWebUI title="rtbit" version={version} />
+        <RtbitWebUI title="RustTorrent" version={version} />
       </AuthGate>
     </APIContext.Provider>
   );

@@ -66,6 +66,7 @@ export const RateLimitsTab: React.FC<RateLimitsTabProps> = ({
     days: 0,
   });
   const [altLoaded, setAltLoaded] = useState(false);
+  const [altError, setAltError] = useState<string | null>(null);
 
   useEffect(() => {
     API.getAltSpeed()
@@ -78,18 +79,21 @@ export const RateLimitsTab: React.FC<RateLimitsTabProps> = ({
         setAltLoaded(true);
       })
       .catch(() => {
-        // Alt speed not available; leave defaults
-        setAltLoaded(true);
+        // Server doesn't support alternative speed limits — hide the section
+        // instead of offering a toggle that can't be saved.
+        setAltLoaded(false);
       });
   }, [API]);
 
   const handleAltToggle = async (enabled: boolean) => {
     setAltEnabled(enabled);
+    setAltError(null);
     try {
       await API.toggleAltSpeed(enabled);
     } catch {
-      // revert on error
+      // revert on error and tell the user why the checkbox snapped back
       setAltEnabled(!enabled);
+      setAltError("Could not update alternative speed limits on the server.");
     }
   };
 
@@ -169,6 +173,7 @@ export const RateLimitsTab: React.FC<RateLimitsTabProps> = ({
             help="When enabled, alternative speed limits override the normal limits above."
             onChange={() => handleAltToggle(!altEnabled)}
           />
+          {altError && <p className="text-sm text-error mt-1">{altError}</p>}
           {altEnabled && (
             <div className="mt-3 space-y-2 ml-6">
               <FormInput

@@ -234,6 +234,21 @@ pub async fn h_torrent_stats_v1(
 
 #[cfg_attr(feature = "swagger", utoipa::path(
     get,
+    path = "/torrents/{id}/trackers",
+    params(("id" = String, Path, description = "Torrent ID or info hash")),
+    responses(
+        (status = 200, description = "Per-tracker announce status (seeders/leechers per tracker)")
+    )
+))]
+pub async fn h_torrent_trackers(
+    State(state): State<ApiState>,
+    Path(idx): Path<TorrentIdOrHash>,
+) -> Result<impl IntoResponse> {
+    state.api.api_tracker_status(idx).map(axum::Json)
+}
+
+#[cfg_attr(feature = "swagger", utoipa::path(
+    get,
     path = "/torrents/{id}/peer_stats",
     params(
         ("id" = String, Path, description = "Torrent ID or info hash"),

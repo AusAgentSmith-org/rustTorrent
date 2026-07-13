@@ -39,6 +39,10 @@ export interface TorrentListItem {
   total_pieces: number;
   stats?: TorrentStats;
   category?: string;
+  /** Unix timestamp (seconds) when the torrent was added. */
+  added_on?: number;
+  /** Announce URLs configured for this torrent. */
+  trackers?: string[];
 }
 
 export interface AddTorrentResponse {
@@ -133,6 +137,29 @@ export interface LimitsConfig {
   max_active_downloads?: number | null;
   max_active_uploads?: number | null;
   max_active_total?: number | null;
+}
+
+// Per-tracker announce status
+export type TrackerAnnounceState =
+  | "not_contacted"
+  | "updating"
+  | "working"
+  | "error"
+  | "disabled";
+
+export interface TrackerStatusEntry {
+  url: string;
+  state: TrackerAnnounceState;
+  seeders: number | null;
+  leechers: number | null;
+  peers_returned: number | null;
+  last_announce_unix: number | null;
+  interval_secs: number | null;
+  last_error: string | null;
+}
+
+export interface TrackerStatusResponse {
+  trackers: TrackerStatusEntry[];
 }
 
 // Alt speed config
@@ -466,6 +493,7 @@ export interface RtbitAPI {
   }) => Promise<ListTorrentsResponse>;
   getTorrentDetails: (index: number) => Promise<TorrentDetails>;
   getTorrentStats: (index: number) => Promise<TorrentStats>;
+  getTrackerStatus: (index: number) => Promise<TrackerStatusResponse>;
   getTorrentHaves: (index: number) => Promise<Uint8Array>;
   getPeerStats: (index: number) => Promise<PeerStatsSnapshot>;
   getTorrentStreamUrl: (

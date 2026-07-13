@@ -19,16 +19,12 @@ pub async fn h_update_session_ratelimits(
     State(state): State<ApiState>,
     Json(limits): Json<LimitsConfig>,
 ) -> Result<impl IntoResponse> {
+    // Goes through the alt-speed-aware setter: while alternative limits are
+    // active this updates the saved normal limits instead of the live limiter.
     state
         .api
         .session()
-        .ratelimits
-        .set_upload_bps(limits.upload_bps);
-    state
-        .api
-        .session()
-        .ratelimits
-        .set_download_bps(limits.download_bps);
+        .set_normal_rate_limits(limits.download_bps, limits.upload_bps);
     if let Some(peer_limit) = limits.peer_limit {
         state.api.session().set_peer_limit(peer_limit);
     }

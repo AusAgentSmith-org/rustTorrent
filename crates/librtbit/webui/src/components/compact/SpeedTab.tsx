@@ -114,16 +114,16 @@ export const SpeedTab: React.FC<SpeedTabProps> = ({ torrent }) => {
       ctx.stroke();
     };
 
-    // Download in green, upload in blue
+    // Download in blue, upload in green (matches table/footer accents)
     drawLine(
       speedHistory,
       (p) => p.downloadSpeed,
-      isDark ? "#4ade80" : "#22c55e",
+      isDark ? "#60a5fa" : "#2563eb",
     );
     drawLine(
       speedHistory,
       (p) => p.uploadSpeed,
-      isDark ? "#60a5fa" : "#3b82f6",
+      isDark ? "#34d399" : "#059669",
     );
 
     // Y-axis labels
@@ -155,7 +155,7 @@ export const SpeedTab: React.FC<SpeedTabProps> = ({ torrent }) => {
     <div className="p-3 h-full flex flex-col">
       <div className="flex items-center gap-4 mb-2 text-xs">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-0.5 bg-green-500 inline-block rounded" />
+          <span className="w-3 h-0.5 bg-accent-download inline-block rounded" />
           <span className="text-secondary">Download</span>
           {torrent.stats?.live && (
             <span className="text-primary font-medium">
@@ -164,7 +164,7 @@ export const SpeedTab: React.FC<SpeedTabProps> = ({ torrent }) => {
           )}
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-3 h-0.5 bg-blue-500 inline-block rounded" />
+          <span className="w-3 h-0.5 bg-accent-upload inline-block rounded" />
           <span className="text-secondary">Upload</span>
           {torrent.stats?.live && (
             <span className="text-primary font-medium">

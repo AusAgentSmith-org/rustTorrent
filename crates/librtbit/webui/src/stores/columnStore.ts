@@ -20,7 +20,9 @@ export type ColumnId =
   | "seeding_time"
   | "queue_position"
   | "sequential"
-  | "availability";
+  | "availability"
+  | "added_on"
+  | "tracker";
 
 // IDs of configurable columns in their default order
 const DEFAULT_CONFIGURABLE_ORDER: ColumnId[] = [
@@ -42,6 +44,8 @@ const DEFAULT_CONFIGURABLE_ORDER: ColumnId[] = [
   "queue_position",
   "sequential",
   "availability",
+  "added_on",
+  "tracker",
 ];
 
 export interface ColumnDef {
@@ -91,7 +95,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Name",
     defaultWidth: 0,
     minWidth: 100,
-    align: "left",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -101,7 +105,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Size",
     defaultWidth: 80,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -121,7 +125,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Recv",
     defaultWidth: 80,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -131,7 +135,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "↓ Speed",
     defaultWidth: 80,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -141,7 +145,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "↑ Speed",
     defaultWidth: 80,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -151,7 +155,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Sent",
     defaultWidth: 80,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -179,10 +183,10 @@ export const COLUMN_DEFS: ColumnDef[] = [
   {
     id: "state",
     label: "State",
-    defaultWidth: 80,
+    defaultWidth: 100,
     minWidth: 60,
     align: "center",
-    defaultVisible: false,
+    defaultVisible: true,
     configurable: true,
     sortable: true,
   },
@@ -191,7 +195,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Info Hash",
     defaultWidth: 150,
     minWidth: 80,
-    align: "left",
+    align: "center",
     defaultVisible: false,
     configurable: true,
     sortable: false,
@@ -201,7 +205,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Ratio",
     defaultWidth: 80,
     minWidth: 50,
-    align: "right",
+    align: "center",
     defaultVisible: true,
     configurable: true,
     sortable: true,
@@ -211,7 +215,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Category",
     defaultWidth: 120,
     minWidth: 60,
-    align: "left",
+    align: "center",
     defaultVisible: false,
     configurable: true,
     sortable: true,
@@ -221,7 +225,7 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Seed Time",
     defaultWidth: 100,
     minWidth: 60,
-    align: "right",
+    align: "center",
     defaultVisible: false,
     configurable: true,
     sortable: true,
@@ -251,7 +255,27 @@ export const COLUMN_DEFS: ColumnDef[] = [
     label: "Avail",
     defaultWidth: 70,
     minWidth: 50,
-    align: "right",
+    align: "center",
+    defaultVisible: false,
+    configurable: true,
+    sortable: true,
+  },
+  {
+    id: "added_on",
+    label: "Added On",
+    defaultWidth: 140,
+    minWidth: 90,
+    align: "center",
+    defaultVisible: true,
+    configurable: true,
+    sortable: true,
+  },
+  {
+    id: "tracker",
+    label: "Tracker",
+    defaultWidth: 150,
+    minWidth: 80,
+    align: "center",
     defaultVisible: false,
     configurable: true,
     sortable: true,

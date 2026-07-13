@@ -27,15 +27,19 @@
   --color-divider-strong: theme(colors.slate.300);
 
   /* Border colors for Tailwind utilities */
-  --border-color-primary: theme(colors.blue.600);
+  --border-color-primary: theme(colors.orange.600);
   --border-color-divider: theme(colors.slate.200);
   --border-color-divider-strong: theme(colors.slate.300);
 
-  /* Interactive (primary) */
-  --color-primary: theme(colors.blue.600);
-  --color-primary-hover: theme(colors.blue.700);
-  --color-primary-bg: theme(colors.blue.600);
-  --color-primary-bg-hover: theme(colors.blue.700);
+  /* Interactive (primary) — rust orange, matching the RustTorrent logo */
+  --color-primary: theme(colors.orange.600);
+  --color-primary-hover: theme(colors.orange.700);
+  --color-primary-bg: theme(colors.orange.600);
+  --color-primary-bg-hover: theme(colors.orange.700);
+
+  /* Accent used for active downloads (progress bars, speed numbers) */
+  --color-accent-download: theme(colors.blue.600);
+  --color-accent-upload: theme(colors.emerald.600);
 
   /* Status: Success (softer green) */
   --color-success: theme(colors.emerald.600);
@@ -68,15 +72,19 @@
   --color-divider-strong: theme(colors.slate.600);
 
   /* Border colors for Tailwind utilities */
-  --border-color-primary: theme(colors.blue.400);
+  --border-color-primary: theme(colors.orange.400);
   --border-color-divider: theme(colors.slate.700);
   --border-color-divider-strong: theme(colors.slate.600);
 
-  /* Interactive (primary) */
-  --color-primary: theme(colors.blue.400);
-  --color-primary-hover: theme(colors.blue.300);
-  --color-primary-bg: theme(colors.blue.500);
-  --color-primary-bg-hover: theme(colors.blue.400);
+  /* Interactive (primary) — rust orange, matching the RustTorrent logo */
+  --color-primary: theme(colors.orange.400);
+  --color-primary-hover: theme(colors.orange.300);
+  --color-primary-bg: theme(colors.orange.500);
+  --color-primary-bg-hover: theme(colors.orange.400);
+
+  /* Accent used for active downloads (progress bars, speed numbers) */
+  --color-accent-download: theme(colors.blue.400);
+  --color-accent-upload: theme(colors.emerald.400);
 
   /* Status: Success (softer green) */
   --color-success: theme(colors.emerald.400);
@@ -111,6 +119,8 @@
   --color-warning-bg: var(--color-warning-bg);
   --color-error: var(--color-error);
   --color-error-bg: var(--color-error-bg);
+  --color-accent-download: var(--color-accent-download);
+  --color-accent-upload: var(--color-accent-upload);
 
   /* Explicit border color utilities (reference CSS vars defined in :root/.dark) */
   --border-color-primary: var(--border-color-primary);

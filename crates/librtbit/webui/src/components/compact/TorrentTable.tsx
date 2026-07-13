@@ -6,7 +6,11 @@ import { useUIStore } from "../../stores/uiStore";
 import { useColumnStore, ColumnDef, ColumnId } from "../../stores/columnStore";
 import { Spinner } from "../Spinner";
 import { SortIcon } from "../SortIcon";
-import { isTorrentVisible, SortDirection } from "../../helper/torrentFilters";
+import {
+  isTorrentVisible,
+  SortDirection,
+  torrentTrackerHosts,
+} from "../../helper/torrentFilters";
 import { ColumnMenu } from "./ColumnMenu";
 import { TorrentContextMenu, ContextMenuState } from "../TorrentContextMenu";
 
@@ -27,7 +31,9 @@ export type TableSortColumn =
   | "category"
   | "seeding_time"
   | "queue_position"
-  | "availability";
+  | "availability"
+  | "added_on"
+  | "tracker";
 
 const DEFAULT_SORT_COLUMN: TableSortColumn = "id";
 const DEFAULT_SORT_DIRECTION: SortDirection = "desc";
@@ -81,6 +87,10 @@ function getTableSortValue(
       return t.stats?.queue_position ?? Infinity;
     case "availability":
       return t.stats?.min_piece_availability ?? 0;
+    case "added_on":
+      return t.added_on ?? 0;
+    case "tracker":
+      return torrentTrackerHosts(t)[0] ?? "";
   }
 }
 
@@ -120,6 +130,7 @@ export const TorrentTable: React.FC<TorrentTableProps> = ({
   const searchQuery = useUIStore((state) => state.searchQuery);
   const statusFilter = useUIStore((state) => state.statusFilter);
   const categoryFilter = useUIStore((state) => state.categoryFilter);
+  const trackerFilter = useUIStore((state) => state.trackerFilter);
 
   // Subscribe to data directly so component re-renders on changes
   useColumnStore((s) => s.columnVisibility);
@@ -172,7 +183,13 @@ export const TorrentTable: React.FC<TorrentTableProps> = ({
 
     return [...torrents]
       .filter((t) =>
-        isTorrentVisible(t, normalizedQuery, statusFilter, categoryFilter),
+        isTorrentVisible(
+          t,
+          normalizedQuery,
+          statusFilter,
+          categoryFilter,
+          trackerFilter,
+        ),
       )
       .sort((a, b) => {
         const aVal = getTableSortValue(a, sortColumn);
@@ -188,6 +205,7 @@ export const TorrentTable: React.FC<TorrentTableProps> = ({
     normalizedQuery,
     statusFilter,
     categoryFilter,
+    trackerFilter,
     sortColumn,
     sortDirection,
   ]);
@@ -346,6 +364,7 @@ export const TorrentTable: React.FC<TorrentTableProps> = ({
           key={torrent.id}
           torrent={torrent}
           isSelected={selectedTorrentIds.has(torrent.id)}
+          odd={index % 2 === 1}
           onRowClick={handleRowClick}
           onContextMenu={handleRowContextMenu}
           onCheckboxChange={toggleSelection}

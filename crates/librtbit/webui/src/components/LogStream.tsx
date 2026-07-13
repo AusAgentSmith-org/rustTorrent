@@ -16,7 +16,28 @@ import { Virtuoso } from "react-virtuoso";
 interface LogStreamProps {
   url: string;
   maxLines?: number;
+  /** When set, only show lines belonging to this torrent (matched via
+   * tracing spans `torrent{id=...}` or an `info_hash` span/field). */
+  torrentFilter?: { id: number; infoHash: string };
 }
+
+const lineMatchesTorrent = (
+  line: JSONLogLine,
+  content: string,
+  filter: { id: number; infoHash: string },
+): boolean => {
+  const spans = [...(line.spans ?? []), ...(line.span ? [line.span] : [])];
+  for (const span of spans) {
+    if (span.name === "torrent" && Number(span.id) === filter.id) {
+      return true;
+    }
+  }
+  // Tracker/DHT/magnet spans carry info_hash rather than the torrent id
+  return (
+    filter.infoHash.length > 0 &&
+    content.toLowerCase().includes(filter.infoHash.toLowerCase())
+  );
+};
 
 export interface Line {
   id: number;
@@ -154,7 +175,11 @@ const streamLogs = (
   };
 };
 
-export const LogStream: React.FC<LogStreamProps> = ({ url, maxLines }) => {
+export const LogStream: React.FC<LogStreamProps> = ({
+  url,
+  maxLines,
+  torrentFilter,
+}) => {
   const [logLines, setLogLines] = useState<Line[]>([]);
   const [error, setError] = useState<ErrorWithLabel | null>(null);
   const [filter, setFilter] = useState<string>("");
@@ -230,9 +255,13 @@ export const LogStream: React.FC<LogStreamProps> = ({ url, maxLines }) => {
   const filteredLines = useMemo(
     () =>
       logLines.filter(
-        (line) => line.show && enabledLevels.has(line.parsed.level),
+        (line) =>
+          line.show &&
+          enabledLevels.has(line.parsed.level) &&
+          (!torrentFilter ||
+            lineMatchesTorrent(line.parsed, line.content, torrentFilter)),
       ),
-    [logLines, enabledLevels],
+    [logLines, enabledLevels, torrentFilter],
   );
 
   const copyLogs = useCallback(() => {
@@ -246,7 +275,7 @@ export const LogStream: React.FC<LogStreamProps> = ({ url, maxLines }) => {
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = blobUrl;
-    a.download = `rtbit-logs-${new Date().toISOString().slice(0, 19)}.log`;
+    a.download = `rusttorrent-logs-${new Date().toISOString().slice(0, 19)}.log`;
     a.click();
     URL.revokeObjectURL(blobUrl);
   }, [filteredLines]);

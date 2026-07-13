@@ -2,17 +2,45 @@ import { TorrentListItem, STATE_INITIALIZING } from "../../api-types";
 import { StatusIcon } from "../StatusIcon";
 import { formatBytes } from "../../helper/formatBytes";
 import { formatSecondsToTime } from "../../helper/formatSecondsToTime";
+import { formatUnixDate } from "../../helper/formatUnixDate";
 import { getCompletionETA } from "../../helper/getCompletionETA";
+import { torrentTrackerHosts } from "../../helper/torrentFilters";
 import { memo } from "react";
 import { ColumnDef, ColumnId, useColumnStore } from "../../stores/columnStore";
 
 interface TorrentTableRowProps {
   torrent: TorrentListItem;
   isSelected: boolean;
+  odd?: boolean;
   onRowClick: (id: number, e: React.MouseEvent) => void;
   onContextMenu: (id: number, e: React.MouseEvent) => void;
   onCheckboxChange: (id: number) => void;
   visibleColumns: ColumnDef[];
+}
+
+/** Human label + badge styling for the torrent state column */
+function stateBadge(
+  state: string,
+  finished: boolean,
+  error: string | null,
+  queued: boolean,
+): { label: string; cls: string } {
+  if (error || state === "error")
+    return { label: "Error", cls: "bg-error/15 text-error" };
+  if (queued)
+    return { label: "Queued", cls: "bg-surface-sunken text-secondary" };
+  if (state === "initializing")
+    return { label: "Checking", cls: "bg-warning/15 text-warning" };
+  if (state === "paused")
+    return { label: "Paused", cls: "bg-surface-sunken text-tertiary" };
+  if (state === "live" && finished)
+    return { label: "Seeding", cls: "bg-success/15 text-success" };
+  if (state === "live")
+    return {
+      label: "Downloading",
+      cls: "bg-accent-download/15 text-accent-download",
+    };
+  return { label: state || "—", cls: "bg-surface-sunken text-tertiary" };
 }
 
 /** Shared colgroup matching the header */
@@ -33,6 +61,7 @@ function RowColGroup({ columns }: { columns: ColumnDef[] }) {
 const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
   torrent,
   isSelected,
+  odd,
   onRowClick,
   onContextMenu,
   onCheckboxChange,
@@ -128,7 +157,10 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
         );
       case "name":
         return (
-          <td key="name" className={`px-2 align-middle ${cellBorder}`}>
+          <td
+            key="name"
+            className={`px-2 align-middle ${alignClass} ${cellBorder}`}
+          >
             <div className="truncate" title={name}>
               {name || "Loading..."}
             </div>
@@ -152,21 +184,21 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
             className={`px-2 align-middle text-center ${cellBorder}`}
           >
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 bg-divider rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-divider rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${
+                  className={`h-full rounded-full transition-[width] duration-500 ${
                     error
                       ? "bg-error-bg"
                       : finished
                         ? "bg-success-bg"
                         : state === STATE_INITIALIZING
                           ? "bg-warning-bg"
-                          : "bg-primary-bg"
+                          : "bg-accent-download"
                   }`}
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-              <span className="text-sm text-secondary w-8 text-right">
+              <span className="text-sm text-secondary w-8 text-right tabular-nums">
                 {progressPercentage}%
               </span>
             </div>
@@ -181,24 +213,32 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
             {formatBytes(progressBytes)}
           </td>
         );
-      case "downSpeed":
+      case "downSpeed": {
+        const active = (stats?.live?.download_speed?.mbps ?? 0) > 0.01;
         return (
           <td
             key="downSpeed"
-            className={`${baseCls} ${alignClass} text-secondary`}
+            className={`${baseCls} ${alignClass} tabular-nums ${
+              active ? "text-accent-download font-medium" : "text-secondary"
+            }`}
           >
             {downloadSpeed}
           </td>
         );
-      case "upSpeed":
+      }
+      case "upSpeed": {
+        const active = (stats?.live?.upload_speed?.mbps ?? 0) > 0.01;
         return (
           <td
             key="upSpeed"
-            className={`${baseCls} ${alignClass} text-secondary`}
+            className={`${baseCls} ${alignClass} tabular-nums ${
+              active ? "text-accent-upload font-medium" : "text-secondary"
+            }`}
           >
             {uploadSpeed}
           </td>
         );
+      }
       case "uploadedBytes":
         return (
           <td
@@ -220,20 +260,28 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
             {peersDisplay}
           </td>
         );
-      case "state":
+      case "state": {
+        const badge = stateBadge(
+          state,
+          finished,
+          error,
+          stats?.queue_state === "Queued",
+        );
         return (
-          <td
-            key="state"
-            className={`${baseCls} ${alignClass} text-secondary capitalize`}
-          >
-            {state}
+          <td key="state" className={`${baseCls} ${alignClass}`}>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badge.cls}`}
+            >
+              {badge.label}
+            </span>
           </td>
         );
+      }
       case "info_hash":
         return (
           <td
             key="info_hash"
-            className={`px-2 align-middle font-mono text-xs text-tertiary ${cellBorder}`}
+            className={`px-2 align-middle ${alignClass} font-mono text-xs text-tertiary ${cellBorder}`}
           >
             <div className="truncate" title={torrent.info_hash}>
               {torrent.info_hash}
@@ -314,6 +362,33 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
           </td>
         );
       }
+      case "added_on":
+        return (
+          <td
+            key="added_on"
+            className={`${baseCls} ${alignClass} text-secondary tabular-nums`}
+          >
+            {formatUnixDate(torrent.added_on)}
+          </td>
+        );
+      case "tracker": {
+        const hosts = torrentTrackerHosts(torrent);
+        return (
+          <td
+            key="tracker"
+            className={`${baseCls} ${alignClass} text-secondary`}
+            title={hosts.join(", ")}
+          >
+            <span className="truncate">
+              {hosts.length === 0
+                ? "\u2014"
+                : hosts.length === 1
+                  ? hosts[0]
+                  : `${hosts[0]} +${hosts.length - 1}`}
+            </span>
+          </td>
+        );
+      }
       default:
         return <td key={col.id} className={baseCls} />;
     }
@@ -326,8 +401,10 @@ const TorrentTableRowUnmemoized: React.FC<TorrentTableRowProps> = ({
         <tr
           onMouseDown={handleRowClick}
           onContextMenu={handleContextMenu}
-          className={`cursor-pointer border-b border-divider text-sm h-8 ${
-            isSelected ? "bg-primary/10" : "hover:bg-surface-raised"
+          className={`cursor-pointer border-b border-divider/60 text-sm h-8 transition-colors ${
+            isSelected
+              ? "bg-primary/15"
+              : `${odd ? "bg-surface-sunken/40" : ""} hover:bg-primary/5`
           }`}
         >
           {visibleColumns.map((col) => renderCell(col))}

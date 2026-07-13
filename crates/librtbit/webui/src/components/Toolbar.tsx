@@ -224,12 +224,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           </button>
         )}
 
-        {/* Logo + title */}
-        <div className="flex items-center gap-1.5 mr-1">
-          <Logo className="w-6 h-6" alt="logo" />
-          <h1 className="hidden lg:flex items-center">
-            <span className="text-lg font-bold">{title}</span>
-          </h1>
+        {/* Logo (image only — no title text) */}
+        <div className="flex items-center mr-1" title={title}>
+          <Logo className="w-6 h-6" alt={title} />
         </div>
 
         {/* Divider after logo */}

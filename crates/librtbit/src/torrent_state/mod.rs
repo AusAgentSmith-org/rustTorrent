@@ -199,6 +199,9 @@ pub struct ManagedTorrentShared {
     /// Category assigned to this torrent.
     pub category: RwLock<Option<String>>,
 
+    /// Live per-tracker announce status (seeds/peers per tracker etc).
+    pub tracker_status: Arc<tracker_comms::TrackerStatusRegistry>,
+
     /// Stable lifecycle timestamps used by compatibility APIs and persistence.
     pub added_on: u64,
     pub completion_on: AtomicU64,
@@ -757,6 +760,7 @@ fn spawn_peer_adder(live: &Arc<TorrentStateLive>, peer_rx: PeerStream) {
                         state.shared.options.force_tracker_interval,
                         Vec::new(), // no initial peers on re-discovery
                         is_private,
+                        Some(state.shared.tracker_status.clone()),
                     );
                     drop(state);
 

@@ -102,6 +102,8 @@ States: `"initializing"`, `"live"`, `"paused"`, `"error"`
 API.listTorrents()           // GET /torrents
 API.getTorrentDetails(id)    // GET /torrents/{id}
 API.getTorrentStats(id)      // GET /torrents/{id}/stats/v1
+API.getTrackerStatus(id)     // GET /torrents/{id}/trackers (per-tracker seeds/peers)
+API.getAltSpeed() / API.toggleAltSpeed(bool)  // GET/POST /speed/alt (turtle mode)
 API.start(id)                // POST /torrents/{id}/start
 API.pause(id)                // POST /torrents/{id}/pause
 API.forget(id)               // POST /torrents/{id}/forget (remove from list)

@@ -44,11 +44,11 @@ export const SetupPage: React.FC = () => {
     <div className="bg-surface h-dvh flex items-center justify-center">
       <div className="bg-surface-raised shadow-lg rounded-lg p-8 w-full max-w-sm">
         <div className="flex flex-col items-center mb-6">
-          <Logo className="w-12 h-12 mb-2" alt="rtbit" />
-          <h1 className="text-2xl font-bold">rtbit</h1>
+          <Logo className="w-12 h-12 mb-2" alt="RustTorrent" />
+          <h1 className="text-2xl font-bold">RustTorrent</h1>
           <p className="text-secondary text-sm mt-1">First-time setup</p>
           <p className="text-tertiary text-xs mt-2 text-center">
-            Create a username and password to secure your rtbit instance.
+            Create a username and password to secure your RustTorrent instance.
           </p>
         </div>
 

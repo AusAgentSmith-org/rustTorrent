@@ -19,7 +19,7 @@ export const LogStreamModal: React.FC<Props> = ({ show, onClose }) => {
     <Modal
       isOpen={show}
       onClose={onClose}
-      title="rtbit server logs"
+      title="RustTorrent server logs"
       className="max-w-7xl"
     >
       <div className="p-3 border-b dark:border-slate-500 h-[70vh]">

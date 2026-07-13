@@ -101,6 +101,33 @@ export function matchesSearch(name: string | null, query: string): boolean {
   return (name ?? "").toLowerCase().includes(query);
 }
 
+// Extract the host of a tracker announce URL ("udp://tr.example.com:80/ann" -> "tr.example.com")
+export function trackerHost(url: string): string | null {
+  const m = /^[a-z+]+:\/\/([^/:?#]+)/i.exec(url);
+  return m ? m[1].toLowerCase() : null;
+}
+
+// Unique tracker hosts for a torrent
+export function torrentTrackerHosts(t: TorrentListItem): string[] {
+  const hosts = new Set<string>();
+  for (const url of t.trackers ?? []) {
+    const host = trackerHost(url);
+    if (host) hosts.add(host);
+  }
+  return Array.from(hosts);
+}
+
+// Check if torrent matches tracker filter (a tracker host, "" = trackerless)
+export function matchesTracker(
+  t: TorrentListItem,
+  trackerFilter: string | null,
+): boolean {
+  if (trackerFilter === null) return true;
+  const hosts = torrentTrackerHosts(t);
+  if (trackerFilter === "") return hosts.length === 0;
+  return hosts.includes(trackerFilter);
+}
+
 // Check if torrent matches category filter
 export function matchesCategory(
   torrent: TorrentListItem,
@@ -141,10 +168,12 @@ export function isTorrentVisible(
   searchQuery: string,
   statusFilter: StatusFilter,
   categoryFilter?: string | null,
+  trackerFilter?: string | null,
 ): boolean {
   return (
     matchesSearch(t.name, searchQuery) &&
     matchesStatus(t, statusFilter) &&
-    matchesCategory(t, categoryFilter ?? null)
+    matchesCategory(t, categoryFilter ?? null) &&
+    matchesTracker(t, trackerFilter ?? null)
   );
 }

@@ -11,6 +11,7 @@ import { useUIStore, CurrentPage } from "../stores/uiStore";
 import { useTorrentStore } from "../stores/torrentStore";
 import { StatusFilter } from "../helper/torrentFilters";
 import { CategoryFilter } from "./compact/CategoryFilter";
+import { TrackerFilter } from "./compact/TrackerFilter";
 
 interface FilterItem {
   key: StatusFilter;
@@ -165,6 +166,9 @@ export const Sidebar: React.FC = () => {
 
         {/* Categories section */}
         <CategoryFilter />
+
+        {/* Trackers section */}
+        <TrackerFilter />
       </div>
       <button
         onClick={toggleSidebar}

@@ -150,6 +150,9 @@ pub struct Session {
     pub(crate) fastresume_validation_denom: Option<u32>,
     // Move-on-complete: destination folder for finished torrents
     completed_folder: RwLock<Option<PathBuf>>,
+
+    // Alternative ("turtle mode") speed limits state.
+    pub(crate) alt_speed: crate::alt_speed::AltSpeedState,
 }
 
 impl Session {
@@ -473,6 +476,7 @@ impl Session {
                 fastresume_validation_denom: opts.fastresume_validation_denom,
                 category_manager,
                 completed_folder: RwLock::new(resolved_completed_folder),
+                alt_speed: Default::default(),
             });
 
             if let Some(mut listen) = listen_result {
@@ -546,6 +550,7 @@ impl Session {
             }
 
             session.start_speed_estimator_updater();
+            session.spawn_alt_speed_scheduler();
 
             Ok(session)
         }
@@ -777,6 +782,13 @@ impl Session {
 
         let private = metadata.as_ref().is_some_and(|m| m.info.info().private);
 
+        // Created ahead of the ManagedTorrent so magnet-resolution announces
+        // are recorded too; moved into ManagedTorrentShared below.
+        let tracker_status = Arc::new(tracker_comms::TrackerStatusRegistry::default());
+        for t in &trackers {
+            tracker_status.ensure(t.as_str());
+        }
+
         let make_peer_rx = || {
             self.make_peer_rx(
                 info_hash,
@@ -785,6 +797,7 @@ impl Session {
                 opts.force_tracker_interval,
                 opts.initial_peers.clone().unwrap_or_default(),
                 private,
+                Some(tracker_status.clone()),
             )
         };
 
@@ -930,6 +943,7 @@ impl Session {
                 magnet_name: name,
                 web_seed_urls,
                 category: RwLock::new(opts.category.clone()),
+                tracker_status,
                 added_on: opts.added_on.unwrap_or_else(|| {
                     std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)

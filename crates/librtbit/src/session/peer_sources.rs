@@ -16,7 +16,7 @@ use crate::{
     torrent_state::{ManagedTorrentHandle, TorrentMetadata},
     type_aliases::PeerStream,
 };
-use tracker_comms::TrackerComms;
+use tracker_comms::{TrackerComms, TrackerStatusRegistry};
 
 use super::Session;
 use super::helpers::merge_two_optional_streams;
@@ -41,10 +41,12 @@ impl Session {
             t.shared().options.force_tracker_interval,
             t.shared().options.initial_peers.clone(),
             is_private,
+            Some(t.shared().tracker_status.clone()),
         )
     }
 
     // Get a peer stream from both DHT and trackers.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn make_peer_rx(
         self: &Arc<Self>,
         info_hash: Id20,
@@ -53,6 +55,7 @@ impl Session {
         force_tracker_interval: Option<Duration>,
         initial_peers: Vec<SocketAddr>,
         is_private: bool,
+        tracker_status: Option<Arc<TrackerStatusRegistry>>,
     ) -> Option<PeerStream> {
         let dht_rx = if is_private {
             None
@@ -90,6 +93,7 @@ impl Session {
             self.announce_port().unwrap_or(4240),
             self.reqwest_client.clone(),
             self.udp_tracker_client.clone(),
+            tracker_status,
         );
 
         let initial_peers_rx = if initial_peers.is_empty() {
