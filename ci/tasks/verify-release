@@ -27,7 +27,7 @@ github=$(curl -fsS \
 printf '%s' "$forgejo" | jq -e --rawfile notes "$notes" \
   '.draft == false and .prerelease == true and .body == $notes' >/dev/null
 printf '%s' "$github" | jq -e --rawfile notes "$notes" \
-  '.draft == false and .prerelease == true and .body == $notes' >/dev/null
+  '.draft == false and .prerelease == false and .body == $notes' >/dev/null
 
 for asset in $expected_assets; do
     printf '%s' "$forgejo" | jq -e --arg name "$asset" '.assets | any(.name == $name)' >/dev/null

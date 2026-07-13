@@ -399,8 +399,8 @@ steps:
         REPO="AusAgentSmith-org/rustTorrent"
         NOTES="$CI_WORKSPACE/RELEASE_NOTES_$TAG.md"
         test -f "$NOTES"
-        echo "$TAG" | grep -qE '(alpha|beta|rc)' && PRERELEASE=true || PRERELEASE=false
-        echo "Creating GitHub release $TAG (prerelease=$PRERELEASE)"
+        PRERELEASE=false
+        echo "Creating GitHub release $TAG as a full release"
 
         # Delete existing release by tag if present (idempotent retry)
         EXISTING_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \

@@ -42,6 +42,10 @@ Release notes are checked in as `RELEASE_NOTES_<tag>.md`. CI uses the same
 file verbatim for Forgejo and GitHub, then verifies source refs, release assets,
 and multi-architecture container images on both registries.
 
+GitHub publishes every tagged build as a full release (`prerelease: false`),
+including tags whose semantic version contains `alpha`, `beta`, or `rc`.
+Forgejo retains semantic prerelease classification for development tracking.
+
 The Docker image must keep `org.opencontainers.image.source` set to
 `https://github.com/AusAgentSmith-org/rustTorrent`. GitHub uses that OCI source
 metadata to associate the GHCR container package with the public repository so
