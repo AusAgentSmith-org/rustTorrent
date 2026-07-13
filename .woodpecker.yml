@@ -24,6 +24,8 @@ steps:
 
   - name: check
     image: rust:1.95-bookworm
+    depends_on:
+      - fmt
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -40,6 +42,8 @@ steps:
 
   - name: test
     image: rust:1.95-bookworm
+    depends_on:
+      - check
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -55,6 +59,8 @@ steps:
 
   - name: clippy
     image: rust:1.95-bookworm
+    depends_on:
+      - test
     environment:
       GIT_AUTH_TOKEN:
         from_secret: git_auth_token
@@ -71,6 +77,8 @@ steps:
 
   - name: webui
     image: node:24-bookworm
+    depends_on:
+      - clippy
     commands:
       - cd crates/librtbit/webui
       - npm ci --no-audit --no-fund
@@ -80,6 +88,8 @@ steps:
 
   - name: gui-e2e
     image: mcr.microsoft.com/playwright:v1.61.1-noble
+    depends_on:
+      - webui
     commands:
       - cd crates/librtbit/webui
       - npm ci --no-audit --no-fund
@@ -87,6 +97,8 @@ steps:
 
   - name: website-check
     image: alpine:3.23
+    depends_on:
+      - gui-e2e
     commands:
       - ci/tasks/website-check
 
