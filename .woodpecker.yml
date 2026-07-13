@@ -85,6 +85,23 @@ steps:
       - npm ci --no-audit --no-fund
       - npm run test:e2e
 
+  - name: website-check
+    image: alpine:3.23
+    commands:
+      - ci/tasks/website-check
+
+  - name: website-deploy
+    image: alpine:3.23
+    when:
+      - event: push
+        branch: main
+    environment:
+      DEPLOY_SSH_KEY:
+        from_secret: deploy_ssh_key
+    commands:
+      - apk add --no-cache openssh-client rsync
+      - ci/tasks/deploy-website
+
   - name: build-linux
     image: rust:1.95-bookworm
     environment:

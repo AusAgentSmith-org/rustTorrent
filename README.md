@@ -101,6 +101,7 @@ for the full integration guide.
 | `crates/librtbit` | Core session, torrent state machine, storage, HTTP API, web UI |
 | `crates/librtbit-*` | Protocol building blocks: bencode, DHT, peer protocol, trackers, UPnP, LSD |
 | `desktop/` | Tauri desktop application |
+| `website/` | Static rusttorrent.dev website and deployment assets |
 | `fuzz/` | Fuzz targets for the protocol parsers |
 | `docs/` | Architecture notes, testing guide, fork provenance |
 

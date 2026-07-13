@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+
+site="${1:-website}"
+
+required_files="
+$site/index.html
+$site/CNAME
+$site/css/style.css
+$site/js/main.js
+$site/demo/index.html
+"
+
+for file in $required_files; do
+  test -s "$file" || {
+    echo "missing or empty website asset: $file" >&2
+    exit 1
+  }
+done
+
+test "$(tr -d '\r\n' < "$site/CNAME")" = "rusttorrent.dev" || {
+  echo "website/CNAME must contain rusttorrent.dev" >&2
+  exit 1
+}
+
+# Validate local href/src references in both HTML entry points. Remote URLs,
+# anchors, mail links, and data URLs are intentionally outside this check.
+for html in "$site/index.html" "$site/demo/index.html"; do
+  base=$(dirname "$html")
+  sed -nE 's/.*(href|src)="([^"]+)".*/\2/p' "$html" |
+    while IFS= read -r ref; do
+      case "$ref" in
+        ""|\#*|http://*|https://*|mailto:*|data:*|javascript:*) continue ;;
+      esac
+      clean=${ref%%\?*}
+      clean=${clean%%\#*}
+      case "$clean" in
+        /*) target="$site/${clean#/}" ;;
+        */) target="$base/${clean}index.html" ;;
+        *) target="$base/$clean" ;;
+      esac
+      test -e "$target" || {
+        echo "$html references missing local asset: $ref" >&2
+        exit 1
+      }
+    done
+done
+
+echo "website assets validated"

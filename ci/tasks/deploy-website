@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+: "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY is required}"
+
+host="${WEBSITE_DEPLOY_HOST:-100.92.4.57}"
+destination="${WEBSITE_DEPLOY_PATH:-/root/websites/rusttorrent}"
+
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+chmod 600 "$HOME/.ssh/id_ed25519"
+ssh-keyscan -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
+
+# The old standalone checkout remains in place during migration. Excluding its
+# .git directory makes this an idempotent content deploy while the monorepo is
+# now the source of truth for every served website file.
+rsync -rlptDz --delete --exclude=.git/ --exclude=.git \
+  website/ "root@$host:$destination/"
+
+ssh root@"$host" \
+  "test -s '$destination/index.html' && test -s '$destination/css/style.css' && test -s '$destination/js/main.js' && ! test -e '$destination/.woodpecker.yml' && ! test -d '$destination/.github'"
+
+echo "website deployed to $host:$destination"
