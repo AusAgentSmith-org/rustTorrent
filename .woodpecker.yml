@@ -90,11 +90,28 @@ steps:
     commands:
       - ci/tasks/website-check
 
+  - name: github-preflight
+    image: alpine:3.23
+    when:
+      - event: push
+        branch: main
+      - event: tag
+    depends_on:
+      - website-check
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+    commands:
+      - apk add --no-cache curl jq
+      - ci/tasks/github-preflight
+
   - name: website-deploy
     image: alpine:3.23
     when:
       - event: push
         branch: main
+    depends_on:
+      - github-preflight
     environment:
       DEPLOY_SSH_KEY:
         from_secret: deploy_ssh_key
@@ -123,6 +140,8 @@ steps:
       - event: push
         branch: main
       - event: tag
+    depends_on:
+      - github-preflight
 
   - name: build-windows
     image: rust:1.95-bookworm
@@ -146,11 +165,15 @@ steps:
       - event: push
         branch: main
       - event: tag
+    depends_on:
+      - build-linux
 
   - name: publish-release
     image: alpine:3.23
     when:
       - event: tag
+    depends_on:
+      - verify-release-images
     environment:
       DEPLOY_SSH_KEY:
         from_secret: deploy_ssh_key
@@ -178,6 +201,8 @@ steps:
     image: alpine:3.23
     when:
       - event: tag
+    depends_on:
+      - publish-release
     environment:
       FORGEJO_TOKEN:
         from_secret: git_auth_token
@@ -187,14 +212,10 @@ steps:
         TAG="$CI_COMMIT_TAG"
         API="https://repo.indexarr.net/api/v1"
         REPO="indexarr/rustTorrent"
-        echo "Creating Forgejo release $TAG"
-
-        BODY="## Downloads\n\n"
-        BODY="$BODY- **Linux x86_64**: \`rtbit-$TAG-linux-x86_64\`\n"
-        BODY="$BODY- **Windows x86_64**: \`rtbit-$TAG-windows-x86_64.exe\`\n"
-        BODY="$BODY- **Debian/Ubuntu**: \`rtbit-$TAG-amd64.deb\`\n"
-        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\` (linux/amd64, linux/arm64)\n"
-        BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
+        NOTES="$CI_WORKSPACE/RELEASE_NOTES_$TAG.md"
+        test -f "$NOTES"
+        echo "$TAG" | grep -qE '(alpha|beta|rc)' && PRERELEASE=true || PRERELEASE=false
+        echo "Creating Forgejo release $TAG (prerelease=$PRERELEASE)"
 
         # Delete existing release by tag if present (idempotent retry)
         EXISTING_ID=$(curl -s -H "Authorization: token $FORGEJO_TOKEN" \
@@ -205,10 +226,17 @@ steps:
             "$API/repos/$REPO/releases/$EXISTING_ID"
         fi
 
+        jq -n \
+          --arg tag "$TAG" \
+          --arg name "rustTorrent $TAG" \
+          --rawfile body "$NOTES" \
+          --argjson prerelease "$PRERELEASE" \
+          '{tag_name:$tag,name:$name,body:$body,draft:false,prerelease:$prerelease}' \
+          > /tmp/forgejo-release.json
         RELEASE_ID=$(curl -s -X POST \
           -H "Authorization: token $FORGEJO_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"tag_name\":\"$TAG\",\"name\":\"rustTorrent $TAG\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":true}" \
+          --data-binary @/tmp/forgejo-release.json \
           "$API/repos/$REPO/releases" | jq -r '.id')
 
         if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
@@ -230,6 +258,8 @@ steps:
     image: woodpeckerci/plugin-docker-buildx
     when:
       - event: push
+    depends_on:
+      - build-windows
     settings:
       repo: repo.indexarr.net/indexarr/rusttorrent
       registry: repo.indexarr.net
@@ -237,7 +267,7 @@ steps:
         from_secret: git_auth_token
       password:
         from_secret: git_auth_token
-      tag: ["latest", "${CI_COMMIT_SHA}"]
+      tag: ["dev", "${CI_COMMIT_SHA}"]
       default_labels: false
       labels:
         - org.opencontainers.image.source=https://github.com/AusAgentSmith-org/rustTorrent
@@ -247,10 +277,47 @@ steps:
       build_args_from_env:
         - PLUGIN_PASSWORD
 
+  - name: push-ghcr-dev
+    image: quay.io/skopeo/stable
+    when:
+      - event: push
+        branch: main
+    depends_on:
+      - build-and-push
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+      FORGEJO_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - SRC="docker://repo.indexarr.net/indexarr/rusttorrent:$CI_COMMIT_SHA"
+      - SRC_CREDS="--src-creds=$FORGEJO_TOKEN:$FORGEJO_TOKEN"
+      - DST_CREDS="--dest-creds=AusAgentSmith:$GH_TOKEN"
+      - skopeo copy $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$CI_COMMIT_SHA"
+      - skopeo copy $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:dev"
+
+  - name: mirror-github-main
+    image: alpine:3.23
+    when:
+      - event: push
+        branch: main
+    depends_on:
+      - push-ghcr-dev
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+      GIT_AUTH_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - apk add --no-cache git
+      - ci/tasks/mirror-github branch
+
   - name: build-and-push-release
     image: woodpeckerci/plugin-docker-buildx
     when:
       - event: tag
+    depends_on:
+      - build-windows
     settings:
       repo: repo.indexarr.net/indexarr/rusttorrent
       registry: repo.indexarr.net
@@ -273,6 +340,8 @@ steps:
     image: quay.io/skopeo/stable
     when:
       - event: tag
+    depends_on:
+      - build-and-push-release
     environment:
       GH_TOKEN:
         from_secret: gh_release_token
@@ -284,10 +353,42 @@ steps:
       - DST_CREDS="--dest-creds=AusAgentSmith:$GH_TOKEN"
       - for tag in $CI_COMMIT_TAG latest beta; do skopeo copy --all $SRC_CREDS $DST_CREDS $SRC "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag"; done
 
+  - name: verify-release-images
+    image: quay.io/skopeo/stable
+    when:
+      - event: tag
+    depends_on:
+      - push-ghcr
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+      FORGEJO_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - for tag in $CI_COMMIT_TAG latest beta; do for arch in amd64 arm64; do skopeo inspect --creds "$FORGEJO_TOKEN:$FORGEJO_TOKEN" --override-arch "$arch" "docker://repo.indexarr.net/indexarr/rusttorrent:$tag" >/dev/null; skopeo inspect --creds "AusAgentSmith:$GH_TOKEN" --override-arch "$arch" "docker://ghcr.io/ausagentsmith-org/rusttorrent:$tag" >/dev/null; done; done
+
+  - name: mirror-github-tag
+    image: alpine:3.23
+    when:
+      - event: tag
+    depends_on:
+      - verify-release-images
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+      GIT_AUTH_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - apk add --no-cache git
+      - ci/tasks/mirror-github tag
+
   - name: github-release
     image: alpine:3.23
     when:
       - event: tag
+    depends_on:
+      - mirror-github-tag
+      - publish-release
     environment:
       GH_TOKEN:
         from_secret: gh_release_token
@@ -296,14 +397,10 @@ steps:
       - |
         TAG="$CI_COMMIT_TAG"
         REPO="AusAgentSmith-org/rustTorrent"
-        echo "Creating GitHub release $TAG on $REPO"
-
-        BODY="## Downloads\n\n"
-        BODY="$BODY- **Linux x86_64**: \`rtbit-$TAG-linux-x86_64\`\n"
-        BODY="$BODY- **Windows x86_64**: \`rtbit-$TAG-windows-x86_64.exe\`\n"
-        BODY="$BODY- **Debian/Ubuntu**: \`rtbit-$TAG-amd64.deb\`\n"
-        BODY="$BODY- **Docker**: \`ghcr.io/ausagentsmith-org/rusttorrent:$TAG\` (linux/amd64, linux/arm64)\n"
-        BODY="$BODY\nSHA256 checksums in \`SHA256SUMS-$TAG.txt\`"
+        NOTES="$CI_WORKSPACE/RELEASE_NOTES_$TAG.md"
+        test -f "$NOTES"
+        echo "$TAG" | grep -qE '(alpha|beta|rc)' && PRERELEASE=true || PRERELEASE=false
+        echo "Creating GitHub release $TAG (prerelease=$PRERELEASE)"
 
         # Delete existing release by tag if present (idempotent retry)
         EXISTING_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
@@ -312,14 +409,19 @@ steps:
           echo "Deleting existing GitHub release ID=$EXISTING_ID"
           curl -s -X DELETE -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$REPO/releases/$EXISTING_ID"
-          curl -s -X DELETE -H "Authorization: token $GH_TOKEN" \
-            "https://api.github.com/repos/$REPO/git/refs/tags/$TAG" || true
         fi
 
+        jq -n \
+          --arg tag "$TAG" \
+          --arg name "rustTorrent $TAG" \
+          --rawfile body "$NOTES" \
+          --argjson prerelease "$PRERELEASE" \
+          '{tag_name:$tag,target_commitish:"main",name:$name,body:$body,draft:false,prerelease:$prerelease}' \
+          > /tmp/github-release.json
         RELEASE_ID=$(curl -s -X POST \
           -H "Authorization: token $GH_TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"tag_name\":\"$TAG\",\"target_commitish\":\"main\",\"name\":\"rustTorrent $TAG\",\"body\":\"$BODY\",\"draft\":false,\"prerelease\":true}" \
+          --data-binary @/tmp/github-release.json \
           "https://api.github.com/repos/$REPO/releases" | jq -r '.id')
 
         if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
@@ -337,6 +439,24 @@ steps:
             "https://uploads.github.com/repos/$REPO/releases/$RELEASE_ID/assets?name=$file" > /dev/null
         done
         echo "GitHub release $TAG complete"
+
+  - name: verify-release
+    image: alpine:3.23
+    when:
+      - event: tag
+    depends_on:
+      - forgejo-release
+      - github-release
+    environment:
+      GH_TOKEN:
+        from_secret: gh_release_token
+      FORGEJO_TOKEN:
+        from_secret: git_auth_token
+      GIT_AUTH_TOKEN:
+        from_secret: git_auth_token
+    commands:
+      - apk add --no-cache curl git jq
+      - ci/tasks/verify-release
 
   - name: discord-success
     image: alpine/curl

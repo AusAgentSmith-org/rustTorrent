@@ -4,7 +4,7 @@ version = "0.1.2"
 edition = "2024"
 description = "Utils to work with byte buffers in librtbit source code"
 license = "MIT"
-repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+repository = "https://github.com/AusAgentSmith-org/rustTorrent"
 
 [dependencies]
 serde = "1"

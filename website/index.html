@@ -37,7 +37,7 @@
         <!-- Hero -->
         <section class="hero">
             <div class="wrap">
-                <p class="hero-status"><span class="dot"></span> Alpha &mdash; under active development</p>
+                <p class="hero-status"><span class="dot"></span> Beta &mdash; under active development</p>
                 <h1>A BitTorrent client,<br>rebuilt in Rust.</h1>
                 <p class="hero-lede">
                     rustTorrent is a self-hostable torrent client with a clean web UI,
@@ -49,8 +49,8 @@
                     <a class="btn btn-ghost" href="demo/">Try the live demo</a>
                 </div>
                 <p class="hero-meta">
-                    <code>docker run ghcr.io/ausagentsmith-org/rusttorrent:alpha</code>
-                    <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:alpha" aria-label="Copy Docker command">copy</button>
+                    <code>docker run ghcr.io/ausagentsmith-org/rusttorrent:beta</code>
+                    <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:beta" aria-label="Copy Docker command">copy</button>
                 </p>
             </div>
 
@@ -160,11 +160,11 @@
 
                 <div class="pane active" id="pane-docker">
                     <div class="code">
-                        <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:alpha" aria-label="Copy">copy</button>
+                        <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:beta" aria-label="Copy">copy</button>
 <pre>docker run -d --name rusttorrent \
   -p 3030:3030 -p 4240:4240 \
   -v ~/downloads:/downloads \
-  ghcr.io/ausagentsmith-org/rusttorrent:alpha</pre>
+  ghcr.io/ausagentsmith-org/rusttorrent:beta</pre>
                     </div>
                     <p class="pane-note">Port <code>3030</code> serves the web UI and API; <code>4240</code> handles BitTorrent TCP and uTP. Mount your download directory at <code>/downloads</code>.</p>
                 </div>
@@ -202,7 +202,7 @@ rtbit-&lt;version&gt;-linux-x86_64</pre>
                 </div>
 
                 <p class="alpha-note">
-                    <strong>Alpha software.</strong> Expect bugs, breaking changes, and incomplete
+                    <strong>Beta software.</strong> Expect bugs, breaking changes, and incomplete
                     features &mdash; not recommended for anything you can&rsquo;t afford to re-download.
                     <a href="https://github.com/AusAgentSmith-org/rustTorrent/issues" target="_blank" rel="noopener">Report issues on GitHub</a>.
                 </p>

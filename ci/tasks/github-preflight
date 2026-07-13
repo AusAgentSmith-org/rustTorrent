@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+: "${GH_TOKEN:?GH_TOKEN is required}"
+
+api=https://api.github.com
+repo=AusAgentSmith-org/rustTorrent
+
+login=$(curl -fsS \
+  -H "Authorization: Bearer $GH_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  "$api/user" | jq -r .login)
+test -n "$login"
+
+curl -fsS \
+  -u "$login:$GH_TOKEN" \
+  "https://ghcr.io/token?scope=repository:ausagentsmith-org/rusttorrent:pull,push&service=ghcr.io" \
+  | jq -e '.token | length > 0' >/dev/null
+
+curl -fsS \
+  -H "Authorization: Bearer $GH_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  "$api/repos/$repo" | jq -e '.permissions.push == true' >/dev/null
+
+echo "GitHub API, repository push, and GHCR access verified for $login"

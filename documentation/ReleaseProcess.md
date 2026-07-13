@@ -5,11 +5,11 @@ runner. GitHub and GHCR are public distribution targets only.
 
 ## Versioning
 
-The next beta release is `0.1.0-beta.1`.
+The current beta release is `0.1.0-beta.2`.
 
 - Crate version: `crates/rtbit/Cargo.toml`
-- Release tag: `v0.1.0-beta.1`
-- Docker tag: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.1`
+- Release tag: `v0.1.0-beta.2`
+- Docker tag: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.2`
 
 ## CI Flow
 
@@ -35,7 +35,12 @@ Release tags build:
 
 Tag releases publish artifacts to the download host, create a Forgejo release,
 push the multi-arch Docker image to Forgejo, copy it to GHCR, then create the
-GitHub release.
+GitHub release. Main and release tags are mirrored to GitHub so the public
+repository contains the complete source history for every published release.
+
+Release notes are checked in as `RELEASE_NOTES_<tag>.md`. CI uses the same
+file verbatim for Forgejo and GitHub, then verifies source refs, release assets,
+and multi-architecture container images on both registries.
 
 The Docker image must keep `org.opencontainers.image.source` set to
 `https://github.com/AusAgentSmith-org/rustTorrent`. GitHub uses that OCI source

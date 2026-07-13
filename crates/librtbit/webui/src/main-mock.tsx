@@ -14,7 +14,7 @@ Object.assign(RssAPI, MockRssAPI);
 const RootWithMockAPI = () => {
   return (
     <APIContext.Provider value={MockAPI}>
-      <RtbitWebUI title="RustTorrent Demo" version="v0.1.0-beta.1" />
+      <RtbitWebUI title="RustTorrent Demo" version="v0.1.0-beta.2" />
     </APIContext.Provider>
   );
 };

@@ -4,7 +4,7 @@ version = "0.1.3"
 edition = "2024"
 description = "BitTorrent peer wire protocol implementation for the rtbit client"
 license = "MIT"
-repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+repository = "https://github.com/AusAgentSmith-org/rustTorrent"
 
 [dependencies]
 serde = "1"

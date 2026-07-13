@@ -4,7 +4,7 @@ version = "0.1.5"
 edition = "2024"
 description = "Core types and utilities for the rtbit BitTorrent client"
 license = "MIT"
-repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+repository = "https://github.com/AusAgentSmith-org/rustTorrent"
 
 [features]
 default = ["sha1-crypto-hash"]

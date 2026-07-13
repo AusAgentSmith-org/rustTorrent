@@ -1,12 +1,12 @@
 [package]
 name = "rtbit"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 authors = ["AusAgentSmith <admin@rusttorrent.dev>"]
 edition = "2024"
 description = "A bittorrent command line client and server."
 license = "Apache-2.0"
 documentation = "https://rusttorrent.dev"
-repository = "https://repo.indexarr.net/indexarr/rustTorrent"
+repository = "https://github.com/AusAgentSmith-org/rustTorrent"
 readme = "README.md"
 
 [lints]

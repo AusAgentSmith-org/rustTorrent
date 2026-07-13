@@ -4,8 +4,8 @@ A modern, self-hostable BitTorrent client written in Rust — a single small bin
 clean web UI, a full HTTP API, and qBittorrent-compatible endpoints for the tools you
 already run.
 
-> **Alpha software.** rustTorrent is under active development. Expect bugs, breaking
-> changes, and incomplete features. [Report issues](https://repo.indexarr.net/indexarr/rustTorrent/issues).
+> **Beta software.** rustTorrent is under active development. Expect bugs, breaking
+> changes, and incomplete features. [Report issues](https://github.com/AusAgentSmith-org/rustTorrent/issues).
 
 **Website:** [rusttorrent.dev](https://rusttorrent.dev/) ·
 **Live demo:** [rusttorrent.dev/demo](https://rusttorrent.dev/demo/) ·
@@ -25,8 +25,6 @@ already run.
 - **Streaming** — play media files directly from incomplete torrents over HTTP.
 - **RSS automation** — subscribe to feeds with filter rules and download new releases
   automatically.
-- **Indexarr integration** — browse and search the [Indexarr](https://indexarr.net/)
-  torrent index from inside the web UI.
 - **Docker ready** — multi-stage build producing a minimal scratch-based image.
 - **Desktop app** — native Tauri application for Windows, macOS, and Linux with system
   tray integration.
@@ -41,13 +39,13 @@ already run.
 docker run -d --name rusttorrent \
   -p 3030:3030 -p 4240:4240 \
   -v ~/downloads:/downloads \
-  ghcr.io/ausagentsmith-org/rusttorrent:alpha
+  ghcr.io/ausagentsmith-org/rusttorrent:beta
 ```
 
 Or build from the repository:
 
 ```bash
-git clone https://repo.indexarr.net/indexarr/rustTorrent.git
+git clone https://github.com/AusAgentSmith-org/rustTorrent.git
 cd rustTorrent
 docker compose up --build -d
 ```
@@ -70,7 +68,7 @@ The web UI comes up at [http://localhost:3030](http://localhost:3030).
 ### From source
 
 ```bash
-git clone https://repo.indexarr.net/indexarr/rustTorrent.git
+git clone https://github.com/AusAgentSmith-org/rustTorrent.git
 cd rustTorrent
 cargo build --release
 ./target/release/rtbit server start ~/Downloads
@@ -82,16 +80,7 @@ UI. See [docs/TESTING.md](docs/TESTING.md) for running the test suites.
 ## Configuration
 
 Most behaviour is configurable from the web UI's settings dialog or via CLI flags
-(`rtbit --help`). Selected environment variables:
-
-| Variable | Purpose |
-|----------|---------|
-| `RTBIT_INDEXARR_ENABLED` | Enable the Indexarr browse/search integration (`true`/`1`) |
-| `RTBIT_INDEXARR_URL` | Base URL of your Indexarr instance |
-| `RTBIT_INDEXARR_API_KEY` | API key, injected server-side (never sent to the browser) |
-
-See [documentation/IndexarrRustTorrentIntegration.md](documentation/IndexarrRustTorrentIntegration.md)
-for the full integration guide.
+(`rtbit --help`). The first browser visit walks through authentication setup.
 
 ## Repository layout
 
@@ -101,6 +90,7 @@ for the full integration guide.
 | `crates/librtbit` | Core session, torrent state machine, storage, HTTP API, web UI |
 | `crates/librtbit-*` | Protocol building blocks: bencode, DHT, peer protocol, trackers, UPnP, LSD |
 | `desktop/` | Tauri desktop application |
+| `website/` | Static rusttorrent.dev website and deployment assets |
 | `fuzz/` | Fuzz targets for the protocol parsers |
 | `docs/` | Architecture notes, testing guide, fork provenance |
 
