@@ -37,7 +37,7 @@ done
 forgejo_ref=$(curl -fsS \
   -H "Authorization: token $FORGEJO_TOKEN" \
   "https://repo.indexarr.net/api/v1/repos/indexarr/rustTorrent/git/refs/tags/$tag" \
-  | jq -r .object.sha)
+  | jq -r 'if type == "array" then .[0].object.sha else .object.sha end')
 github_ref=$(curl -fsS \
   -H "Authorization: Bearer $GH_TOKEN" \
   -H "Accept: application/vnd.github+json" \
