@@ -55,7 +55,7 @@ pub struct AltSpeedState {
 }
 
 fn to_bps(rate: Option<u64>) -> Option<NonZeroU32> {
-    rate.and_then(|r| NonZeroU32::new(r.min(u32::MAX as u64) as u32))
+    rate.and_then(|r| NonZeroU32::new(u32::try_from(r).unwrap_or(u32::MAX)))
 }
 
 impl Session {
