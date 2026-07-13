@@ -11,7 +11,7 @@ BitTorrent client written in Rust with a web UI.
 - **Credentials come from Infisical**, not from a logged-in `gh`/git session (there is none).
   This runtime has an injected machine identity (`INFISICAL_CLIENT_ID`/`INFISICAL_CLIENT_SECRET`);
   `mydevenv2-agent-auth check` confirms access. Do not declare yourself "blocked on auth" without
-  fetching from Infisical first. Full paths + token names are in `/home/AusAgentSmith/Working/AGENTS.md`
+  fetching from Infisical first. Paths and token names are in the workspace-level `AGENTS.md`
   (Service Access table): `GIT_AUTH_TOKEN`/`FORGEJO_TOKEN`/`GITHUB_PAT` live in the `cicd` project,
   env `prod`. Never print token values.
 

@@ -53,7 +53,7 @@ it appears on `https://github.com/AusAgentSmith-org/rustTorrent/packages`.
 
 ## Auth and Permission Notes
 
-Use `/home/AusAgentSmith/Working/docs/AUTH-VALIDATION.md` before touching Forgejo,
+Use the workspace `docs/AUTH-VALIDATION.md` before touching Forgejo,
 Woodpecker, Infisical, GitHub, GHCR, or Komodo state.
 
 Known permission failure modes:
