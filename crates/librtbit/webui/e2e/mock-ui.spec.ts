@@ -2,30 +2,36 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/mock.html");
-  await expect(page).toHaveTitle(/rtbit/i);
+  await expect(page).toHaveTitle(/rustTorrent/i);
   await expect(page.locator("tbody tr").first()).toBeVisible();
 });
 
-test("renders deterministic torrent data and live session stats", async ({ page }) => {
-  await expect(page.getByText("rtbit (MOCK)", { exact: false })).toBeVisible();
-  // The table intentionally virtualizes 1,000 records, so only a viewport-sized
-  // subset should exist in the DOM while the sidebar exposes the full count.
-  await expect(page.locator("tbody tr")).toHaveCount(13);
-  await expect(page.getByRole("button", { name: /^All/ }).first()).toContainText("1000");
-  await expect(page.getByText(/Ubuntu|Fedora|Arch|Debian/).first()).toBeVisible();
+test("renders fictional release data and live session stats", async ({ page }) => {
+  await expect(page.getByText("rustTorrent Demo", { exact: false })).toBeVisible();
+  await expect(page.locator("tbody tr")).toHaveCount(12);
+  await expect(page.getByRole("button", { name: /^All/ }).first()).toContainText("36");
+  await expect(page.locator("tbody tr").first()).toContainText("Telescope.Raw.Sample.Data");
   await expect(page.getByTitle("Toggle dark mode")).toBeVisible();
 });
 
 test("filters torrents by search and status", async ({ page }) => {
   const search = page.locator("[data-search-input]");
-  await search.fill("Ubuntu");
+  await search.fill("NebulaOS");
   await expect(page.locator("tbody tr")).not.toHaveCount(1000);
-  await expect(page.locator("tbody tr").first()).toContainText("Ubuntu");
+  await expect(page.locator("tbody tr").first()).toContainText("NebulaOS");
 
   await search.fill("");
   await page.getByRole("button", { name: /^Paused/ }).click();
   await expect(page.locator("tbody tr")).toHaveCount(13);
   await expect(page.getByRole("button", { name: /^Paused/ })).toHaveClass(/bg-primary/);
+});
+
+test("shows simulated RSS release history", async ({ page }) => {
+  await page.getByRole("button", { name: "RSS" }).click();
+  await expect(page.locator("tbody").getByText("Open Media Weekly").first()).toBeVisible();
+  await expect(page.getByText("Glass River", { exact: false })).toBeVisible();
+  await expect(page.getByText("Done").first()).toBeVisible();
+  await expect(page.getByText("Pending").first()).toBeVisible();
 });
 
 test("selects a torrent and exposes safe bulk actions", async ({ page }) => {

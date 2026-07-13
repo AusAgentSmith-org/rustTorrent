@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a3728"/>
+      <stop offset="100%" style="stop-color:#3d2e22"/>
+    </linearGradient>
+    <linearGradient id="gear" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b6914"/>
+      <stop offset="100%" style="stop-color:#a07818"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded background -->
+  <rect width="120" height="120" rx="24" fill="url(#bg)"/>
+  <!-- Gear teeth -->
+  <g transform="translate(60,62)">
+    <path d="M-6,-38 L6,-38 L8,-30 L-8,-30Z" fill="url(#gear)"/>
+    <path d="M-6,30 L6,30 L8,38 L-8,38Z" fill="url(#gear)"/>
+    <path d="M-38,-6 L-38,6 L-30,8 L-30,-8Z" fill="url(#gear)"/>
+    <path d="M30,-6 L30,6 L38,8 L38,-8Z" fill="url(#gear)"/>
+    <path d="M21,-31 L29,-25 L23,-19 L15,-25Z" fill="url(#gear)"/>
+    <path d="M-29,25 L-21,31 L-15,25 L-23,19Z" fill="url(#gear)"/>
+    <path d="M-29,-25 L-21,-31 L-15,-25 L-23,-19Z" fill="url(#gear)"/>
+    <path d="M21,31 L29,25 L23,19 L15,25Z" fill="url(#gear)"/>
+    <!-- Gear ring -->
+    <circle cx="0" cy="0" r="24" fill="none" stroke="url(#gear)" stroke-width="6"/>
+    <!-- Cloud shape -->
+    <ellipse cx="-6" cy="-4" rx="12" ry="10" fill="#e8dcc8"/>
+    <ellipse cx="8" cy="-2" rx="10" ry="9" fill="#e8dcc8"/>
+    <ellipse cx="0" cy="4" rx="14" ry="8" fill="#e8dcc8"/>
+    <!-- Download arrow -->
+    <path d="M0,-10 L0,2 L-5,-3 M0,2 L5,-3" fill="none" stroke="#4a3728" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- T letter -->
+    <text x="0" y="12" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="800" fill="#4a3728" text-anchor="middle">T</text>
+  </g>
+</svg>

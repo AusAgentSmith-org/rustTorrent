@@ -21,64 +21,50 @@ import {
   TorrentListItem,
   LiveTorrentStats,
   TorrentFile,
+  RssFeedConfig,
+  RssItem,
+  RssRule,
 } from "./api-types";
 
-// Torrent name templates for variety
+// Deliberately fictional release names make the public demo feel populated
+// without implying that any real torrent or tracker is being served.
 const TORRENT_NAMES = [
-  "Ubuntu-{version}-desktop-amd64",
-  "Fedora-Workstation-{version}-x86_64",
-  "Arch-Linux-{version}",
-  "Debian-{version}-amd64-netinst",
-  "Linux-Mint-{version}-cinnamon-64bit",
-  "PopOS-{version}-amd64-nvidia",
-  "Manjaro-{version}-kde-plasma",
-  "OpenSUSE-Tumbleweed-{version}",
-  "EndeavourOS-{version}-Galileo",
-  "Zorin-OS-{version}-Core-64bit",
-  "Elementary-OS-{version}-stable",
-  "Kali-Linux-{version}-amd64",
-  "Parrot-Security-{version}-amd64",
-  "NixOS-{version}-x86_64-plasma",
-  "Alpine-Linux-{version}-standard",
-  "Void-Linux-{version}-x86_64",
-  "Gentoo-{version}-amd64-minimal",
-  "Slackware-{version}-install-dvd",
-  "CentOS-Stream-{version}-x86_64",
-  "Rocky-Linux-{version}-minimal",
-  "AlmaLinux-{version}-x86_64",
-  "FreeBSD-{version}-amd64-dvd",
-  "OpenBSD-{version}-amd64",
-  "NetBSD-{version}-amd64",
-  "SteamOS-{version}-Deck-Recovery",
-  "Tails-{version}-amd64-img",
-  "Qubes-OS-{version}-x86_64",
-  "Whonix-{version}-gateway",
-  "MX-Linux-{version}-ahs-x64",
-  "AntiX-{version}-full-x64",
-  "Solus-{version}-Budgie",
-  "Deepin-{version}-amd64",
-  "LMDE-{version}-cinnamon-64bit",
-  "Garuda-Linux-{version}-dr460nized",
-  "ArcoLinux-{version}-plasma",
-  "Artix-Linux-{version}-dinit",
-  "Calculate-Linux-{version}-desktop",
-  "Mageia-{version}-Plasma-x86_64",
-  "PCLinuxOS-{version}-kde-darkstar",
-  "Puppy-Linux-{version}-bionicpup64",
-];
-
-// Very long torrent names (realistic naming patterns with legitimate content)
-const LONG_TORRENT_NAMES = [
-  "Big.Buck.Bunny.2008.4K.Remastered.2160p.UHD.BluRay.x265.10bit.HDR.DTS-HD.MA.7.1-Blender",
-  "Sintel.2010.Open.Movie.Project.Directors.Cut.1080p.BluRay.x264.DTS-HD.MA.5.1-BlenderFoundation",
-  "Tears.of.Steel.2012.Creative.Commons.1080p.BluRay.x264.FLAC.5.1-Mango",
-  "LibreOffice.Fresh.v24.8.3.Full.Multilingual.x64.Portable-DocumentFoundation",
-  "Blender.Studio.Open.Movies.Complete.Collection.2008-2024.4K.UHD.x265.10bit.HDR-BlenderCloud",
-  "Cosmos.Laundromat.2015.First.Cycle.Open.Movie.2160p.UHD.HDR.x265.DTS-HD.MA.7.1.Atmos-Gooseberry",
-  "Spring.2019.Open.Movie.Blender.Animation.Studio.2160p.UHD.BluRay.x265.10bit.HDR.FLAC.5.1-BlenderStudio",
-  "Agent.327.Operation.Barbershop.2017.Blender.Institute.1080p.BluRay.x264.DTS-HD.MA.5.1-BlenderFoundation",
-  "Wikipedia.Offline.Complete.English.2024.Compressed.Archive.Split.Parts.001-100-Kiwix",
-  "Internet.Archive.Public.Domain.Movies.Collection.Vol.42.1080p.Restored.x264-ArchiveOrg",
+  "NebulaOS-26.07-desktop-x86_64.iso",
+  "CopperFinch-Linux-12.4-live-amd64.iso",
+  "Atlas.Public.Dataset.2026.07.parquet.zst",
+  "Moonbase.Manuals.Collection.v4.2.epub.zip",
+  "Open.Orchestra.Sessions.Vol.08.FLAC",
+  "Glass.River.2026.Short.Film.1080p.WEB.x264-DEMO",
+  "Cinder.Workstation-9.1-arm64.img.xz",
+  "Northstar.Game.Assets.CreativeCommons.v3.tar.zst",
+  "Pocket.Planetarium.Catalog.2026-07.sqlite.zst",
+  "Paper.Kites.Public.Domain.Collection.4K-DEMO",
+  "Field.Notes.Quarterly.Issue.42.pdf.zip",
+  "LighthouseOS-5.8-server-amd64.iso",
+  "Mosaic.Fonts.Open.Collection.2026.1.tar.gz",
+  "Signal.Garden.S01E04.1080p.WEB.x265-DEMO",
+  "Blue.Hour.Live.Session.2026.FLAC-DEMO",
+  "JuniperBSD-14.2-install-amd64.iso",
+  "Rookery.Container.Images.airgap-bundle-v7.tar",
+  "Cloud.Atlas.Weather.Archive.2026-06.nc.zst",
+  "Tiny.Museums.Photo.Archive.Vol.12.zip",
+  "Amber.Terminal-3.6.2-source-and-docs.tar.gz",
+  "Fable.Engine.Sample.Projects.v2.8.zip",
+  "Harbor.Light.2025.Open.Movie.2160p-DEMO",
+  "OrchardOS-rolling-2026.07-kde-x86_64.iso",
+  "Transit.Map.OpenData.Global.2026Q2.pbf",
+  "Night.Train.Radio.Archive.Episodes.101-125.opus",
+  "Stonecrop.Rescue.Environment.v5.1.iso",
+  "Wildflower.Macro.Photos.CC0.Collection.03.zip",
+  "CometDB-8.0.1-offline-documentation.tar.gz",
+  "Riverside.Ambience.24bit.96kHz.FLAC-DEMO",
+  "SundialOS-2.0-raspberrypi-arm64.img.xz",
+  "Workshop.CAD.Models.Open-Pack.2026-07.zip",
+  "Morning.Fog.2024.Short.Film.1080p-DEMO",
+  "Redwood.Security.Lab.v11.qcow2",
+  "Open.Cookbook.Archive.2026.07.epub",
+  "Aurora.Language.Corpus.v6.jsonl.zst",
+  "Telescope.Raw.Sample.Data.M31.2026.fits.tar",
 ];
 
 // File name templates
@@ -105,21 +91,14 @@ function generateInfoHash(id: number): string {
 
 // Generate torrent name from id
 function generateTorrentName(id: number): string {
-  const rand = seededRandom(id);
-  // Every ~10th torrent gets a long name
-  if (rand() < 0.1) {
-    return LONG_TORRENT_NAMES[Math.floor(rand() * LONG_TORRENT_NAMES.length)];
-  }
-  const template = TORRENT_NAMES[Math.floor(rand() * TORRENT_NAMES.length)];
-  const version = `${Math.floor(rand() * 30) + 1}.${Math.floor(rand() * 12)}.${Math.floor(rand() * 20)}`;
-  return template.replace("{version}", version);
+  return TORRENT_NAMES[id % TORRENT_NAMES.length];
 }
 
 // State weights for distribution
 type TorrentState = "live" | "paused" | "initializing" | "error";
 
 // Limit concurrent active torrents to be more realistic
-const MAX_CONCURRENT_ACTIVE = 30;
+const MAX_CONCURRENT_ACTIVE = 8;
 
 function generateState(id: number): TorrentState {
   // Only first MAX_CONCURRENT_ACTIVE torrents are active by default
@@ -402,7 +381,7 @@ function updatePeerCounters(torrentId: number): void {
   }
 }
 
-const TOTAL_TORRENTS = 1000;
+const TOTAL_TORRENTS = TORRENT_NAMES.length;
 
 // Mock category data
 const MOCK_CATEGORY_NAMES = ["Linux ISOs", "Software", "Documents", "Media"];
@@ -429,6 +408,193 @@ for (let i = 0; i < TOTAL_TORRENTS; i++) {
     );
   }
 }
+
+const now = Date.now();
+const hoursAgo = (hours: number) =>
+  new Date(now - hours * 3_600_000).toISOString();
+
+let mockRssFeeds: RssFeedConfig[] = [
+  {
+    name: "Open Media Weekly",
+    url: "https://feeds.example.invalid/open-media.xml",
+    poll_interval_secs: 900,
+    category: "Media",
+    enabled: true,
+    auto_download: false,
+  },
+  {
+    name: "Demo Software Releases",
+    url: "https://feeds.example.invalid/software.xml",
+    poll_interval_secs: 1800,
+    category: "Software",
+    filter_regex: "(stable|release)",
+    enabled: true,
+    auto_download: true,
+  },
+  {
+    name: "Public Data Dispatch",
+    url: "https://feeds.example.invalid/data.xml",
+    poll_interval_secs: 3600,
+    category: "Documents",
+    enabled: true,
+    auto_download: false,
+  },
+];
+
+let mockRssItems: RssItem[] = [
+  [
+    "rss-01",
+    "Open Media Weekly",
+    "Glass River (2026) — Open Short Film 1080p",
+    2.4e9,
+    2,
+    true,
+  ],
+  [
+    "rss-02",
+    "Demo Software Releases",
+    "Amber Terminal 3.6.2 stable source bundle",
+    184e6,
+    5,
+    true,
+  ],
+  [
+    "rss-03",
+    "Public Data Dispatch",
+    "Atlas public dataset — July 2026 snapshot",
+    8.7e9,
+    9,
+    true,
+  ],
+  [
+    "rss-04",
+    "Open Media Weekly",
+    "Blue Hour — live session in lossless audio",
+    1.1e9,
+    15,
+    false,
+  ],
+  [
+    "rss-05",
+    "Demo Software Releases",
+    "CometDB 8.0.1 offline documentation",
+    426e6,
+    21,
+    true,
+  ],
+  [
+    "rss-06",
+    "Open Media Weekly",
+    "Harbor Light (2025) — open movie 2160p",
+    6.8e9,
+    28,
+    false,
+  ],
+  [
+    "rss-07",
+    "Public Data Dispatch",
+    "Transit map OpenData — 2026 Q2 export",
+    4.3e9,
+    37,
+    true,
+  ],
+  [
+    "rss-08",
+    "Demo Software Releases",
+    "Fable Engine sample projects v2.8 release",
+    970e6,
+    49,
+    false,
+  ],
+  [
+    "rss-09",
+    "Open Media Weekly",
+    "Riverside Ambience — 24-bit field recording",
+    3.2e9,
+    63,
+    true,
+  ],
+  [
+    "rss-10",
+    "Public Data Dispatch",
+    "Pocket Planetarium catalog — July update",
+    740e6,
+    76,
+    false,
+  ],
+].map(([id, feedName, title, size, age, downloaded]) => ({
+  id: id as string,
+  feed_name: feedName as string,
+  title: title as string,
+  url: `magnet:?xt=urn:btih:${generateInfoHash(Number((id as string).slice(-2)))}`,
+  published_at: hoursAgo(age as number),
+  first_seen_at: hoursAgo((age as number) - 0.25),
+  downloaded: downloaded as boolean,
+  downloaded_at: downloaded ? hoursAgo((age as number) - 0.5) : null,
+  category: mockRssFeeds.find((feed) => feed.name === feedName)?.category,
+  size_bytes: size as number,
+}));
+
+let mockRssRules: RssRule[] = [
+  {
+    id: "rule-1",
+    name: "Stable software",
+    feed_names: ["Demo Software Releases"],
+    category: "Software",
+    priority: 10,
+    match_regex: "(?i)(stable|release)",
+    enabled: true,
+  },
+  {
+    id: "rule-2",
+    name: "Open films",
+    feed_names: ["Open Media Weekly"],
+    category: "Media",
+    priority: 20,
+    match_regex: "(?i)(open movie|short film)",
+    enabled: true,
+  },
+];
+
+export const MockRssAPI = {
+  getFeeds: async () => [...mockRssFeeds],
+  addFeed: async (feed: RssFeedConfig) => {
+    mockRssFeeds = [...mockRssFeeds, feed];
+  },
+  updateFeed: async (name: string, feed: RssFeedConfig) => {
+    mockRssFeeds = mockRssFeeds.map((entry) =>
+      entry.name === name ? feed : entry,
+    );
+  },
+  deleteFeed: async (name: string) => {
+    mockRssFeeds = mockRssFeeds.filter((feed) => feed.name !== name);
+  },
+  getItems: async (feed?: string) =>
+    mockRssItems.filter((item) => !feed || item.feed_name === feed),
+  downloadItem: async (id: string) => {
+    mockRssItems = mockRssItems.map((item) =>
+      item.id === id
+        ? { ...item, downloaded: true, downloaded_at: new Date().toISOString() }
+        : item,
+    );
+  },
+  getRules: async () => [...mockRssRules],
+  addRule: async (rule: Omit<RssRule, "id">) => {
+    mockRssRules = [
+      ...mockRssRules,
+      { ...rule, id: `rule-${mockRssRules.length + 1}` },
+    ];
+  },
+  updateRule: async (id: string, rule: Omit<RssRule, "id">) => {
+    mockRssRules = mockRssRules.map((entry) =>
+      entry.id === id ? { ...rule, id } : entry,
+    );
+  },
+  deleteRule: async (id: string) => {
+    mockRssRules = mockRssRules.filter((rule) => rule.id !== id);
+  },
+  getSettings: async () => ({ rss_history_limit: 500 }),
+};
 
 // Mock API implementation
 export const MockAPI: RtbitAPI & { getVersion: () => Promise<string> } = {

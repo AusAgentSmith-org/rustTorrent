@@ -5,13 +5,16 @@ import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { RtbitWebUI } from "./rtbit-web";
 import { APIContext } from "./context";
-import { MockAPI } from "./mock-api";
+import { RssAPI } from "./http-api";
+import { MockAPI, MockRssAPI } from "./mock-api";
 import "./globals.css";
+
+Object.assign(RssAPI, MockRssAPI);
 
 const RootWithMockAPI = () => {
   return (
     <APIContext.Provider value={MockAPI}>
-      <RtbitWebUI title="rtbit (MOCK)" version="mock-1.0.0" />
+      <RtbitWebUI title="rustTorrent Demo" version="v0.1.0-beta.1" />
     </APIContext.Provider>
   );
 };

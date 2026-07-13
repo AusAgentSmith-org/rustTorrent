@@ -39,20 +39,3 @@ document.querySelectorAll('.copy').forEach(function (btn) {
         });
     });
 });
-
-// Resolve latest release version for download links
-(function () {
-    var BASE = 'https://dl.rusttorrent.dev/latest/';
-    fetch(BASE).then(function (r) { return r.text(); }).then(function (html) {
-        var m = html.match(/rtbit-(v[\d.]+-[a-z]+\.\d+)-linux-x86_64/);
-        if (!m) return;
-        var ver = m[1];
-        document.querySelectorAll('.dl-version').forEach(function (el) {
-            el.textContent = ver;
-        });
-        var linux = document.getElementById('dl-linux');
-        if (linux) linux.href = BASE + 'rtbit-' + ver + '-linux-x86_64';
-        var win = document.getElementById('dl-windows');
-        if (win) win.href = BASE + 'rtbit-' + ver + '-windows-x86_64.exe';
-    }).catch(function () {});
-})();

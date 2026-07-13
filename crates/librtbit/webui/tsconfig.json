@@ -11,5 +11,5 @@
     "strict": true
   },
   "include": ["node_modules/vite/client.d.ts", "**/*"],
-  "exclude": ["dist/**"]
+  "exclude": ["dist/**", "playwright-report/**", "test-results/**"]
 }

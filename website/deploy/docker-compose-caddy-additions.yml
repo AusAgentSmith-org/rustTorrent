@@ -18,7 +18,6 @@
 #       - ./Caddyfile:/etc/caddy/Caddyfile
 #       - caddy_data:/data
 #       - caddy_config:/config
-#       - ~/Indexarr_Website:/srv/website:ro
 #       - ~/NoteTaker_Website:/srv/notetaker:ro
 #       - ~/rustTorrent_Website:/srv/rusttorrent:ro
 #
@@ -28,6 +27,5 @@
 #     volumes:
 #       - ./webhook/hooks.json:/etc/webhook/hooks.json
 #       - ./webhook/scripts:/scripts
-#       - ~/Indexarr_Website:/repos/indexarr-website
 #       - ~/NoteTaker_Website:/repos/notetaker-website
 #       - ~/rustTorrent_Website:/repos/rusttorrent-website

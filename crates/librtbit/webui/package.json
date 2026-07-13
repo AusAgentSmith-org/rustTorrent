@@ -6,6 +6,7 @@
     "dev": "vite",
     "dev:mock": "vite --port 3032 --open /mock.html",
     "build": "tsc --noEmit && vite build && node post-build",
+    "build:demo": "tsc --noEmit && RTBIT_DEMO_BUILD=1 vite build --base ./ --outDir ../../../website/demo --emptyOutDir && mv ../../../website/demo/mock.html ../../../website/demo/index.html && rm -rf ../../../website/demo/.vite ../../../website/demo/openapi.json",
     "test": "node --test src/helper/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",

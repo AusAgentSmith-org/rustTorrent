@@ -2,8 +2,8 @@
 
 This directory is the canonical source for the static website served at
 [rusttorrent.dev](https://rusttorrent.dev). It was imported from the former
-`indexarr/rustTorrent_Website` repository as a Git subtree, following the
-monorepo layout used by rustnzbd.
+standalone website repository as a Git subtree, following the monorepo layout
+used by rustnzbd.
 
 ## Development
 
@@ -29,5 +29,5 @@ site's entry points and local assets. A push to `main` synchronizes
 the deployed entry points. The standalone repository pipelines are retained
 only in the imported Git history and must not be re-enabled.
 
-Application releases and `dl.rusttorrent.dev` remain separate from this static
-site deployment.
+Application releases are published through the project's GitHub Releases page
+and remain separate from this static site deployment.

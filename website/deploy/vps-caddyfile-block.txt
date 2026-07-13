@@ -1,5 +1,5 @@
 # Add this block to ~/Caddy/Caddyfile on the VPS (46.250.255.234)
-# Place alongside the existing indexarr.net and notetakerapp.dev blocks
+# Place alongside the existing website blocks
 
 rusttorrent.dev, www.rusttorrent.dev {
     tls {
