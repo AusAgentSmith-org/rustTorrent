@@ -1,6 +1,6 @@
 [package]
 name = "librtbit-tracker-comms"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "HTTP and UDP tracker communication for the rtbit BitTorrent client"
 license = "MIT"

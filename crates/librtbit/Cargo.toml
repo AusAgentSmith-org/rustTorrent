@@ -1,6 +1,6 @@
 [package]
 name = "librtbit"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "Core BitTorrent client library for the rtbit torrent client"
 license = "MIT"
