@@ -5,6 +5,12 @@ when:
   - event: manual
   - event: pull_request
 
+# Every step uses Linux container images or a Linux Docker socket. Without an
+# explicit constraint Woodpecker may schedule this workflow on a Windows
+# local-backend agent and try to execute the image name as a host binary.
+labels:
+  platform: linux/amd64
+
 steps:
   - name: fmt
     image: rust:1.95-bookworm
