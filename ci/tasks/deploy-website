@@ -14,9 +14,18 @@ ssh-keyscan -H "$host" >> "$HOME/.ssh/known_hosts" 2>/dev/null
 
 # The old standalone checkout remains in place during migration. Excluding its
 # .git directory makes this an idempotent content deploy while the monorepo is
-# now the source of truth for every served website file.
-rsync -rlptDz --delete --exclude=.git/ --exclude=.git \
-  website/ "root@$host:$destination/"
+# now the source of truth for every served website file. Prefer rsync when the
+# runner provides it, but keep deployment portable: the GitHub self-hosted
+# runner is intentionally unprivileged and cannot install packages with sudo.
+if command -v rsync >/dev/null 2>&1; then
+  rsync -rlptDz --delete --exclude=.git/ --exclude=.git \
+    website/ "root@$host:$destination/"
+else
+  archive=$(mktemp)
+  trap 'rm -f "$archive"' EXIT
+  tar -C website --exclude=.git --exclude=.git/ -czf "$archive" .
+  ssh root@"$host" "mkdir -p '$destination' && find '$destination' -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf -- {} + && tar -xzf - -C '$destination'" < "$archive"
+fi
 
 ssh root@"$host" \
   "test -s '$destination/index.html' && test -s '$destination/css/style.css' && test -s '$destination/js/main.js' && ! test -e '$destination/.woodpecker.yml' && ! test -d '$destination/.github'"
