@@ -23,7 +23,7 @@ ci/tasks/website-check
 
 ## Deployment
 
-The root `.woodpecker.yml` owns website CI/CD. Every pipeline validates the
+The GitHub Actions website workflow owns website CI/CD. Every pipeline validates the
 site's entry points and local assets. A push to `main` synchronizes
 `website/` to `/root/websites/rusttorrent` on the Vultr web host and verifies
 the deployed entry points. The standalone repository pipelines are retained

@@ -6,7 +6,7 @@ edition = "2024"
 description = "A bittorrent command line client and server."
 license = "Apache-2.0"
 documentation = "https://rusttorrent.dev"
-repository = "https://github.com/AusAgentSmith-org/rustTorrent"
+repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
 readme = "README.md"
 
 [lints]

@@ -1,6 +1,6 @@
 services:
   rtbit:
-    image: repo.indexarr.net/indexarr/rusttorrent:latest
+    image: ghcr.io/thedancingdeveloper-org/rusttorrent:latest
     container_name: rtbit
     restart: unless-stopped
     ports:

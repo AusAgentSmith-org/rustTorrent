@@ -1,0 +1,88 @@
+name: Release binaries
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: [self-hosted, node-b, linux, x64]
+    env:
+      CARGO_BUILD_JOBS: 1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95"
+      - name: Install release toolchain
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 nasm
+          cargo install cargo-deb --locked
+          rustup target add x86_64-pc-windows-gnu
+      - name: Build Linux and Debian artifacts
+        shell: bash
+        run: |
+          export CARGO_PROFILE_RELEASE_GITHUB_LTO=fat
+          export CARGO_PROFILE_RELEASE_GITHUB_CODEGEN_UNITS=1
+          export CARGO_PROFILE_RELEASE_GITHUB_STRIP=symbols
+          cargo build --profile release-github -p rtbit --no-default-features --features default-tls
+          cargo deb -p rtbit --no-build --no-strip --profile release-github -o target/release-github/rtbit_amd64.deb
+      - name: Build Windows artifact
+        shell: bash
+        run: |
+          export CARGO_PROFILE_RELEASE_GITHUB_LTO=fat
+          export CARGO_PROFILE_RELEASE_GITHUB_CODEGEN_UNITS=1
+          export CARGO_PROFILE_RELEASE_GITHUB_STRIP=symbols
+          cargo build --profile release-github -p rtbit --target x86_64-pc-windows-gnu --no-default-features --features default-tls
+      - name: Stage and checksum artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          tag="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          test -n "$tag"
+          rm -rf release-artifacts
+          mkdir release-artifacts
+          cp target/release-github/rtbit "release-artifacts/rtbit-$tag-linux-x86_64"
+          cp target/x86_64-pc-windows-gnu/release-github/rtbit.exe "release-artifacts/rtbit-$tag-windows-x86_64.exe"
+          cp target/release-github/rtbit_amd64.deb "release-artifacts/rtbit-$tag-amd64.deb"
+          (cd release-artifacts && sha256sum rtbit-*) > "release-artifacts/SHA256SUMS-$tag.txt"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Publish download artifacts
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        shell: bash
+        run: |
+          test -n "$DEPLOY_SSH_KEY"
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+          ssh-keyscan -H 100.92.4.57 >> "$RUNNER_TEMP/ssh/known_hosts" 2>/dev/null
+          tag="${{ steps.artifacts.outputs.tag }}"
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" root@100.92.4.57 "mkdir -p /root/downloads/rusttorrent/$tag"
+          scp -i "$RUNNER_TEMP/ssh/id_ed25519" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" release-artifacts/* root@100.92.4.57:/root/downloads/rusttorrent/$tag/
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" root@100.92.4.57 "cd /root/downloads/rusttorrent/$tag && ln -sfn rtbit-$tag-linux-x86_64 rtbit-linux-x86_64 && ln -sfn rtbit-$tag-windows-x86_64.exe rtbit-windows-x86_64.exe && ln -sfn $tag /root/downloads/rusttorrent/latest"
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="${{ steps.artifacts.outputs.tag }}"
+          notes="RELEASE_NOTES_${tag}.md"
+          test -f "$notes"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --verify-tag --title "rustTorrent $tag" --notes-file "$notes"
+          fi
+          gh release upload "$tag" release-artifacts/* --clobber

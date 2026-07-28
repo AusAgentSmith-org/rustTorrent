@@ -1,0 +1,26 @@
+name: Website deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - website/**
+      - ci/tasks/website-check
+      - ci/tasks/deploy-website
+      - .github/workflows/website.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, node-b, linux, x64]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate website
+        run: ci/tasks/website-check
+      - name: Deploy website
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: ci/tasks/deploy-website

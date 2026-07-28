@@ -4,7 +4,7 @@ version = "0.1.6"
 edition = "2024"
 description = "HTTP and UDP tracker communication for the rtbit BitTorrent client"
 license = "MIT"
-repository = "https://github.com/AusAgentSmith-org/rustTorrent"
+repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
 
 [dependencies]
 tokio = "1"

@@ -4,7 +4,7 @@ version = "0.1.2"
 edition = "2024"
 description = "Pluggable SHA1/SHA256 abstraction for the rtbit BitTorrent client"
 license = "MIT"
-repository = "https://github.com/AusAgentSmith-org/rustTorrent"
+repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
 
 [features]
 default = ["sha1-crypto-hash"]

@@ -5,7 +5,7 @@ clean web UI, a full HTTP API, and qBittorrent-compatible endpoints for the tool
 already run.
 
 > **Beta software.** rustTorrent is under active development. Expect bugs, breaking
-> changes, and incomplete features. [Report issues](https://github.com/AusAgentSmith-org/rustTorrent/issues).
+> changes, and incomplete features. [Report issues](https://github.com/TheDancingDeveloper-org/rustTorrent/issues).
 
 **Website:** [rusttorrent.dev](https://rusttorrent.dev/) ·
 **Live demo:** [rusttorrent.dev/demo](https://rusttorrent.dev/demo/) ·
@@ -39,13 +39,13 @@ already run.
 docker run -d --name rusttorrent \
   -p 3030:3030 -p 4240:4240 \
   -v ~/downloads:/downloads \
-  ghcr.io/ausagentsmith-org/rusttorrent:beta
+  ghcr.io/thedancingdeveloper-org/rusttorrent:beta
 ```
 
 Or build from the repository:
 
 ```bash
-git clone https://github.com/AusAgentSmith-org/rustTorrent.git
+git clone https://github.com/TheDancingDeveloper-org/rustTorrent.git
 cd rustTorrent
 docker compose up --build -d
 ```
@@ -68,7 +68,7 @@ The web UI comes up at [http://localhost:3030](http://localhost:3030).
 ### From source
 
 ```bash
-git clone https://github.com/AusAgentSmith-org/rustTorrent.git
+git clone https://github.com/TheDancingDeveloper-org/rustTorrent.git
 cd rustTorrent
 cargo build --release
 ./target/release/rtbit server start ~/Downloads
