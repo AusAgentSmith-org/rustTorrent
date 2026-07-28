@@ -1,6 +1,3 @@
-[registries.forgejo]
-index = "sparse+https://repo.indexarr.net/api/packages/indexarr/cargo/"
-
 [target.arm-unknown-linux-gnueabihf]
 rustflags = ["-l", "atomic"]
 

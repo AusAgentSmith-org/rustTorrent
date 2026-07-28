@@ -1,7 +1,7 @@
 # rustTorrent Release Process
 
-Forgejo is the source of truth for source code and Woodpecker is the release
-runner. GitHub and GHCR are public distribution targets only.
+GitHub is the source of truth for source code, CI, releases, GHCR, and the
+rusttorrent.dev website. The historical Forgejo/Woodpecker path is retired.
 
 ## Versioning
 
@@ -9,21 +9,17 @@ The current beta release is `0.1.0-beta.2`.
 
 - Crate version: `crates/rtbit/Cargo.toml`
 - Release tag: `v0.1.0-beta.2`
-- Docker tag: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.2`
+- Docker tag: `ghcr.io/thedancingdeveloper-org/rusttorrent:v0.1.0-beta.2`
 
 ## CI Flow
 
-Pushes and tags run `.woodpecker.yml`.
+Pushes and tags run the workflows under `.github/workflows/`.
 
-The Rust steps strip local `[patch]` sections before building so CI proves the
-app can consume the published `librtbit-*` crates from the Forgejo Cargo
-registry. Local development keeps `[patch]` sections pointed at sibling crates
-under `../libs/`.
+The Rust workflow builds the workspace from GitHub. Local development keeps
+`[patch]` sections pointed at sibling crates under `../libs/`.
 
-Main branch pushes build and push the Forgejo Docker image as:
-
-- `repo.indexarr.net/indexarr/rusttorrent:latest`
-- `repo.indexarr.net/indexarr/rusttorrent:<commit-sha>`
+Main branch pushes publish the public GHCR image as `dev` and an immutable
+`sha-<commit>` tag.
 
 Release tags build:
 
@@ -33,28 +29,23 @@ Release tags build:
 - `SHA256SUMS-<tag>.txt`
 - Docker manifest for `linux/amd64` and `linux/arm64`
 
-Tag releases publish artifacts to the download host, create a Forgejo release,
-push the multi-arch Docker image to Forgejo, copy it to GHCR, then create the
-GitHub release. Main and release tags are mirrored to GitHub so the public
-repository contains the complete source history for every published release.
+Tag releases publish artifacts to the download host and create the canonical
+GitHub release. The container workflow publishes the multi-arch GHCR image.
 
-Release notes are checked in as `RELEASE_NOTES_<tag>.md`. CI uses the same
-file verbatim for Forgejo and GitHub, then verifies source refs, release assets,
-and multi-architecture container images on both registries.
+Release notes are checked in as `RELEASE_NOTES_<tag>.md`; the GitHub release
+workflow uses that file verbatim and uploads the binaries and checksums.
 
 GitHub publishes every tagged build as a full release (`prerelease: false`),
 including tags whose semantic version contains `alpha`, `beta`, or `rc`.
-Forgejo retains semantic prerelease classification for development tracking.
-
 The Docker image must keep `org.opencontainers.image.source` set to
-`https://github.com/AusAgentSmith-org/rustTorrent`. GitHub uses that OCI source
+`https://github.com/TheDancingDeveloper-org/rustTorrent`. GitHub uses that OCI source
 metadata to associate the GHCR container package with the public repository so
-it appears on `https://github.com/AusAgentSmith-org/rustTorrent/packages`.
+it appears on `https://github.com/TheDancingDeveloper-org/rustTorrent/packages`.
 
 ## Auth and Permission Notes
 
-Use the workspace `docs/AUTH-VALIDATION.md` before touching Forgejo,
-Woodpecker, Infisical, GitHub, GHCR, or Komodo state.
+Use the workspace `docs/AUTH-VALIDATION.md` before touching Infisical, GitHub,
+GHCR, or Komodo state.
 
 Known permission failure modes:
 
@@ -84,7 +75,7 @@ updated with `manual`, `push`, and `tag` event access.
 - Linux x86_64, Windows x86_64, Debian amd64, and SHA256 assets: published to
   Forgejo and GitHub
 - Forgejo Docker image: published for `linux/amd64` and `linux/arm64`
-- GHCR image: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.1`,
+- Historical GHCR image: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.1`,
   `latest`, and `beta` published for `linux/amd64` and `linux/arm64`
 - GitHub mirror: release tag `v0.1.0-beta.1` dereferences to the release-prep
   commit `6d040d0`; release follow-up documentation is on `main`

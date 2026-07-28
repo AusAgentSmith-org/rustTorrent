@@ -25,7 +25,7 @@
                 <a href="#features">Features</a>
                 <a href="#start">Get started</a>
                 <a href="demo/">Demo</a>
-                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/TheDancingDeveloper-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener">Discord</a>
                 <a href="#start" class="nav-cta">Download</a>
             </nav>
@@ -49,8 +49,8 @@
                     <a class="btn btn-ghost" href="demo/">Try the live demo</a>
                 </div>
                 <p class="hero-meta">
-                    <code>docker run ghcr.io/ausagentsmith-org/rusttorrent:beta</code>
-                    <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:beta" aria-label="Copy Docker command">copy</button>
+                    <code>docker run ghcr.io/thedancingdeveloper-org/rusttorrent:beta</code>
+                    <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/thedancingdeveloper-org/rusttorrent:beta" aria-label="Copy Docker command">copy</button>
                 </p>
             </div>
 
@@ -160,18 +160,18 @@
 
                 <div class="pane active" id="pane-docker">
                     <div class="code">
-                        <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/ausagentsmith-org/rusttorrent:beta" aria-label="Copy">copy</button>
+                        <button class="copy" data-copy="docker run -d --name rusttorrent -p 3030:3030 -p 4240:4240 -v ~/downloads:/downloads ghcr.io/thedancingdeveloper-org/rusttorrent:beta" aria-label="Copy">copy</button>
 <pre>docker run -d --name rusttorrent \
   -p 3030:3030 -p 4240:4240 \
   -v ~/downloads:/downloads \
-  ghcr.io/ausagentsmith-org/rusttorrent:beta</pre>
+  ghcr.io/thedancingdeveloper-org/rusttorrent:beta</pre>
                     </div>
                     <p class="pane-note">Port <code>3030</code> serves the web UI and API; <code>4240</code> handles BitTorrent TCP and uTP. Mount your download directory at <code>/downloads</code>.</p>
                 </div>
 
                 <div class="pane" id="pane-linux">
                     <div class="code">
-                        <button class="copy" data-copy="https://github.com/AusAgentSmith-org/rustTorrent/releases/latest" aria-label="Copy">copy</button>
+                        <button class="copy" data-copy="https://github.com/TheDancingDeveloper-org/rustTorrent/releases/latest" aria-label="Copy">copy</button>
 <pre>Open the latest GitHub release and download:
 rtbit-&lt;version&gt;-linux-x86_64</pre>
                     </div>
@@ -180,22 +180,22 @@ rtbit-&lt;version&gt;-linux-x86_64</pre>
 
                 <div class="pane" id="pane-windows">
                     <div class="code">
-                        <button class="copy" data-copy="https://github.com/AusAgentSmith-org/rustTorrent/releases/latest" aria-label="Copy">copy</button>
+                        <button class="copy" data-copy="https://github.com/TheDancingDeveloper-org/rustTorrent/releases/latest" aria-label="Copy">copy</button>
 <pre>rtbit-&lt;version&gt;-windows-x86_64.exe server start %USERPROFILE%\Downloads</pre>
                     </div>
-                    <p class="pane-note">Download the Windows binary from the <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases/latest" target="_blank" rel="noopener">latest GitHub release</a>, then run it from a terminal. The web UI comes up at <code>localhost:3030</code>.</p>
+                    <p class="pane-note">Download the Windows binary from the <a href="https://github.com/TheDancingDeveloper-org/rustTorrent/releases/latest" target="_blank" rel="noopener">latest GitHub release</a>, then run it from a terminal. The web UI comes up at <code>localhost:3030</code>.</p>
                 </div>
 
                 <div class="dl-row">
-                    <a class="dl" id="dl-linux" href="https://github.com/AusAgentSmith-org/rustTorrent/releases/latest" target="_blank" rel="noopener">
+                    <a class="dl" id="dl-linux" href="https://github.com/TheDancingDeveloper-org/rustTorrent/releases/latest" target="_blank" rel="noopener">
                         <span class="dl-os">Linux x86_64</span>
                         <span class="dl-v dl-version">static binary</span>
                     </a>
-                    <a class="dl" id="dl-windows" href="https://github.com/AusAgentSmith-org/rustTorrent/releases/latest" target="_blank" rel="noopener">
+                    <a class="dl" id="dl-windows" href="https://github.com/TheDancingDeveloper-org/rustTorrent/releases/latest" target="_blank" rel="noopener">
                         <span class="dl-os">Windows x86_64</span>
                         <span class="dl-v dl-version">.exe binary</span>
                     </a>
-                    <a class="dl" href="https://github.com/AusAgentSmith-org/rustTorrent/releases" target="_blank" rel="noopener">
+                    <a class="dl" href="https://github.com/TheDancingDeveloper-org/rustTorrent/releases" target="_blank" rel="noopener">
                         <span class="dl-os">All builds</span>
                         <span class="dl-v">+ SHA256 checksums</span>
                     </a>
@@ -204,7 +204,7 @@ rtbit-&lt;version&gt;-linux-x86_64</pre>
                 <p class="alpha-note">
                     <strong>Beta software.</strong> Expect bugs, breaking changes, and incomplete
                     features &mdash; not recommended for anything you can&rsquo;t afford to re-download.
-                    <a href="https://github.com/AusAgentSmith-org/rustTorrent/issues" target="_blank" rel="noopener">Report issues on GitHub</a>.
+                    <a href="https://github.com/TheDancingDeveloper-org/rustTorrent/issues" target="_blank" rel="noopener">Report issues on GitHub</a>.
                 </p>
             </div>
         </section>
@@ -234,9 +234,9 @@ rtbit-&lt;version&gt;-linux-x86_64</pre>
                 </p>
             </div>
             <nav class="footer-links">
-                <a href="https://github.com/AusAgentSmith-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://github.com/TheDancingDeveloper-org/rustTorrent" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://discord.gg/pu6chSqpnJ" target="_blank" rel="noopener">Discord</a>
-                <a href="https://github.com/AusAgentSmith-org/rustTorrent/releases" target="_blank" rel="noopener">Releases</a>
+                <a href="https://github.com/TheDancingDeveloper-org/rustTorrent/releases" target="_blank" rel="noopener">Releases</a>
                 <a href="demo/">Demo</a>
             </nav>
             <div class="footer-related">

@@ -2,7 +2,7 @@
 
 ## Overview
 
-rustTorrent integrates with [Indexarr](https://github.com/AusAgentSmith-org/Indexarr) to provide torrent index browsing directly from the web UI. Users can search a massive decentralized torrent index, view recently indexed torrents, and download with a single click — all without leaving rustTorrent.
+rustTorrent integrates with [Indexarr](https://github.com/TheDancingDeveloper-org/indexarr-rs) to provide torrent index browsing directly from the web UI. Users can search a massive decentralized torrent index, view recently indexed torrents, and download with a single click — all without leaving rustTorrent.
 
 The integration is **fully optional** — controlled by env vars, defaulting to off. When disabled, no Indexarr-related UI or endpoints are exposed.
 

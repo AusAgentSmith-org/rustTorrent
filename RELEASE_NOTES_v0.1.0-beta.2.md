@@ -91,15 +91,13 @@ upgrading and avoid using it for data that cannot be downloaded again.
 
 ## Source and release distribution
 
-- Forgejo remains the development source of truth, and the complete `main`
-  branch plus this release tag are mirrored to the public GitHub repository.
-- Linux, Windows, Debian, checksum, and source artifacts are published on both
-  Forgejo and GitHub Releases.
+- GitHub is the source of truth for the complete `main` branch and release tag.
+- Linux, Windows, Debian, checksum, and source artifacts are published on the
+  canonical GitHub Release and the download host.
 - Multi-architecture Docker images for `linux/amd64` and `linux/arm64` are
-  published to Forgejo and mirrored to GHCR under the version, `beta`, and
-  `latest` tags.
-- CI verifies both source refs, both release objects, every attached artifact,
-  checksums, and both container architectures before the release is accepted.
+  published directly to public GHCR under the version, `beta`, and `latest` tags.
+- GitHub Actions verifies the release assets, checksums, and container
+  architectures before the release is accepted.
 
 ## Validation
 
@@ -133,8 +131,8 @@ upgrading and avoid using it for data that cannot be downloaded again.
 - Windows x86_64: `rtbit-v0.1.0-beta.2-windows-x86_64.exe`
 - Debian/Ubuntu amd64: `rtbit-v0.1.0-beta.2-amd64.deb`
 - Checksums: `SHA256SUMS-v0.1.0-beta.2.txt`
-- Docker: `ghcr.io/ausagentsmith-org/rusttorrent:v0.1.0-beta.2`
+- Docker: `ghcr.io/thedancingdeveloper-org/rusttorrent:v0.1.0-beta.2`
 - Source: automatic `.zip` and `.tar.gz` archives on the GitHub release tag
 
-All downloadable files are attached to both the Forgejo and GitHub releases
-and are also published at `https://dl.rusttorrent.dev/v0.1.0-beta.2/`.
+All downloadable files are attached to the canonical GitHub release and are
+also published at `https://dl.rusttorrent.dev/v0.1.0-beta.2/`.

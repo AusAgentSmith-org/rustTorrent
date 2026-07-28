@@ -4,7 +4,7 @@ version = "0.1.6"
 edition = "2024"
 description = "Core BitTorrent client library for the rtbit torrent client"
 license = "MIT"
-repository = "https://github.com/AusAgentSmith-org/rustTorrent"
+repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
 
 [features]
 default = ["default-tls", "http-api-client"]

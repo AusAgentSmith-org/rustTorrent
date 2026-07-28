@@ -4,7 +4,7 @@ version = "0.1.5"
 edition = "2024"
 description = "Bencode serialization and deserialization using Serde"
 license = "MIT"
-repository = "https://github.com/AusAgentSmith-org/rustTorrent"
+repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

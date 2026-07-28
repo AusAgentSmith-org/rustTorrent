@@ -1,6 +1,6 @@
 services:
   rtbit:
-    image: ghcr.io/ausagentsmith-org/rusttorrent:latest
+    image: ghcr.io/thedancingdeveloper-org/rusttorrent:latest
     container_name: rtbit
     restart: unless-stopped
     ports:
