@@ -17,7 +17,17 @@ use crate::storage::{StorageFactory, TorrentStorage};
 use super::opened_file::OpenedFile;
 
 #[derive(Default, Clone, Copy)]
-pub struct FilesystemStorageFactory {}
+pub struct FilesystemStorageFactory {
+    read_only: bool,
+}
+
+impl FilesystemStorageFactory {
+    /// Create storage that can verify and seed existing payloads without
+    /// creating, resizing, writing, or deleting payload files.
+    pub const fn read_only() -> Self {
+        Self { read_only: true }
+    }
+}
 
 impl StorageFactory for FilesystemStorageFactory {
     type Storage = FilesystemStorage;
@@ -30,6 +40,7 @@ impl StorageFactory for FilesystemStorageFactory {
         Ok(FilesystemStorage {
             output_folder: shared.options.output_folder.clone(),
             opened_files: Default::default(),
+            read_only: self.read_only,
         })
     }
 
@@ -41,9 +52,17 @@ impl StorageFactory for FilesystemStorageFactory {
 pub struct FilesystemStorage {
     pub(super) output_folder: PathBuf,
     pub(super) opened_files: Vec<OpenedFile>,
+    read_only: bool,
 }
 
 impl FilesystemStorage {
+    fn require_writable(&self) -> anyhow::Result<()> {
+        if self.read_only {
+            anyhow::bail!("filesystem storage is read-only")
+        }
+        Ok(())
+    }
+
     pub(super) fn take_fs(&self) -> anyhow::Result<Self> {
         Ok(Self {
             opened_files: self
@@ -52,6 +71,7 @@ impl FilesystemStorage {
                 .map(|f| f.take_clone())
                 .collect::<anyhow::Result<Vec<_>>>()?,
             output_folder: self.output_folder.clone(),
+            read_only: self.read_only,
         })
     }
 }
@@ -66,6 +86,7 @@ impl TorrentStorage for FilesystemStorage {
     }
 
     fn pwrite_all(&self, file_id: usize, offset: u64, buf: &[u8]) -> anyhow::Result<()> {
+        self.require_writable()?;
         let of = self.opened_files.get(file_id).context("no such file")?;
         #[cfg(windows)]
         return of.try_mark_sparse()?.pwrite_all(offset, buf);
@@ -79,6 +100,7 @@ impl TorrentStorage for FilesystemStorage {
         offset: u64,
         bufs: [IoSlice<'_>; 2],
     ) -> anyhow::Result<usize> {
+        self.require_writable()?;
         let of = self.opened_files.get(file_id).context("no such file")?;
         #[cfg(windows)]
         return of.try_mark_sparse()?.pwrite_all_vectored(offset, bufs);
@@ -87,11 +109,21 @@ impl TorrentStorage for FilesystemStorage {
     }
 
     fn remove_file(&self, _file_id: usize, filename: &Path) -> anyhow::Result<()> {
+        self.require_writable()?;
         Ok(std::fs::remove_file(self.output_folder.join(filename))?)
     }
 
     fn ensure_file_length(&self, file_id: usize, len: u64) -> anyhow::Result<()> {
         let f = &self.opened_files.get(file_id).context("no such file")?;
+        if self.read_only {
+            let actual = f.lock_read()?.metadata()?.len();
+            if actual != len {
+                anyhow::bail!(
+                    "filesystem storage is read-only and file length is {actual}, expected {len}"
+                )
+            }
+            return Ok(());
+        }
         #[cfg(windows)]
         f.try_mark_sparse()?;
         Ok(f.lock_read()?.set_len(len)?)
@@ -105,10 +137,12 @@ impl TorrentStorage for FilesystemStorage {
                 .map(|f| f.take_clone())
                 .collect::<anyhow::Result<Vec<_>>>()?,
             output_folder: self.output_folder.clone(),
+            read_only: self.read_only,
         }))
     }
 
     fn remove_directory_if_empty(&self, path: &Path) -> anyhow::Result<()> {
+        self.require_writable()?;
         let path = self.output_folder.join(path);
         if !path.is_dir() {
             anyhow::bail!("cannot remove dir: {path:?} is not a directory")
@@ -140,6 +174,21 @@ impl TorrentStorage for FilesystemStorage {
                 files.push(OpenedFile::new_dummy());
                 continue;
             };
+            if self.read_only {
+                match OpenOptions::new().read(true).open(&full_path) {
+                    Ok(f) => files.push(OpenedFile::new(full_path, f)),
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                        files.push(OpenedFile::new_dummy());
+                    }
+                    Err(error) => {
+                        return Err(error).with_context(|| {
+                            format!("error opening {full_path:?} in read-only mode")
+                        });
+                    }
+                }
+                continue;
+            }
+
             std::fs::create_dir_all(full_path.parent().context("bug: no parent")?)?;
             let f = if shared.options.allow_overwrite {
                 OpenOptions::new()
@@ -195,6 +244,7 @@ mod tests {
         let storage = FilesystemStorage {
             output_folder: dir.path().to_owned(),
             opened_files,
+            read_only: false,
         };
         (storage, dir)
     }
@@ -394,5 +444,49 @@ mod tests {
             .remove_directory_if_empty(Path::new("subdir"))
             .unwrap();
         assert!(sub.exists());
+    }
+
+    #[test]
+    fn test_read_only_storage_reads_and_rejects_mutations() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("payload.dat");
+        let original = b"existing payload";
+        std::fs::write(&path, original).unwrap();
+        let file = OpenOptions::new().read(true).open(&path).unwrap();
+        let storage = FilesystemStorage {
+            output_folder: dir.path().to_owned(),
+            opened_files: vec![OpenedFile::new(path.clone(), file)],
+            read_only: true,
+        };
+
+        let mut buf = vec![0; original.len()];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(buf, original);
+        storage
+            .ensure_file_length(0, original.len() as u64)
+            .unwrap();
+
+        assert!(storage.pwrite_all(0, 0, b"changed").is_err());
+        assert!(
+            storage
+                .pwrite_all_vectored(0, 0, [IoSlice::new(b"changed"), IoSlice::new(b" again")],)
+                .is_err()
+        );
+        assert!(storage.ensure_file_length(0, 1).is_err());
+        assert!(storage.remove_file(0, Path::new("payload.dat")).is_err());
+
+        let empty_dir = dir.path().join("empty");
+        std::fs::create_dir(&empty_dir).unwrap();
+        assert!(
+            storage
+                .remove_directory_if_empty(Path::new("empty"))
+                .is_err()
+        );
+
+        assert_eq!(std::fs::read(&path).unwrap(), original);
+        assert!(empty_dir.exists());
+
+        let taken = storage.take().unwrap();
+        assert!(taken.pwrite_all(0, 0, b"changed").is_err());
     }
 }
