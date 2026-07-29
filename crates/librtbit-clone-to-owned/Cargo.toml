@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-clone-to-owned"
-version = "0.1.1"
+name = "swarmforge-clone-to-owned"
+version = "0.1.0"
 edition = "2024"
 description = "Util traits to represent something that can be made owned and change type at the same time"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["ownership", "bittorrent", "swarmforge"]
+categories = ["data-structures"]
+
+[lib]
+name = "librtbit_clone_to_owned"
 
 [dependencies]
 bytes = "1"

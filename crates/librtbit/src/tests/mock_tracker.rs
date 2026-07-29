@@ -239,6 +239,102 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn live_tracker_worker_observes_announce_port_update() {
+        use std::num::NonZeroU16;
+
+        let tracker = MockUdpTracker::start().await;
+        let output = tempfile::TempDir::with_prefix("tracker_port_update").unwrap();
+        let source = output.path().join("payload.bin");
+        create_new_file_with_random_content(&source, 16 * 1024);
+        let torrent = create_torrent(
+            &source,
+            CreateTorrentOptions {
+                trackers: vec![tracker.url()],
+                piece_length: Some(16 * 1024),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await
+        .unwrap();
+        let info_hash = torrent.info_hash();
+        let listen_port = available_port();
+        let initial_announce_port = available_port();
+        let updated_announce_port = available_port();
+        let session = Session::new_with_opts(
+            output.path().to_owned(),
+            SessionOptions {
+                disable_dht: true,
+                disable_local_service_discovery: true,
+                listen: Some(ListenerOptions {
+                    mode: ListenerMode::TcpOnly,
+                    listen_addr: (Ipv4Addr::LOCALHOST, listen_port).into(),
+                    announce_port: Some(initial_announce_port),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+        let handle = session
+            .add_torrent(
+                AddTorrent::TorrentFileBytes(torrent.as_bytes().unwrap()),
+                Some(AddTorrentOptions {
+                    overwrite: true,
+                    force_tracker_interval: Some(Duration::from_secs(1)),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .unwrap()
+            .into_handle()
+            .unwrap();
+
+        wait_until(
+            || {
+                let peers = tracker.peers(info_hash);
+                if peers
+                    .iter()
+                    .any(|peer| peer.port() == initial_announce_port)
+                {
+                    Ok(())
+                } else {
+                    anyhow::bail!("initial announce port not observed: {peers:?}")
+                }
+            },
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+
+        session.set_announce_port(NonZeroU16::new(updated_announce_port).unwrap());
+
+        wait_until(
+            || {
+                let peers = tracker.peers(info_hash);
+                if peers
+                    .iter()
+                    .any(|peer| peer.port() == updated_announce_port)
+                {
+                    Ok(())
+                } else {
+                    anyhow::bail!("updated announce port not observed: {peers:?}")
+                }
+            },
+            Duration::from_secs(10),
+        )
+        .await
+        .unwrap();
+        assert_eq!(session.listen_addr().unwrap().port(), listen_port);
+        assert_eq!(session.announce_port(), Some(updated_announce_port));
+
+        drop(handle);
+        drop(session);
+        tracker.shutdown().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn leech_discovers_seed_through_tracker() {
         let tracker = MockUdpTracker::start().await;
         let seed_root = tempfile::TempDir::with_prefix("tracker_seed").unwrap();

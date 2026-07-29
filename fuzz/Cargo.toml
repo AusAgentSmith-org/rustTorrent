@@ -9,9 +9,9 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-bencode = { path = "../crates/librtbit-bencode", package = "librtbit-bencode" }
-peer_binary_protocol = { path = "../crates/librtbit-peer-protocol", package = "librtbit-peer-protocol" }
-dht = { path = "../crates/librtbit-dht", package = "librtbit-dht" }
+bencode = { path = "../crates/librtbit-bencode", package = "swarmforge-bencode" }
+peer_binary_protocol = { path = "../crates/librtbit-peer-protocol", package = "swarmforge-peer-protocol" }
+dht = { path = "../crates/librtbit-dht", package = "swarmforge-dht" }
 
 [[bin]]
 name = "bencode"

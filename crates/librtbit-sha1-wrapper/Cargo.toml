@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-sha1-wrapper"
-version = "0.1.2"
+name = "swarmforge-sha1-wrapper"
+version = "0.1.0"
 edition = "2024"
 description = "Pluggable SHA1/SHA256 abstraction for the rtbit BitTorrent client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["sha1", "bittorrent", "swarmforge"]
+categories = ["cryptography"]
+
+[lib]
+name = "librtbit_sha1_wrapper"
 
 [features]
 default = ["sha1-crypto-hash"]

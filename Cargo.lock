@@ -3316,312 +3316,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "librtbit"
-version = "0.1.6"
-dependencies = [
- "anyhow",
- "arc-swap",
- "async-backtrace",
- "async-compression",
- "async-stream",
- "async-trait",
- "axum",
- "axum-extra",
- "backon",
- "base64 0.22.1",
- "bincode",
- "bitvec",
- "byteorder",
- "bytes",
- "chrono",
- "console-subscriber",
- "crc32fast",
- "dashmap 6.2.1",
- "feed-rs",
- "futures",
- "governor",
- "hex 0.4.3",
- "home",
- "http",
- "intervaltree",
- "itertools 0.14.0",
- "librqbit-dualstack-sockets",
- "librqbit-utp",
- "librtbit-bencode",
- "librtbit-buffers",
- "librtbit-clone-to-owned",
- "librtbit-core",
- "librtbit-dht",
- "librtbit-lsd",
- "librtbit-peer-protocol",
- "librtbit-sha1-wrapper",
- "librtbit-tracker-comms",
- "librtbit-upnp",
- "librtbit-upnp-serve",
- "lru",
- "memmap2",
- "metrics-exporter-prometheus",
- "mime_guess",
- "nix",
- "notify",
- "parking_lot",
- "pollster",
- "rand 0.10.1",
- "regex",
- "reqwest",
- "rlimit",
- "rusqlite",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_urlencoded",
- "serde_with",
- "size_format",
- "socket2",
- "sqlx",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-socks",
- "tokio-stream",
- "tokio-test",
- "tokio-util",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "url",
- "urlencoding",
- "utoipa",
- "utoipa-axum",
- "utoipa-swagger-ui",
- "uuid",
- "walkdir",
- "windows 0.62.2",
-]
-
-[[package]]
-name = "librtbit-bencode"
-version = "0.1.5"
-dependencies = [
- "anyhow",
- "arrayvec",
- "atoi 3.0.0",
- "bytes",
- "librtbit-buffers",
- "librtbit-clone-to-owned",
- "serde",
- "serde_derive",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "librtbit-buffers"
-version = "0.1.2"
-dependencies = [
- "bytes",
- "librtbit-clone-to-owned",
- "serde",
- "serde_derive",
-]
-
-[[package]]
-name = "librtbit-clone-to-owned"
-version = "0.1.1"
-dependencies = [
- "bytes",
-]
-
-[[package]]
-name = "librtbit-core"
-version = "0.1.5"
-dependencies = [
- "anyhow",
- "bytes",
- "chardetng",
- "data-encoding",
- "directories",
- "encoding_rs",
- "hex 0.4.3",
- "itertools 0.14.0",
- "librtbit-bencode",
- "librtbit-buffers",
- "librtbit-clone-to-owned",
- "librtbit-sha1-wrapper",
- "memchr",
- "parking_lot",
- "rand 0.10.1",
- "serde",
- "serde_derive",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "librtbit-dht"
-version = "0.1.4"
-dependencies = [
- "anyhow",
- "aws-lc-rs",
- "backon",
- "bytes",
- "chrono",
- "dashmap 6.2.1",
- "futures",
- "indexmap 2.14.0",
- "leaky-bucket",
- "librqbit-dualstack-sockets",
- "librtbit-bencode",
- "librtbit-buffers",
- "librtbit-clone-to-owned",
- "librtbit-core",
- "librtbit-sha1-wrapper",
- "parking_lot",
- "rand 0.10.1",
- "serde",
- "serde_derive",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "librtbit-lsd"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "atoi 3.0.0",
- "bstr",
- "futures",
- "httparse",
- "librqbit-dualstack-sockets",
- "librtbit-core",
- "librtbit-sha1-wrapper",
- "parking_lot",
- "rand 0.10.1",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "librtbit-peer-protocol"
-version = "0.1.4"
-dependencies = [
- "anyhow",
- "bitvec",
- "byteorder",
- "bytes",
- "criterion",
- "itertools 0.14.0",
- "librtbit-bencode",
- "librtbit-buffers",
- "librtbit-clone-to-owned",
- "librtbit-core",
- "serde",
- "serde_derive",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
-name = "librtbit-sha1-wrapper"
-version = "0.1.2"
-dependencies = [
- "assert_cfg",
- "aws-lc-rs",
- "crypto-hash",
- "hex 0.4.3",
-]
-
-[[package]]
-name = "librtbit-tracker-comms"
-version = "0.1.6"
-dependencies = [
- "anyhow",
- "async-stream",
- "backon",
- "byteorder",
- "futures",
- "itertools 0.14.0",
- "librqbit-dualstack-sockets",
- "librtbit-bencode",
- "librtbit-buffers",
- "librtbit-core",
- "parking_lot",
- "rand 0.10.1",
- "reqwest",
- "serde",
- "serde_derive",
- "serde_with",
- "tokio",
- "tokio-util",
- "tracing",
- "url",
- "urlencoding",
-]
-
-[[package]]
-name = "librtbit-upnp"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "bstr",
- "futures",
- "httparse",
- "librqbit-dualstack-sockets",
- "network-interface",
- "quick-xml 0.40.1",
- "reqwest",
- "serde",
- "serde_derive",
- "socket2",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
-name = "librtbit-upnp-serve"
-version = "0.1.2"
-dependencies = [
- "anyhow",
- "axum",
- "bstr",
- "futures",
- "gethostname",
- "http",
- "httparse",
- "librqbit-dualstack-sockets",
- "librtbit-core",
- "librtbit-upnp",
- "mime_guess",
- "network-interface",
- "parking_lot",
- "quick-xml 0.40.1",
- "rand 0.10.1",
- "reqwest",
- "serde",
- "serde_derive",
- "tokio",
- "tokio-util",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "libsqlite3-sys"
 version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5283,9 +4977,6 @@ dependencies = [
  "gethostname",
  "libc",
  "librqbit-dualstack-sockets",
- "librtbit",
- "librtbit-core",
- "librtbit-upnp-serve",
  "metrics-exporter-prometheus",
  "openssl",
  "parking_lot",
@@ -5296,6 +4987,9 @@ dependencies = [
  "serde_json",
  "signal-hook 0.4.4",
  "size_format",
+ "swarmforge",
+ "swarmforge-core",
+ "swarmforge-upnp-serve",
  "tokio",
  "tokio-util",
  "tracing",
@@ -5311,7 +5005,6 @@ dependencies = [
  "directories",
  "gethostname",
  "librqbit-dualstack-sockets",
- "librtbit",
  "metrics-exporter-prometheus",
  "open",
  "parking_lot",
@@ -5319,6 +5012,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_with",
+ "swarmforge",
  "tauri",
  "tauri-build",
  "tauri-plugin-notification",
@@ -6298,6 +5992,312 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
+
+[[package]]
+name = "swarmforge"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "async-backtrace",
+ "async-compression",
+ "async-stream",
+ "async-trait",
+ "axum",
+ "axum-extra",
+ "backon",
+ "base64 0.22.1",
+ "bincode",
+ "bitvec",
+ "byteorder",
+ "bytes",
+ "chrono",
+ "console-subscriber",
+ "crc32fast",
+ "dashmap 6.2.1",
+ "feed-rs",
+ "futures",
+ "governor",
+ "hex 0.4.3",
+ "home",
+ "http",
+ "intervaltree",
+ "itertools 0.14.0",
+ "librqbit-dualstack-sockets",
+ "librqbit-utp",
+ "lru",
+ "memmap2",
+ "metrics-exporter-prometheus",
+ "mime_guess",
+ "nix",
+ "notify",
+ "parking_lot",
+ "pollster",
+ "rand 0.10.1",
+ "regex",
+ "reqwest",
+ "rlimit",
+ "rusqlite",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_urlencoded",
+ "serde_with",
+ "size_format",
+ "socket2",
+ "sqlx",
+ "swarmforge-bencode",
+ "swarmforge-buffers",
+ "swarmforge-clone-to-owned",
+ "swarmforge-core",
+ "swarmforge-dht",
+ "swarmforge-lsd",
+ "swarmforge-peer-protocol",
+ "swarmforge-sha1-wrapper",
+ "swarmforge-tracker-comms",
+ "swarmforge-upnp",
+ "swarmforge-upnp-serve",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-socks",
+ "tokio-stream",
+ "tokio-test",
+ "tokio-util",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "urlencoding",
+ "utoipa",
+ "utoipa-axum",
+ "utoipa-swagger-ui",
+ "uuid",
+ "walkdir",
+ "windows 0.62.2",
+]
+
+[[package]]
+name = "swarmforge-bencode"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arrayvec",
+ "atoi 3.0.0",
+ "bytes",
+ "serde",
+ "serde_derive",
+ "swarmforge-buffers",
+ "swarmforge-clone-to-owned",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "swarmforge-buffers"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "serde",
+ "serde_derive",
+ "swarmforge-clone-to-owned",
+]
+
+[[package]]
+name = "swarmforge-clone-to-owned"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+]
+
+[[package]]
+name = "swarmforge-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "chardetng",
+ "data-encoding",
+ "directories",
+ "encoding_rs",
+ "hex 0.4.3",
+ "itertools 0.14.0",
+ "memchr",
+ "parking_lot",
+ "rand 0.10.1",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "swarmforge-bencode",
+ "swarmforge-buffers",
+ "swarmforge-clone-to-owned",
+ "swarmforge-sha1-wrapper",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "swarmforge-dht"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aws-lc-rs",
+ "backon",
+ "bytes",
+ "chrono",
+ "dashmap 6.2.1",
+ "futures",
+ "indexmap 2.14.0",
+ "leaky-bucket",
+ "librqbit-dualstack-sockets",
+ "parking_lot",
+ "rand 0.10.1",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "swarmforge-bencode",
+ "swarmforge-buffers",
+ "swarmforge-clone-to-owned",
+ "swarmforge-core",
+ "swarmforge-sha1-wrapper",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "swarmforge-lsd"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "atoi 3.0.0",
+ "bstr",
+ "futures",
+ "httparse",
+ "librqbit-dualstack-sockets",
+ "parking_lot",
+ "rand 0.10.1",
+ "swarmforge-core",
+ "swarmforge-sha1-wrapper",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "swarmforge-peer-protocol"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bitvec",
+ "byteorder",
+ "bytes",
+ "criterion",
+ "itertools 0.14.0",
+ "serde",
+ "serde_derive",
+ "swarmforge-bencode",
+ "swarmforge-buffers",
+ "swarmforge-clone-to-owned",
+ "swarmforge-core",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "swarmforge-sha1-wrapper"
+version = "0.1.0"
+dependencies = [
+ "assert_cfg",
+ "aws-lc-rs",
+ "crypto-hash",
+ "hex 0.4.3",
+]
+
+[[package]]
+name = "swarmforge-tracker-comms"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "backon",
+ "byteorder",
+ "futures",
+ "itertools 0.14.0",
+ "librqbit-dualstack-sockets",
+ "parking_lot",
+ "rand 0.10.1",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_with",
+ "swarmforge-bencode",
+ "swarmforge-buffers",
+ "swarmforge-core",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "url",
+ "urlencoding",
+]
+
+[[package]]
+name = "swarmforge-upnp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bstr",
+ "futures",
+ "httparse",
+ "librqbit-dualstack-sockets",
+ "network-interface",
+ "quick-xml 0.40.1",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "socket2",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
+name = "swarmforge-upnp-serve"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "bstr",
+ "futures",
+ "gethostname",
+ "http",
+ "httparse",
+ "librqbit-dualstack-sockets",
+ "mime_guess",
+ "network-interface",
+ "parking_lot",
+ "quick-xml 0.40.1",
+ "rand 0.10.1",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "swarmforge-core",
+ "swarmforge-upnp",
+ "tokio",
+ "tokio-util",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
 
 [[package]]
 name = "swift-rs"

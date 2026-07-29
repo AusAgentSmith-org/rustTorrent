@@ -1193,6 +1193,25 @@ fn spawn_stats_printer(session: Arc<Session>) {
 
 #[cfg(test)]
 mod tests {
+    use clap::Parser;
+
+    use crate::Opts;
+
+    #[test]
+    fn announce_port_is_initialized_from_cli_value() {
+        let opts = Opts::try_parse_from([
+            "rtbit",
+            "--announce-port",
+            "51234",
+            "server",
+            "start",
+            "/tmp/rtbit-startup-test",
+        ])
+        .unwrap();
+
+        assert_eq!(opts.announce_port, Some(51_234));
+    }
+
     #[cfg(not(target_os = "windows"))]
     #[test]
     fn test_parse_umask() {

@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     marker::PhantomData,
     net::SocketAddr,
+    num::NonZeroU16,
     path::PathBuf,
     str::FromStr,
     sync::Arc,
@@ -514,6 +515,18 @@ impl Api {
 
     pub fn api_output_folder(&self) -> String {
         self.session.output_folder().to_string_lossy().into_owned()
+    }
+
+    pub fn api_listen_port(&self) -> u16 {
+        self.session.listen_addr().map_or(0, |addr| addr.port())
+    }
+
+    pub fn api_announce_port(&self) -> u16 {
+        self.session.announce_port().unwrap_or_default()
+    }
+
+    pub fn api_set_announce_port(&self, port: NonZeroU16) {
+        self.session.set_announce_port(port);
     }
 
     pub fn api_set_output_folder(&self, folder: String) {

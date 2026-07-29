@@ -6,6 +6,7 @@
 
 use std::{
     collections::HashMap,
+    num::NonZeroU16,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
@@ -227,6 +228,19 @@ struct QbitPreferences {
     queueing_enabled: bool,
     locale: &'static str,
     web_ui_port: u16,
+    listen_port: u16,
+    announce_port: u16,
+}
+
+#[derive(Deserialize)]
+struct SetPreferencesForm {
+    json: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SetPreferences {
+    announce_port: u16,
 }
 
 // ---------------------------------------------------------------------------
@@ -300,7 +314,7 @@ async fn h_app_build_info() -> impl IntoResponse {
     })
 }
 
-async fn h_app_preferences(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
+async fn h_app_preferences(State(state): State<Arc<QbitState>>) -> axum::Json<QbitPreferences> {
     let save_path = state.api_state.api.api_output_folder();
 
     axum::Json(QbitPreferences {
@@ -320,7 +334,42 @@ async fn h_app_preferences(State(state): State<Arc<QbitState>>) -> impl IntoResp
         queueing_enabled: false,
         locale: "en",
         web_ui_port: state.api_state.opts.web_ui_port.unwrap_or(3030),
+        listen_port: state.api_state.api.api_listen_port(),
+        announce_port: state.api_state.api.api_announce_port(),
     })
+}
+
+async fn h_app_set_preferences(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> impl IntoResponse {
+    let form = match serde_urlencoded::from_bytes::<SetPreferencesForm>(&body) {
+        Ok(form) => form,
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("invalid preferences form: {error}"),
+            );
+        }
+    };
+    let preferences = match serde_json::from_str::<SetPreferences>(&form.json) {
+        Ok(preferences) => preferences,
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("invalid preferences JSON: {error}"),
+            );
+        }
+    };
+    let Some(port) = NonZeroU16::new(preferences.announce_port) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            "announce_port must be between 1 and 65535".to_string(),
+        );
+    };
+
+    state.api_state.api.api_set_announce_port(port);
+    (StatusCode::OK, String::new())
 }
 
 // ---------------------------------------------------------------------------
@@ -1149,7 +1198,8 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/version", get(h_app_version))
         .route("/webapiVersion", get(h_app_webapi_version))
         .route("/buildInfo", get(h_app_build_info))
-        .route("/preferences", get(h_app_preferences));
+        .route("/preferences", get(h_app_preferences))
+        .route("/setPreferences", post(h_app_set_preferences));
 
     // Torrent endpoints
     let torrents_router = Router::new()
@@ -1213,7 +1263,116 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
 
 #[cfg(test)]
 mod tests {
-    use super::matches_category;
+    use std::{net::Ipv4Addr, sync::Arc};
+
+    use axum::response::IntoResponse;
+    use bytes::Bytes;
+    use http::StatusCode;
+
+    use crate::{
+        Api, ListenerMode, Session, SessionOptions,
+        http_api::{HttpApi, HttpApiOptions},
+        listen::ListenerOptions,
+    };
+
+    use super::{
+        QbitSessions, QbitState, h_app_preferences, h_app_set_preferences, matches_category,
+    };
+
+    async fn qbit_state() -> (Arc<QbitState>, Arc<Session>, tempfile::TempDir) {
+        let output = tempfile::TempDir::with_prefix("qbit_preferences").unwrap();
+        let session = Session::new_with_opts(
+            output.path().to_owned(),
+            SessionOptions {
+                disable_dht: true,
+                disable_local_service_discovery: true,
+                listen: Some(ListenerOptions {
+                    mode: ListenerMode::TcpOnly,
+                    listen_addr: (Ipv4Addr::LOCALHOST, 0).into(),
+                    announce_port: Some(4241),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+        let api = Api::new(
+            session.clone(),
+            None,
+            #[cfg(feature = "tracing-subscriber-utils")]
+            None,
+        );
+        let api_state = Arc::new(HttpApi::new(
+            api,
+            Some(HttpApiOptions {
+                web_ui_port: Some(3031),
+                ..Default::default()
+            }),
+        ));
+        (
+            Arc::new(QbitState {
+                api_state,
+                sessions: QbitSessions::new(),
+            }),
+            session,
+            output,
+        )
+    }
+
+    #[tokio::test]
+    async fn preferences_reports_fixed_listener_and_runtime_announce_port() {
+        let (state, session, _output) = qbit_state().await;
+
+        let preferences = h_app_preferences(axum::extract::State(state)).await.0;
+
+        assert_eq!(
+            preferences.listen_port,
+            session.listen_addr().unwrap().port()
+        );
+        assert_eq!(preferences.announce_port, 4241);
+        assert_eq!(preferences.web_ui_port, 3031);
+    }
+
+    #[tokio::test]
+    async fn set_preferences_updates_port_idempotently_without_rebinding_listener() {
+        let (state, session, _output) = qbit_state().await;
+        let listen_addr = session.listen_addr().unwrap();
+        let body = Bytes::from_static(b"json=%7B%22announce_port%22%3A51234%7D");
+
+        for _ in 0..2 {
+            let response = h_app_set_preferences(axum::extract::State(state.clone()), body.clone())
+                .await
+                .into_response();
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+
+        assert_eq!(session.announce_port(), Some(51_234));
+        assert_eq!(session.listen_addr(), Some(listen_addr));
+    }
+
+    #[tokio::test]
+    async fn set_preferences_rejects_invalid_and_unsupported_fields() {
+        let (state, session, _output) = qbit_state().await;
+        let invalid_bodies = [
+            "json=%7B%22announce_port%22%3A0%7D",
+            "json=%7B%22announce_port%22%3A65536%7D",
+            "json=%7B%22save_path%22%3A%22%2Ftmp%22%7D",
+            "json=not-json",
+            "announce_port=4241",
+        ];
+
+        for body in invalid_bodies {
+            let response = h_app_set_preferences(
+                axum::extract::State(state.clone()),
+                Bytes::copy_from_slice(body.as_bytes()),
+            )
+            .await
+            .into_response();
+            assert_eq!(response.status(), StatusCode::BAD_REQUEST, "body={body}");
+        }
+        assert_eq!(session.announce_port(), Some(4241));
+    }
 
     #[test]
     fn category_filter_supports_qbittorrent_special_values() {

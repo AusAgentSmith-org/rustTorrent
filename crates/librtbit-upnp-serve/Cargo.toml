@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-upnp-serve"
-version = "0.1.2"
+name = "swarmforge-upnp-serve"
+version = "0.1.0"
 edition = "2024"
 description = "Simple UPnP MediaServer implementation for the rtbit BitTorrent client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["bittorrent", "upnp", "swarmforge"]
+categories = ["network-programming"]
+
+[lib]
+name = "librtbit_upnp_serve"
 
 [dependencies]
 anyhow = "1"
