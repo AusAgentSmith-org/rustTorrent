@@ -52,8 +52,14 @@ const apiUrl = (() => {
 
   const url = new URL(window.location.href);
 
-  // assume Vite devserver
-  if (url.port == "3031" || url.port == "1420") {
+  // Vite's development server runs on 3031 and forwards API requests to a
+  // separately running backend on 3030. The production web UI is served by
+  // rtbit itself under /web/ on the API port, so it must use same-origin API
+  // requests. The desktop dev shell on 1420 also talks to the backend on 3030.
+  if (url.port == "3031" && (url.pathname === "/" || url.pathname === "")) {
+    return `${url.protocol}//${url.hostname}:3030`;
+  }
+  if (url.port == "1420") {
     return `${url.protocol}//${url.hostname}:3030`;
   }
 
