@@ -203,3 +203,40 @@ async fn read_only_session_verifies_qbittorrent_multi_file_save_path() -> anyhow
     );
     Ok(())
 }
+
+#[tokio::test(flavor = "multi_thread")]
+async fn read_only_session_verifies_single_entry_multi_file_save_path() -> anyhow::Result<()> {
+    let payload_root = TempDir::with_prefix("rtbit_qbit_single_entry_root")?;
+    let torrent_root = payload_root.path().join("single-entry-payload");
+    std::fs::create_dir(&torrent_root)?;
+    std::fs::write(torrent_root.join("only.bin"), vec![0x56; 48 * 1024])?;
+    let torrent = create_multi_file_torrent(&torrent_root).await?;
+
+    let session_dir = TempDir::with_prefix("rtbit_qbit_single_entry_session")?;
+    let session = create_read_only_session(session_dir.path()).await?;
+    let handle = session
+        .add_torrent(
+            AddTorrent::from_bytes(torrent),
+            Some(AddTorrentOptions {
+                paused: true,
+                overwrite: true,
+                output_folder_root: Some(payload_root.path().to_string_lossy().into_owned()),
+                ..Default::default()
+            }),
+        )
+        .await?
+        .into_handle()
+        .context("expected a torrent handle")?;
+
+    timeout(Duration::from_secs(10), handle.wait_until_initialized())
+        .await
+        .context("timed out waiting for single-entry multi-file initialization")??;
+
+    assert!(handle.stats().finished);
+    assert_eq!(handle.shared().options.output_folder, torrent_root);
+    assert_eq!(
+        handle.shared().options.output_folder_root.as_deref(),
+        Some(payload_root.path())
+    );
+    Ok(())
+}

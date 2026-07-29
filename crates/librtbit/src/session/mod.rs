@@ -735,13 +735,14 @@ impl Session {
         info: &ValidatedTorrentMetaV1Info<ByteBufOwned>,
         magnet_name: Option<&str>,
     ) -> anyhow::Result<Option<PathBuf>> {
+        if info.info().files.is_none() {
+            return Ok(None);
+        }
+
         let files = info
             .iter_file_details()
             .map(|fd| Ok((fd.filename.to_pathbuf(), fd.len)))
             .collect::<anyhow::Result<Vec<(PathBuf, u64)>>>()?;
-        if files.len() < 2 {
-            return Ok(None);
-        }
 
         fn check_valid(pb: &Path) -> anyhow::Result<()> {
             if pb.components().any(|x| !matches!(x, Component::Normal(_))) {
