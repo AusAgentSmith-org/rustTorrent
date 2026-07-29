@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-upnp"
-version = "0.1.2"
+name = "swarmforge-upnp"
+version = "0.1.0"
 edition = "2024"
 description = "UPnP port forwarding client for the rtbit BitTorrent client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["bittorrent", "upnp", "swarmforge"]
+categories = ["network-programming"]
+
+[lib]
+name = "librtbit_upnp"
 
 [dependencies]
 tracing = "0.1"

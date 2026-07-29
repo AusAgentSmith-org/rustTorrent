@@ -25,6 +25,7 @@ use crate::tracker_comms_http;
 use crate::tracker_comms_udp;
 use crate::tracker_comms_udp::UdpTrackerClient;
 use crate::tracker_status::TrackerStatusRegistry;
+use librtbit_core::AnnouncePort;
 use librtbit_core::hash_id::Id20;
 
 pub struct TrackerComms {
@@ -34,7 +35,7 @@ pub struct TrackerComms {
     force_tracker_interval: Option<Duration>,
     tx: Sender,
     // This MUST be set as trackers don't work with 0 port.
-    announce_port: u16,
+    announce_port: AnnouncePort,
     reqwest_client: reqwest::Client,
     key: u32,
     status: Option<Arc<TrackerStatusRegistry>>,
@@ -149,6 +150,31 @@ impl TrackerComms {
         stats: Box<dyn TorrentStatsProvider>,
         force_interval: Option<Duration>,
         announce_port: u16,
+        reqwest_client: reqwest::Client,
+        udp_client: Option<UdpTrackerClient>,
+        status: Option<Arc<TrackerStatusRegistry>>,
+    ) -> Option<BoxStream<'static, SocketAddr>> {
+        Self::start_with_shared_announce_port(
+            info_hash,
+            peer_id,
+            trackers,
+            stats,
+            force_interval,
+            AnnouncePort::new(std::num::NonZeroU16::new(announce_port)),
+            reqwest_client,
+            udp_client,
+            status,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn start_with_shared_announce_port(
+        info_hash: Id20,
+        peer_id: Id20,
+        trackers: HashSet<Url>,
+        stats: Box<dyn TorrentStatsProvider>,
+        force_interval: Option<Duration>,
+        announce_port: AnnouncePort,
         reqwest_client: reqwest::Client,
         udp_client: Option<UdpTrackerClient>,
         status: Option<Arc<TrackerStatusRegistry>>,
@@ -320,7 +346,11 @@ impl TrackerComms {
         let request = tracker_comms_http::TrackerRequest {
             info_hash: &self.info_hash,
             peer_id: &self.peer_id,
-            port: self.announce_port,
+            port: self
+                .announce_port
+                .get()
+                .map(std::num::NonZeroU16::get)
+                .unwrap_or(4240),
             uploaded: stats.uploaded_bytes,
             downloaded: stats.downloaded_bytes,
             left: stats.get_left_to_download_bytes(),
@@ -482,7 +512,11 @@ impl TrackerComms {
                 }
             },
             key: self.key,
-            port: self.announce_port,
+            port: self
+                .announce_port
+                .get()
+                .map(std::num::NonZeroU16::get)
+                .unwrap_or(4240),
         };
 
         match client.announce(addr, request).await {

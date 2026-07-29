@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-peer-protocol"
-version = "0.1.4"
+name = "swarmforge-peer-protocol"
+version = "0.1.0"
 edition = "2024"
 description = "BitTorrent peer wire protocol implementation for the rtbit client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["bittorrent", "protocol", "swarmforge"]
+categories = ["network-programming"]
+
+[lib]
+name = "librtbit_peer_protocol"
 
 [dependencies]
 serde = "1"

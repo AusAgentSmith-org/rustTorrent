@@ -20,6 +20,7 @@ use std::{
     borrow::Cow,
     collections::HashSet,
     net::SocketAddr,
+    num::NonZeroU16,
     path::{Component, Path, PathBuf},
     sync::{Arc, atomic::AtomicUsize},
     time::Duration,
@@ -56,7 +57,7 @@ use futures::{FutureExt, StreamExt, future::BoxFuture, stream::FuturesUnordered}
 use itertools::Itertools;
 use librqbit_utp::BindDevice;
 use librtbit_core::{
-    crate_version, peer_id::generate_azereus_style, spawn_utils::spawn_with_cancel,
+    AnnouncePort, crate_version, peer_id::generate_azereus_style, spawn_utils::spawn_with_cancel,
     torrent_metainfo::ValidatedTorrentMetaV1Info,
 };
 use librtbit_lsd::{LocalServiceDiscovery, LocalServiceDiscoveryOptions};
@@ -103,7 +104,7 @@ pub struct Session {
 
     // Network
     peer_id: Id20,
-    announce_port: Option<u16>,
+    announce_port: AnnouncePort,
     listen_addr: Option<SocketAddr>,
     dht: Option<Dht>,
     pub(crate) connector: Arc<StreamConnector>,
@@ -449,7 +450,12 @@ impl Session {
                 db: RwLock::new(Default::default()),
                 _cancellation_token_drop_guard: token.clone().drop_guard(),
                 cancellation_token: token,
-                announce_port: listen_result.as_ref().and_then(|l| l.announce_port),
+                announce_port: AnnouncePort::new(
+                    listen_result
+                        .as_ref()
+                        .and_then(|l| l.announce_port)
+                        .and_then(NonZeroU16::new),
+                ),
                 listen_addr: listen_result.as_ref().map(|l| l.addr),
                 default_storage_factory: opts.default_storage_factory,
                 reqwest_client,
@@ -1339,7 +1345,14 @@ impl Session {
     }
 
     pub fn announce_port(&self) -> Option<u16> {
-        self.announce_port
+        self.announce_port.get().map(NonZeroU16::get)
+    }
+
+    /// Update the port advertised by trackers, DHT, and LSD.
+    ///
+    /// This deliberately does not rebind the peer listener.
+    pub fn set_announce_port(&self, port: NonZeroU16) {
+        self.announce_port.set(port);
     }
 
     pub fn categories(&self) -> &CategoryManager {

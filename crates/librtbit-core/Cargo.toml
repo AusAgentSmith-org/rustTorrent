@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-core"
-version = "0.1.5"
+name = "swarmforge-core"
+version = "0.1.0"
 edition = "2024"
 description = "Core types and utilities for the rtbit BitTorrent client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["bittorrent", "torrent", "swarmforge"]
+categories = ["network-programming", "data-structures"]
+
+[lib]
+name = "librtbit_core"
 
 [features]
 default = ["sha1-crypto-hash"]

@@ -1,3 +1,4 @@
+pub mod announce_port;
 pub mod compact_ip;
 pub mod constants;
 pub mod directories;
@@ -9,6 +10,7 @@ pub mod peer_id;
 pub mod spawn_utils;
 pub mod speed_estimator;
 pub mod torrent_metainfo;
+pub use announce_port::AnnouncePort;
 pub use hash_id::{Id20, Id32};
 
 pub use error::Error;

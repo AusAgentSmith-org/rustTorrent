@@ -29,6 +29,7 @@ use futures::{
 use leaky_bucket::RateLimiter;
 use librqbit_dualstack_sockets::{BindDevice, UdpSocket};
 use librtbit_core::{
+    AnnouncePort,
     compact_ip::{CompactSerialize, CompactSerializeFixedLen},
     crate_version,
     hash_id::Id20,
@@ -108,7 +109,16 @@ trait RecursiveRequestCallbacks: Sized + Send + Sync + 'static {
 struct RecursiveRequestCallbacksGetPeers {
     // Id20::from_str("00000fffffffffffffffffffffffffffffffffff").unwrap()
     min_distance_to_announce: Id20,
-    announce_port: Option<u16>,
+    announce_port: Option<AnnouncePort>,
+}
+
+impl RecursiveRequestCallbacksGetPeers {
+    fn current_announce_port(&self) -> Option<u16> {
+        self.announce_port
+            .as_ref()
+            .and_then(AnnouncePort::get)
+            .map(std::num::NonZeroU16::get)
+    }
 }
 
 impl RecursiveRequestCallbacks for RecursiveRequestCallbacksGetPeers {
@@ -121,8 +131,8 @@ impl RecursiveRequestCallbacks for RecursiveRequestCallbacksGetPeers {
         addr: SocketAddr,
         resp: &crate::Result<ResponseOrError>,
     ) {
-        let announce_port = match self.announce_port {
-            Some(a) => a,
+        let announce_port = match self.current_announce_port() {
+            Some(port) => port,
             None => return,
         };
         let resp = match resp {
@@ -154,6 +164,27 @@ impl RecursiveRequestCallbacks for RecursiveRequestCallbacksGetPeers {
             message,
             addr,
         });
+    }
+}
+
+#[cfg(test)]
+mod announce_port_tests {
+    use super::RecursiveRequestCallbacksGetPeers;
+    use librtbit_core::{AnnouncePort, Id20};
+    use std::{num::NonZeroU16, str::FromStr};
+
+    #[test]
+    fn announce_peer_decision_reads_runtime_port() {
+        let shared = AnnouncePort::new(NonZeroU16::new(4241));
+        let callbacks = RecursiveRequestCallbacksGetPeers {
+            min_distance_to_announce: Id20::from_str("0000ffffffffffffffffffffffffffffffffffff")
+                .unwrap(),
+            announce_port: Some(shared.clone()),
+        };
+
+        assert_eq!(callbacks.current_announce_port(), Some(4241));
+        shared.set(NonZeroU16::new(51_234).unwrap());
+        assert_eq!(callbacks.current_announce_port(), Some(51_234));
     }
 }
 
@@ -204,7 +235,7 @@ pub struct RequestPeersStream {
 }
 
 impl RequestPeersStream {
-    fn new(dht: Arc<DhtState>, info_hash: Id20, announce_port: Option<u16>) -> Self {
+    fn new(dht: Arc<DhtState>, info_hash: Id20, announce_port: Option<AnnouncePort>) -> Self {
         let (peer_tx, peer_rx) = unbounded_channel();
         let make = |is_v4: bool, dht: Arc<DhtState>, peer_tx: UnboundedSender<SocketAddr>| {
             let (node_tx, node_rx) = unbounded_channel();
@@ -222,7 +253,7 @@ impl RequestPeersStream {
                         "0000ffffffffffffffffffffffffffffffffffff",
                     )
                     .unwrap(),
-                    announce_port,
+                    announce_port: announce_port.clone(),
                 },
             });
             rp.request_peers_forever(node_rx, is_v4)
@@ -1438,6 +1469,17 @@ impl DhtState {
         self: &Arc<Self>,
         info_hash: Id20,
         announce_port: Option<u16>,
+    ) -> RequestPeersStream {
+        self.get_peers_with_shared_announce_port(
+            info_hash,
+            announce_port.map(|port| AnnouncePort::new(std::num::NonZeroU16::new(port))),
+        )
+    }
+
+    pub fn get_peers_with_shared_announce_port(
+        self: &Arc<Self>,
+        info_hash: Id20,
+        announce_port: Option<AnnouncePort>,
     ) -> RequestPeersStream {
         RequestPeersStream::new(self.clone(), info_hash, announce_port)
     }

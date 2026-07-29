@@ -1,10 +1,16 @@
 [package]
-name = "librtbit-buffers"
-version = "0.1.2"
+name = "swarmforge-buffers"
+version = "0.1.0"
 edition = "2024"
 description = "Utils to work with byte buffers in librtbit source code"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["buffers", "bittorrent", "swarmforge"]
+categories = ["data-structures", "network-programming"]
+
+[lib]
+name = "librtbit_buffers"
 
 [dependencies]
 serde = "1"

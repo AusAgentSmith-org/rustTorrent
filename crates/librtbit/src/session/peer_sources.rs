@@ -61,7 +61,10 @@ impl Session {
             None
         } else {
             self.dht.as_ref().map(|dht| {
-                dht.get_peers(info_hash, if announce { self.announce_port } else { None })
+                dht.get_peers_with_shared_announce_port(
+                    info_hash,
+                    announce.then(|| self.announce_port.clone()),
+                )
             })
         };
 
@@ -69,7 +72,10 @@ impl Session {
             None
         } else {
             self.lsd.as_ref().map(|lsd| {
-                lsd.announce(info_hash, if announce { self.announce_port } else { None })
+                lsd.announce_with_shared_port(
+                    info_hash,
+                    announce.then(|| self.announce_port.clone()),
+                )
             })
         };
 
@@ -84,13 +90,13 @@ impl Session {
             info_hash,
             session: self.clone(),
         };
-        let tracker_rx = TrackerComms::start(
+        let tracker_rx = TrackerComms::start_with_shared_announce_port(
             info_hash,
             self.peer_id,
             trackers.into_iter().collect(),
             Box::new(tracker_rx_stats),
             force_tracker_interval,
-            self.announce_port().unwrap_or(4240),
+            self.announce_port.clone(),
             self.reqwest_client.clone(),
             self.udp_tracker_client.clone(),
             tracker_status,

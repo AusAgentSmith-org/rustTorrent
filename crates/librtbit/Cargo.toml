@@ -1,10 +1,16 @@
 [package]
-name = "librtbit"
-version = "0.1.6"
+name = "swarmforge"
+version = "0.1.0"
 edition = "2024"
 description = "Core BitTorrent client library for the rtbit torrent client"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/TheDancingDeveloper-org/rustTorrent"
+readme = "../SWARMFORGE-README.md"
+keywords = ["bittorrent", "torrent", "swarmforge"]
+categories = ["network-programming"]
+
+[lib]
+name = "librtbit"
 
 [features]
 default = ["default-tls", "http-api-client"]

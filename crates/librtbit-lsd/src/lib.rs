@@ -12,7 +12,7 @@ use std::{
 use anyhow::Context;
 use futures::Stream;
 use librqbit_dualstack_sockets::{BindDevice, MulticastUdpSocket};
-use librtbit_core::{Id20, spawn_utils::spawn_with_cancel};
+use librtbit_core::{AnnouncePort, Id20, spawn_utils::spawn_with_cancel};
 use parking_lot::RwLock;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tokio_util::sync::CancellationToken;
@@ -57,9 +57,18 @@ impl RateLimiter {
 
 struct Announce {
     tx: UnboundedSender<SocketAddr>,
-    port: Option<u16>,
+    port: Option<AnnouncePort>,
     last_reply_ipv4: RateLimiter,
     last_reply_ipv6: RateLimiter,
+}
+
+impl Announce {
+    fn current_port(&self) -> Option<u16> {
+        self.port
+            .as_ref()
+            .and_then(AnnouncePort::get)
+            .map(std::num::NonZeroU16::get)
+    }
 }
 
 struct LocalServiceDiscoveryInner {
@@ -174,7 +183,7 @@ cookie: {cookie}\r
 
             return_if_none!(announce.tx.send(addr).ok());
 
-            let announce_port = return_if_none!(announce.port);
+            let announce_port = return_if_none!(announce.current_port());
 
             let rl = if addr.is_ipv4() {
                 &announce.last_reply_ipv4
@@ -215,7 +224,11 @@ cookie: {cookie}\r
         }
     }
 
-    async fn task_announce_periodically(self, info_hash: Id20, port: u16) -> anyhow::Result<()> {
+    async fn task_announce_periodically(
+        self,
+        info_hash: Id20,
+        port: AnnouncePort,
+    ) -> anyhow::Result<()> {
         let mut interval = tokio::time::interval(Duration::from_secs(60 * 5));
         loop {
             interval.tick().await;
@@ -223,7 +236,9 @@ cookie: {cookie}\r
             self.inner
                 .socket
                 .try_send_mcast_everywhere(&|mopts| {
-                    Some(self.gen_announce_msg(info_hash, port, mopts.mcast_addr().is_ipv6()))
+                    port.get().map(|port| {
+                        self.gen_announce_msg(info_hash, port.get(), mopts.mcast_addr().is_ipv6())
+                    })
                 })
                 .await;
         }
@@ -233,6 +248,17 @@ cookie: {cookie}\r
         &self,
         info_hash: Id20,
         announce_port: Option<u16>,
+    ) -> impl Stream<Item = SocketAddr> + Send + Sync + 'static {
+        self.announce_with_shared_port(
+            info_hash,
+            announce_port.map(|port| AnnouncePort::new(std::num::NonZeroU16::new(port))),
+        )
+    }
+
+    pub fn announce_with_shared_port(
+        &self,
+        info_hash: Id20,
+        announce_port: Option<AnnouncePort>,
     ) -> impl Stream<Item = SocketAddr> + Send + Sync + 'static {
         // 1. Periodically announce the torrent.
         // 2. Stream back the results from received messages.
@@ -266,7 +292,7 @@ cookie: {cookie}\r
             info_hash,
             Announce {
                 tx,
-                port: announce_port,
+                port: announce_port.clone(),
                 last_reply_ipv4: Default::default(),
                 last_reply_ipv6: Default::default(),
             },
@@ -274,8 +300,9 @@ cookie: {cookie}\r
 
         if let Some(announce_port) = announce_port {
             let cancel_token = self.inner.cancel_token.child_token();
+            let initial_port = announce_port.get().map(std::num::NonZeroU16::get);
             spawn_with_cancel(
-                debug_span!(parent: None, "lsd-announce", ?info_hash, port=announce_port),
+                debug_span!(parent: None, "lsd-announce", ?info_hash, port=initial_port),
                 "lsd-announce",
                 cancel_token,
                 self.clone()
@@ -611,6 +638,22 @@ mod tests {
             &Ipv6Addr::new(0xff15, 0, 0, 0, 0, 0, 0xefc0, 0x988f)
         );
         assert_eq!(LSD_IPV6.port(), 6771);
+    }
+
+    #[test]
+    fn lsd_reply_decision_reads_runtime_port() {
+        let shared = AnnouncePort::new(std::num::NonZeroU16::new(4241));
+        let (tx, _rx) = unbounded_channel();
+        let announce = Announce {
+            tx,
+            port: Some(shared.clone()),
+            last_reply_ipv4: Default::default(),
+            last_reply_ipv6: Default::default(),
+        };
+
+        assert_eq!(announce.current_port(), Some(4241));
+        shared.set(std::num::NonZeroU16::new(51_234).unwrap());
+        assert_eq!(announce.current_port(), Some(51_234));
     }
 
     #[test]
