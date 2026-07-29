@@ -3,9 +3,8 @@
 Release preparation date: 2026-07-29
 
 This is the immutable release and rollback record for the first coordinated
-`swarmforge-*` package family. It records the old-family boundary before any
-new crates.io publication and will be extended with the published package
-checksums after the registry accepts version 0.1.0.
+`swarmforge-*` package family. It records the old-family boundary, published
+package checksums, source provenance, and independent consumer verification.
 
 ## Compatibility contract
 
@@ -115,10 +114,64 @@ entry; it does not mean the standalone Git repository is absent.
 `scripts/publish.sh --execute` dry-runs each package immediately before its
 upload and waits until crates.io's sparse index exposes version 0.1.0 before
 moving to the next dependency level. A pre-existing package name or version is
-a hard failure, not a successful rerun.
+a hard failure in normal mode. `--execute --resume` exists only for recovery
+from a partially accepted coordinated publication: it verifies and skips an
+exact, non-yanked 0.1.0 and rejects every other registry state.
 
 ## Published SwarmForge artifacts
 
-This section is intentionally pending until crates.io has accepted all 12
-immutable packages. Record the exact source commit, source tag, package URLs,
-and sparse-index checksums here immediately after publication.
+All 12 immutable packages were accepted by crates.io on 2026-07-29 and were
+independently verified in the authoritative sparse index as exactly one,
+non-yanked `0.1.0` entry per package.
+
+The first seven packages were published from the original coordinated release
+commit and tag. An isolated-package dry-run then exposed a missing default SHA
+backend in `swarmforge-lsd`; no LSD artifact had been uploaded. The correction
+made the LSD feature contract explicit, propagated the root SHA feature, and
+made the publisher safely resumable. The final five packages were published
+from that correction commit and tag.
+
+| Source set | Commit | Tag | Pull request |
+| --- | --- | --- | --- |
+| Initial seven packages | `29901dba6b8dc10b50fa78639e41daf3f38d429c` | `swarmforge-v0.1.0` | `#21` |
+| Corrected final five packages | `d5df464bcc73e557aff95b7e7a7745d7e4626d1f` | `swarmforge-v0.1.0-lsd-fix` | `#22` |
+
+| Package | Source set | crates.io checksum |
+| --- | --- | --- |
+| [`swarmforge-clone-to-owned`](https://crates.io/crates/swarmforge-clone-to-owned/0.1.0) | Initial | `2bb3b8f73c82f8996e0ace7e18f6122b679121e6e2c2375b12785a8d4b6ae3de` |
+| [`swarmforge-buffers`](https://crates.io/crates/swarmforge-buffers/0.1.0) | Initial | `3d580701883234fe6f873c0996e38feb829635ef970bbf341eb44ba148a27ed2` |
+| [`swarmforge-sha1-wrapper`](https://crates.io/crates/swarmforge-sha1-wrapper/0.1.0) | Initial | `433e984d736e80f61a4171482657ec6bd0108b0803a973bd84c712e571e0481b` |
+| [`swarmforge-bencode`](https://crates.io/crates/swarmforge-bencode/0.1.0) | Initial | `62025700dfaaaaa83979d2660a6fc14370ed273990cce0dbc76b0782a22fdb05` |
+| [`swarmforge-core`](https://crates.io/crates/swarmforge-core/0.1.0) | Initial | `f832d9e4a4b8da07731824ce53ccec3b1efa26007d28a9a20bda0c2cd9a190a5` |
+| [`swarmforge-peer-protocol`](https://crates.io/crates/swarmforge-peer-protocol/0.1.0) | Initial | `f5bb477c07172aeeebe5c363472e210d0766073b40ef39475aa3ac5e486b7c94` |
+| [`swarmforge-dht`](https://crates.io/crates/swarmforge-dht/0.1.0) | Initial | `b906ebbdf427da92ed396e1467e73bd773c95065f62f501b422268d8dee9a957` |
+| [`swarmforge-lsd`](https://crates.io/crates/swarmforge-lsd/0.1.0) | Corrected | `7d97411d5e5bf18353e3ca6fc22f3dc42659b7217bf53aec70f6d6f24cf7978e` |
+| [`swarmforge-tracker-comms`](https://crates.io/crates/swarmforge-tracker-comms/0.1.0) | Corrected | `e2c1a9c97cd297611004f9c56ea00c2587492bfd409aac1e55162abad27da659` |
+| [`swarmforge-upnp`](https://crates.io/crates/swarmforge-upnp/0.1.0) | Corrected | `74d398b4babe325834bd32ea02c3fd97dacda0e3f0b365ac484fe71f62ea3825` |
+| [`swarmforge-upnp-serve`](https://crates.io/crates/swarmforge-upnp-serve/0.1.0) | Corrected | `2b438743bf8cbc23f6ef9aece56c1c4d1ab25cf943dda734d91f09bd48c2cb61` |
+| [`swarmforge`](https://crates.io/crates/swarmforge/0.1.0) | Corrected | `91806d3fedb13ffdfd86e903d62c6e0a46921c1b080ca0a105e25887fcaff7e2` |
+
+## Verification evidence
+
+The protected-branch checks passed for both release pull requests. The initial
+release CI run was `30418493414`; its post-merge CI and container publication
+runs were `30419119860` and `30419119856`. The LSD correction CI run was
+`30420931263`; its post-merge CI and container publication runs were
+`30421472136` and `30421472180`. Required policy checks passed for both changes
+and both tags.
+
+After all packages were visible, a fresh anonymous checkout of the correction
+tag was prepared with an empty `CARGO_HOME`, no registry credentials, no
+monorepo path overrides, and a newly generated lockfile. Cargo metadata proved
+that the `rtbit` application's direct SwarmForge dependencies resolved from
+crates.io. The following consumer gates then passed with `spin 0.9.9` selected
+by the clean lockfile:
+
+```text
+cargo check --locked -p rtbit --no-default-features --features default-tls
+cargo test --locked -p rtbit --no-default-features --features default-tls
+cargo clippy --locked -p rtbit --no-default-features --features default-tls -- -D warnings
+```
+
+The consumer test result was 2 passed, 0 failed. This clean checkout did not
+use Forgejo packages, credentials, or locally patched SwarmForge crates.
