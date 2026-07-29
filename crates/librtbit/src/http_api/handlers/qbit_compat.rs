@@ -7,6 +7,7 @@
 use std::{
     collections::HashMap,
     num::NonZeroU16,
+    path::Path,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
@@ -187,6 +188,44 @@ struct QbitFileInfo {
     is_seed: bool,
     piece_range: [u32; 2],
     availability: f64,
+}
+
+fn qbit_save_path(handle: &crate::torrent_state::ManagedTorrentHandle) -> String {
+    handle
+        .shared()
+        .options
+        .output_folder_root
+        .as_ref()
+        .unwrap_or(&handle.shared().options.output_folder)
+        .to_string_lossy()
+        .into_owned()
+}
+
+fn qbit_content_path(handle: &crate::torrent_state::ManagedTorrentHandle, name: &str) -> String {
+    Path::new(&qbit_save_path(handle))
+        .join(name)
+        .to_string_lossy()
+        .into_owned()
+}
+
+fn qbit_file_name(
+    torrent_name: Option<&str>,
+    file_name: &str,
+    is_multi_file: bool,
+    has_save_path_root: bool,
+) -> String {
+    if is_multi_file && has_save_path_root {
+        torrent_name
+            .map(|root| {
+                Path::new(root)
+                    .join(file_name)
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .unwrap_or_else(|| file_name.to_owned())
+    } else {
+        file_name.to_owned()
+    }
 }
 
 #[derive(Serialize)]
@@ -477,13 +516,8 @@ async fn h_torrents_info(
 
             let stats = handle.stats();
             let name = handle.name().unwrap_or_else(|| format!("torrent_{id}"));
-            let output_folder = handle
-                .shared()
-                .options
-                .output_folder
-                .to_string_lossy()
-                .into_owned();
-            let content_path = format!("{}/{}", output_folder, name);
+            let output_folder = qbit_save_path(handle);
+            let content_path = qbit_content_path(handle, &name);
 
             let qbit_state = map_state(stats.state, stats.finished);
             let category = handle.shared().category.read().clone().unwrap_or_default();
@@ -699,12 +733,7 @@ async fn h_torrents_properties(
     };
 
     let stats = handle.stats();
-    let output_folder = handle
-        .shared()
-        .options
-        .output_folder
-        .to_string_lossy()
-        .into_owned();
+    let output_folder = qbit_save_path(&handle);
     let now = now_unix();
     let added_on = handle.shared().added_on;
     let completion_on = handle
@@ -839,9 +868,11 @@ async fn h_torrents_files(
     let stats = handle.stats();
     let is_seed = stats.finished;
 
-    let files: Vec<QbitFileInfo> = details
-        .files
-        .unwrap_or_default()
+    let details_name = details.name.clone();
+    let details_files = details.files.unwrap_or_default();
+    let qbit_root = handle.shared().options.output_folder_root.is_some();
+    let is_multi_file = details_files.len() > 1;
+    let files: Vec<QbitFileInfo> = details_files
         .iter()
         .enumerate()
         .map(|(i, f)| {
@@ -851,9 +882,10 @@ async fn h_torrents_files(
             } else {
                 1.0
             };
+            let name = qbit_file_name(details_name.as_deref(), &f.name, is_multi_file, qbit_root);
             QbitFileInfo {
                 index: i,
-                name: f.name.clone(),
+                name,
                 size: f.length,
                 progress,
                 priority: if f.included { 1 } else { 0 },
@@ -936,7 +968,7 @@ async fn h_torrents_add(
         let opts = AddTorrentOptions {
             paused,
             overwrite: true,
-            output_folder: savepath.clone(),
+            output_folder_root: savepath.clone(),
             category: category.clone(),
             ..Default::default()
         };
@@ -953,7 +985,7 @@ async fn h_torrents_add(
         let opts = AddTorrentOptions {
             paused,
             overwrite: true,
-            output_folder: savepath.clone(),
+            output_folder_root: savepath.clone(),
             category: category.clone(),
             ..Default::default()
         };
@@ -1263,7 +1295,7 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
 
 #[cfg(test)]
 mod tests {
-    use std::{net::Ipv4Addr, sync::Arc};
+    use std::{net::Ipv4Addr, path::Path, sync::Arc};
 
     use axum::response::IntoResponse;
     use bytes::Bytes;
@@ -1277,6 +1309,7 @@ mod tests {
 
     use super::{
         QbitSessions, QbitState, h_app_preferences, h_app_set_preferences, matches_category,
+        qbit_file_name,
     };
 
     async fn qbit_state() -> (Arc<QbitState>, Arc<Session>, tempfile::TempDir) {
@@ -1383,6 +1416,22 @@ mod tests {
         assert!(!matches_category("uncategorized", "Linux ISOs"));
         assert!(matches_category("Linux ISOs", "Linux ISOs"));
         assert!(!matches_category("linux isos", "Linux ISOs"));
+    }
+
+    #[test]
+    fn qbit_multi_file_names_include_torrent_root_for_save_path_imports() {
+        assert_eq!(
+            qbit_file_name(Some("release"), "disc/file.bin", true, true),
+            Path::new("release").join("disc/file.bin").to_string_lossy()
+        );
+        assert_eq!(
+            qbit_file_name(Some("release"), "single.bin", false, true),
+            "single.bin"
+        );
+        assert_eq!(
+            qbit_file_name(Some("release"), "disc/file.bin", true, false),
+            "disc/file.bin"
+        );
     }
 
     #[test]

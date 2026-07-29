@@ -867,19 +867,33 @@ impl Session {
 
         let default_output_folder =
             expand_folder_template(&self.output_folder.read().clone(), opts.category.as_deref());
-        let output_folder = match (opts.output_folder, opts.sub_folder) {
-            (None, None) => default_output_folder.join(
+        let output_folder_root = opts
+            .output_folder_root
+            .as_ref()
+            .map(|root| expand_folder_template(&PathBuf::from(root), opts.category.as_deref()));
+        let output_folder = match (
+            opts.output_folder,
+            opts.sub_folder,
+            output_folder_root.as_ref(),
+        ) {
+            (None, None, None) => default_output_folder.join(
                 self.get_default_subfolder_for_torrent(&metadata.info, name.as_deref())?
                     .unwrap_or_default(),
             ),
-            (Some(o), None) => expand_folder_template(&PathBuf::from(o), opts.category.as_deref()),
-            (Some(_), Some(_)) => {
-                bail!("you can't provide both output_folder and sub_folder")
+            (Some(o), None, None) => {
+                expand_folder_template(&PathBuf::from(o), opts.category.as_deref())
             }
-            (None, Some(s)) => default_output_folder.join(expand_folder_template(
+            (None, Some(s), None) => default_output_folder.join(expand_folder_template(
                 &PathBuf::from(s),
                 opts.category.as_deref(),
             )),
+            (None, None, Some(root)) => root.join(
+                self.get_default_subfolder_for_torrent(&metadata.info, name.as_deref())?
+                    .unwrap_or_default(),
+            ),
+            _ => {
+                bail!("output_folder, output_folder_root, and sub_folder are mutually exclusive")
+            }
         };
 
         if opts.list_only {
@@ -938,6 +952,7 @@ impl Session {
                     peer_read_write_timeout: peer_opts.read_write_timeout,
                     allow_overwrite: opts.overwrite,
                     output_folder,
+                    output_folder_root,
                     ratelimits: opts.ratelimits,
                     initial_peers: opts.initial_peers.clone().unwrap_or_default(),
                     peer_limit: opts.peer_limit.or(self.peer_limit),

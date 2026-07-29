@@ -110,6 +110,11 @@ pub struct AddTorrentOptions {
     pub list_only: bool,
     /// The output folder for the torrent. If not set, the session's default one will be used.
     pub output_folder: Option<String>,
+    /// A root output folder under which multi-file torrents receive their
+    /// normal torrent-name subfolder. This matches qBittorrent's `savepath`
+    /// semantics and is mutually exclusive with `output_folder` and
+    /// `sub_folder`.
+    pub output_folder_root: Option<String>,
     /// Sub-folder within session's default output folder. Will error if "output_folder" if also set.
     /// By default, multi-torrent files are downloaded to a sub-folder.
     pub sub_folder: Option<String>,
