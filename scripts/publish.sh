@@ -2,9 +2,22 @@
 set -euo pipefail
 
 publish_flag="--dry-run"
+resume=false
 if [[ "${1:-}" == "--execute" ]]; then
   publish_flag=""
   shift
+fi
+if [[ "${1:-}" == "--resume" ]]; then
+  resume=true
+  shift
+fi
+[[ $# -eq 0 ]] || {
+  echo "usage: $0 [--execute [--resume]]" >&2
+  exit 2
+}
+if $resume && [[ -n "$publish_flag" ]]; then
+  echo '--resume is valid only with --execute' >&2
+  exit 2
 fi
 
 version="0.1.0"
@@ -49,6 +62,42 @@ package_is_visible() {
     >/dev/null <<<"$body"
 }
 
+package_status() {
+  curl --silent --output /dev/null --write-out '%{http_code}' \
+    --user-agent 'cargo swarmforge-release' \
+    "https://index.crates.io/$(sparse_path "$1")"
+}
+
+wait_until_epoch() {
+  local epoch="$1" now
+  while true; do
+    now="$(date -u +%s)"
+    ((now >= epoch)) && return
+    sleep 10
+  done
+}
+
+publish_with_rate_limit() {
+  local package="$1" output retry_text retry_epoch
+  while true; do
+    if output="$(cargo publish --locked -p "$package" 2>&1)"; then
+      printf '%s\n' "$output"
+      return
+    fi
+    printf '%s\n' "$output" >&2
+    retry_text="$(sed -n 's/.*Please try again after \(.* GMT\) and see.*/\1/p' \
+      <<<"$output" | tail -n 1)"
+    [[ -n "$retry_text" ]] || return 1
+    retry_epoch="$(( $(date -u -d "$retry_text" +%s) + 5 ))"
+    echo "rate limit for $package; retrying after $(date -u -d "@$retry_epoch" +%Y-%m-%dT%H:%M:%SZ)" >&2
+    wait_until_epoch "$retry_epoch"
+    package_is_visible "$package" && {
+      echo "$package became visible after a rejected upload; refusing a duplicate" >&2
+      return 1
+    }
+  done
+}
+
 if [[ -z "$publish_flag" ]]; then
   command -v curl >/dev/null
   command -v jq >/dev/null
@@ -57,12 +106,15 @@ if [[ -z "$publish_flag" ]]; then
     exit 1
   }
 
-  # Names are checked as one family immediately before the first upload. Any
-  # existing sparse-index entry means ownership changed and publication stops.
+  # Names are checked as one family immediately before the first upload. A
+  # normal release requires every name to be vacant. Explicit resume mode is
+  # only for recovery after a partially accepted family publication: it skips
+  # an existing, non-yanked 0.1.0 and still rejects every other registry state.
   for package in "${packages[@]}"; do
-    status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
-      --user-agent 'cargo swarmforge-release' \
-      "https://index.crates.io/$(sparse_path "$package")")"
+    status="$(package_status "$package")"
+    if $resume && [[ "$status" == "200" ]] && package_is_visible "$package"; then
+      continue
+    fi
     [[ "$status" == "404" ]] || {
       echo "refusing publication: $package sparse-index status is $status, expected 404" >&2
       exit 1
@@ -71,10 +123,14 @@ if [[ -z "$publish_flag" ]]; then
 fi
 
 for package in "${packages[@]}"; do
+  if [[ -z "$publish_flag" ]] && $resume && package_is_visible "$package"; then
+    echo "verified existing $package $version; skipping"
+    continue
+  fi
   cargo publish --locked --dry-run -p "$package" "$@"
   [[ -z "$publish_flag" ]] || continue
 
-  cargo publish --locked -p "$package" "$@"
+  publish_with_rate_limit "$package"
   for _ in {1..60}; do
     package_is_visible "$package" && break
     sleep 2

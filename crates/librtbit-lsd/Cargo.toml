@@ -12,6 +12,11 @@ categories = ["network-programming"]
 [lib]
 name = "librtbit_lsd"
 
+[features]
+default = ["sha1-crypto-hash"]
+sha1-crypto-hash = ["sha1w/sha1-crypto-hash"]
+sha1-ring = ["sha1w/sha1-ring"]
+
 [dependencies]
 anyhow = "1"
 librqbit-dualstack-sockets = "0.7"
