@@ -30,11 +30,18 @@ default-tls = [
     "reqwest/native-tls",
     "sha1w/sha1-crypto-hash",
     "librtbit-core/sha1-crypto-hash",
+    "librtbit-lsd/sha1-crypto-hash",
     "dht/sha1-crypto-hash",
 ]
 miri = []
 prometheus = ["metrics-exporter-prometheus"]
-rust-tls = ["reqwest/rustls", "sha1w/sha1-ring", "librtbit-core/sha1-ring", "dht/sha1-ring"]
+rust-tls = [
+    "reqwest/rustls",
+    "sha1w/sha1-ring",
+    "librtbit-core/sha1-ring",
+    "librtbit-lsd/sha1-ring",
+    "dht/sha1-ring",
+]
 storage_middleware = ["lru"]
 storage_examples = []
 tracing-subscriber-utils = ["tracing-subscriber"]
