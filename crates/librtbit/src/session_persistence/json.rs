@@ -155,6 +155,7 @@ impl JsonSessionPersistenceStore {
             only_files: torrent.only_files().clone(),
             is_paused: torrent.is_paused(),
             output_folder: torrent.shared().options.output_folder.clone(),
+            output_folder_root: torrent.shared().options.output_folder_root.clone(),
             category: torrent.shared().category.read().clone(),
             added_on: Some(torrent.shared().added_on),
             completion_on: match torrent

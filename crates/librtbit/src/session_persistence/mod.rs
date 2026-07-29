@@ -36,6 +36,8 @@ pub struct SerializedTorrent {
     torrent_bytes: Bytes,
     trackers: HashSet<String>,
     output_folder: PathBuf,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    output_folder_root: Option<PathBuf>,
     only_files: Option<Vec<usize>>,
     is_paused: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -75,14 +77,26 @@ impl SerializedTorrent {
             AddTorrent::from_url(magnet)
         };
 
-        let opts = AddTorrentOptions {
-            paused: self.is_paused,
-            output_folder: Some(
+        let output_folder_root = self
+            .output_folder_root
+            .as_ref()
+            .map(|path| path.to_str().context("broken root path"))
+            .transpose()?
+            .map(str::to_owned);
+        let output_folder = if output_folder_root.is_some() {
+            None
+        } else {
+            Some(
                 self.output_folder
                     .to_str()
                     .context("broken path")?
                     .to_owned(),
-            ),
+            )
+        };
+        let opts = AddTorrentOptions {
+            paused: self.is_paused,
+            output_folder,
+            output_folder_root,
             only_files: self.only_files,
             overwrite: true,
             category,
