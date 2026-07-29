@@ -1431,6 +1431,10 @@ mod tests {
             "single.bin"
         );
         assert_eq!(
+            qbit_file_name(Some("release"), "only.bin", true, true),
+            Path::new("release").join("only.bin").to_string_lossy()
+        );
+        assert_eq!(
             qbit_file_name(Some("release"), "disc/file.bin", true, false),
             "disc/file.bin"
         );
