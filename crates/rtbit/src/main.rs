@@ -229,6 +229,15 @@ struct Opts {
     #[arg(long)]
     experimental_mmap_storage: bool,
 
+    /// Only read existing payload files. This disables payload creation,
+    /// resizing, writes, and deletion while still allowing verification and seeding.
+    #[arg(
+        long = "storage-read-only",
+        env = "RTBIT_STORAGE_READ_ONLY",
+        conflicts_with = "experimental_mmap_storage"
+    )]
+    storage_read_only: bool,
+
     /// If set will use socks5 proxy for all outgoing connections.
     /// The format is socks5://[username:password]@host:port
     ///
@@ -669,7 +678,9 @@ async fn async_main(mut opts: Opts, cancel: CancellationToken) -> anyhow::Result
                 s
             }
 
-            if opts.experimental_mmap_storage {
+            if opts.storage_read_only {
+                wrap(FilesystemStorageFactory::read_only()).boxed()
+            } else if opts.experimental_mmap_storage {
                 wrap(MmapFilesystemStorageFactory::default()).boxed()
             } else {
                 wrap(FilesystemStorageFactory::default()).boxed()
@@ -1210,6 +1221,34 @@ mod tests {
         .unwrap();
 
         assert_eq!(opts.announce_port, Some(51_234));
+    }
+
+    #[test]
+    fn read_only_storage_is_initialized_from_cli_flag() {
+        let opts = Opts::try_parse_from([
+            "rtbit",
+            "--storage-read-only",
+            "server",
+            "start",
+            "/tmp/rtbit-startup-test",
+        ])
+        .unwrap();
+
+        assert!(opts.storage_read_only);
+    }
+
+    #[test]
+    fn read_only_storage_rejects_mmap_storage() {
+        let result = Opts::try_parse_from([
+            "rtbit",
+            "--storage-read-only",
+            "--experimental-mmap-storage",
+            "server",
+            "start",
+            "/tmp/rtbit-startup-test",
+        ]);
+
+        assert!(result.is_err());
     }
 
     #[cfg(not(target_os = "windows"))]
