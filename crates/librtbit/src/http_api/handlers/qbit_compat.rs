@@ -871,7 +871,9 @@ async fn h_torrents_files(
     let details_name = details.name.clone();
     let details_files = details.files.unwrap_or_default();
     let qbit_root = handle.shared().options.output_folder_root.is_some();
-    let is_multi_file = details_files.len() > 1;
+    let is_multi_file = handle
+        .with_metadata(|metadata| metadata.info.info().files.is_some())
+        .unwrap_or(false);
     let files: Vec<QbitFileInfo> = details_files
         .iter()
         .enumerate()
@@ -1427,6 +1429,10 @@ mod tests {
         assert_eq!(
             qbit_file_name(Some("release"), "single.bin", false, true),
             "single.bin"
+        );
+        assert_eq!(
+            qbit_file_name(Some("release"), "only.bin", true, true),
+            Path::new("release").join("only.bin").to_string_lossy()
         );
         assert_eq!(
             qbit_file_name(Some("release"), "disc/file.bin", true, false),

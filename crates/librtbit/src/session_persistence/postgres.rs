@@ -24,6 +24,7 @@ struct TorrentsTableRecord {
     torrent_bytes: Vec<u8>,
     trackers: Vec<String>,
     output_folder: String,
+    output_folder_root: Option<String>,
     only_files: Option<Vec<i32>>,
     is_paused: bool,
 }
@@ -37,6 +38,7 @@ impl TorrentsTableRecord {
                 torrent_bytes: self.torrent_bytes.into(),
                 trackers: self.trackers.into_iter().collect(),
                 output_folder: PathBuf::from(self.output_folder),
+                output_folder_root: self.output_folder_root.map(PathBuf::from),
                 only_files: self
                     .only_files
                     .map(|v| v.into_iter().map(|v| v as usize).collect()),
@@ -77,12 +79,14 @@ impl PostgresSessionStorage {
           torrent_bytes BYTEA NOT NULL,
           trackers TEXT[] NOT NULL,
           output_folder TEXT NOT NULL,
+          output_folder_root TEXT,
           only_files INTEGER[],
           is_paused BOOLEAN NOT NULL
         )"
         );
 
         exec!("ALTER TABLE torrents ADD COLUMN IF NOT EXISTS have_bitfield BYTEA");
+        exec!("ALTER TABLE torrents ADD COLUMN IF NOT EXISTS output_folder_root TEXT");
 
         Ok(Self { pool })
     }
@@ -105,8 +109,8 @@ impl SessionPersistenceStore for PostgresSessionStorage {
             .as_ref()
             .map(|i| i.torrent_bytes.clone())
             .unwrap_or_default();
-        let q = "INSERT INTO torrents (id, info_hash, torrent_bytes, trackers, output_folder, only_files, is_paused)
-        VALUES($1, $2, $3, $4, $5, $6, $7)
+        let q = "INSERT INTO torrents (id, info_hash, torrent_bytes, trackers, output_folder, output_folder_root, only_files, is_paused)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT(id) DO NOTHING";
         sqlx::query(q)
             .bind::<i32>(id.try_into()?)
@@ -128,6 +132,15 @@ impl SessionPersistenceStore for PostgresSessionStorage {
                     .to_str()
                     .context("output_folder")?
                     .to_owned(),
+            )
+            .bind(
+                torrent
+                    .shared()
+                    .options
+                    .output_folder_root
+                    .as_ref()
+                    .map(|path| path.to_str().context("output_folder_root"))
+                    .transpose()?,
             )
             .bind(torrent.only_files().map(|o| {
                 o.into_iter()
