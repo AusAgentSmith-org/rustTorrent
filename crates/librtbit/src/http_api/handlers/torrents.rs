@@ -306,6 +306,52 @@ pub async fn h_torrent_action_start(
 
 #[cfg_attr(feature = "swagger", utoipa::path(
     post,
+    path = "/torrents/{id}/recheck",
+    params(("id" = String, Path, description = "Torrent ID or info hash")),
+    responses(
+        (status = 200, description = "Full integrity check started", body = EmptyJsonResponse)
+    )
+))]
+pub async fn h_torrent_action_recheck(
+    State(state): State<ApiState>,
+    Path(idx): Path<TorrentIdOrHash>,
+) -> Result<impl IntoResponse> {
+    state
+        .api
+        .api_torrent_action_recheck(idx)
+        .await
+        .map(axum::Json)
+}
+
+#[derive(Deserialize)]
+#[cfg_attr(feature = "swagger", derive(utoipa::ToSchema))]
+pub struct AddTrackersRequest {
+    trackers: Vec<String>,
+}
+
+#[cfg_attr(feature = "swagger", utoipa::path(
+    post,
+    path = "/torrents/{id}/trackers",
+    params(("id" = String, Path, description = "Torrent ID or info hash")),
+    request_body(content = AddTrackersRequest, description = "Tracker announce URLs to merge"),
+    responses(
+        (status = 200, description = "Trackers attached", body = EmptyJsonResponse)
+    )
+))]
+pub async fn h_torrent_action_add_trackers(
+    State(state): State<ApiState>,
+    Path(idx): Path<TorrentIdOrHash>,
+    axum::Json(req): axum::Json<AddTrackersRequest>,
+) -> Result<impl IntoResponse> {
+    state
+        .api
+        .api_torrent_action_add_trackers(idx, req.trackers)
+        .await
+        .map(axum::Json)
+}
+
+#[cfg_attr(feature = "swagger", utoipa::path(
+    post,
     path = "/torrents/{id}/forget",
     params(("id" = String, Path, description = "Torrent ID or info hash")),
     responses(
@@ -635,4 +681,100 @@ pub async fn h_set_torrent_category(
         .api_set_torrent_category(idx, req.category)
         .await
         .map(axum::Json)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use anyhow::Context;
+    use axum::extract::{Path, State};
+    use tempfile::TempDir;
+
+    use super::{AddTrackersRequest, h_torrent_action_add_trackers, h_torrent_action_recheck};
+    use crate::{
+        AddTorrent, AddTorrentOptions, Api, CreateTorrentOptions, Session, SessionOptions,
+        create_torrent,
+        http_api::{HttpApi, HttpApiOptions},
+        spawn_utils::BlockingSpawner,
+        torrent_state::{ManagedTorrentHandle, TorrentStatsState},
+    };
+
+    async fn torrent_api() -> anyhow::Result<(Arc<HttpApi>, ManagedTorrentHandle, TempDir)> {
+        let payload = TempDir::with_prefix("rtbit_http_action_payload")?;
+        std::fs::write(payload.path().join("payload.bin"), vec![0x5e; 32 * 1024])?;
+        let torrent = create_torrent(
+            payload.path(),
+            CreateTorrentOptions {
+                piece_length: Some(16_384),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await?
+        .as_bytes()?
+        .to_vec();
+        let session = Session::new_with_opts(
+            payload.path().to_owned(),
+            SessionOptions {
+                disable_dht: true,
+                disable_trackers: true,
+                disable_local_service_discovery: true,
+                ..Default::default()
+            },
+        )
+        .await?;
+        let handle = session
+            .add_torrent(
+                AddTorrent::from_bytes(torrent),
+                Some(AddTorrentOptions {
+                    paused: true,
+                    overwrite: true,
+                    output_folder: Some(payload.path().to_string_lossy().into_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await?
+            .into_handle()
+            .context("expected torrent handle")?;
+        handle.wait_until_initialized().await?;
+        let api = Api::new(
+            session,
+            None,
+            #[cfg(feature = "tracing-subscriber-utils")]
+            None,
+        );
+        Ok((
+            Arc::new(HttpApi::new(api, Some(HttpApiOptions::default()))),
+            handle,
+            payload,
+        ))
+    }
+
+    #[tokio::test]
+    async fn add_trackers_handler_merges_urls() -> anyhow::Result<()> {
+        let (state, handle, _payload) = torrent_api().await?;
+        h_torrent_action_add_trackers(
+            State(state),
+            Path(handle.id().into()),
+            axum::Json(AddTrackersRequest {
+                trackers: vec!["https://tracker.example.test/announce".to_string()],
+            }),
+        )
+        .await
+        .map_err(|error| anyhow::anyhow!("{error:?}"))?;
+        assert_eq!(handle.shared().trackers.read().len(), 1);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn recheck_handler_starts_full_check() -> anyhow::Result<()> {
+        let (state, handle, _payload) = torrent_api().await?;
+        h_torrent_action_recheck(State(state), Path(handle.id().into()))
+            .await
+            .map_err(|error| anyhow::anyhow!("{error:?}"))?;
+        handle.wait_until_initialized().await?;
+        assert!(matches!(handle.stats().state, TorrentStatsState::Paused));
+        Ok(())
+    }
 }

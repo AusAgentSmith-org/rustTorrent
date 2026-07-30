@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { TorrentListItem } from "../api-types";
+import { ErrorDetails, TorrentListItem } from "../api-types";
 import { APIContext } from "../context";
 import { useErrorStore } from "../stores/errorStore";
 import { useTorrentStore } from "../stores/torrentStore";
@@ -19,6 +19,7 @@ import {
   FaAngleDoubleDown,
   FaTachometerAlt,
   FaSeedling,
+  FaSyncAlt,
 } from "react-icons/fa";
 import { BsCheckSquareFill, BsSquare } from "react-icons/bs";
 
@@ -76,6 +77,7 @@ export const TorrentContextMenu: React.FC<TorrentContextMenuProps> = ({
 
   const hasFinished = targets.some((t) => t.stats?.finished);
   const hasQueueState = targets.some((t) => t.stats?.queue_state != null);
+  const canRecheck = targets.some((t) => t.stats?.state !== "initializing");
 
   // For single target toggles
   const isSequential = singleTarget?.stats?.sequential ?? false;
@@ -178,6 +180,23 @@ export const TorrentContextMenu: React.FC<TorrentContextMenuProps> = ({
             details: e,
           });
         }
+      }
+    }
+    refreshTorrents();
+    onClose();
+  };
+
+  const handleRecheck = async () => {
+    setActionInProgress(true);
+    for (const t of targets) {
+      if (t.stats?.state === "initializing") continue;
+      try {
+        await API.recheck(t.id);
+      } catch (e: unknown) {
+        setCloseableError({
+          text: `Error checking torrent "${t.name ?? t.id}"`,
+          details: e as ErrorDetails,
+        });
       }
     }
     refreshTorrents();
@@ -399,6 +418,17 @@ export const TorrentContextMenu: React.FC<TorrentContextMenuProps> = ({
         )}
 
         {(hasResumable || hasLive) && separator}
+
+        <button
+          className={itemCls}
+          onClick={handleRecheck}
+          disabled={actionInProgress || !canRecheck}
+        >
+          <FaSyncAlt className={`${iconCls} text-secondary`} />
+          {isBulk ? "Force Recheck Selected" : "Force Recheck"}
+        </button>
+
+        {separator}
 
         {canConfigure && (
           <>

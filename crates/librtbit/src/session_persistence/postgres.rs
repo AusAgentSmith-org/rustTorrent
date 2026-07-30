@@ -109,6 +109,13 @@ impl SessionPersistenceStore for PostgresSessionStorage {
             .as_ref()
             .map(|i| i.torrent_bytes.clone())
             .unwrap_or_default();
+        let trackers = torrent
+            .shared()
+            .trackers
+            .read()
+            .iter()
+            .map(|tracker| tracker.to_string())
+            .collect::<Vec<_>>();
         let q = "INSERT INTO torrents (id, info_hash, torrent_bytes, trackers, output_folder, output_folder_root, only_files, is_paused)
         VALUES($1, $2, $3, $4, $5, $6, $7, $8)
         ON CONFLICT(id) DO NOTHING";
@@ -116,14 +123,7 @@ impl SessionPersistenceStore for PostgresSessionStorage {
             .bind::<i32>(id.try_into()?)
             .bind(&torrent.info_hash().0[..])
             .bind(torrent_bytes.as_ref())
-            .bind(
-                torrent
-                    .shared()
-                    .trackers
-                    .iter()
-                    .map(|t| t.to_string())
-                    .collect::<Vec<_>>(),
-            )
+            .bind(trackers)
             .bind(
                 torrent
                     .shared()
@@ -179,17 +179,27 @@ impl SessionPersistenceStore for PostgresSessionStorage {
         id: TorrentId,
         torrent: &ManagedTorrentHandle,
     ) -> anyhow::Result<()> {
-        sqlx::query("UPDATE torrents SET only_files = $1, is_paused = $2 WHERE id = $3")
-            .bind(torrent.only_files().map(|v| {
-                v.into_iter()
-                    .filter_map(|f| f.try_into().ok())
-                    .collect::<Vec<i32>>()
-            }))
-            .bind(torrent.is_paused())
-            .bind::<i32>(id.try_into()?)
-            .execute(&self.pool)
-            .await
-            .context("error executing UPDATE torrents")?;
+        let trackers = torrent
+            .shared()
+            .trackers
+            .read()
+            .iter()
+            .map(|tracker| tracker.to_string())
+            .collect::<Vec<_>>();
+        sqlx::query(
+            "UPDATE torrents SET trackers = $1, only_files = $2, is_paused = $3 WHERE id = $4",
+        )
+        .bind(trackers)
+        .bind(torrent.only_files().map(|v| {
+            v.into_iter()
+                .filter_map(|f| f.try_into().ok())
+                .collect::<Vec<i32>>()
+        }))
+        .bind(torrent.is_paused())
+        .bind::<i32>(id.try_into()?)
+        .execute(&self.pool)
+        .await
+        .context("error executing UPDATE torrents")?;
         Ok(())
     }
 

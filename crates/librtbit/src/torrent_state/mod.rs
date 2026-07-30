@@ -183,7 +183,7 @@ pub struct ManagedTorrentShared {
     pub id: TorrentId,
     pub info_hash: Id20,
     pub(crate) spawner: BlockingSpawner,
-    pub trackers: HashSet<url::Url>,
+    pub trackers: RwLock<HashSet<url::Url>>,
     pub peer_id: Id20,
     pub span: tracing::Span,
     pub(crate) options: ManagedTorrentOptions,
@@ -496,6 +496,77 @@ impl ManagedTorrent {
         self.locked.read().paused
     }
 
+    /// Replace the current state with a fresh initializer that ignores any
+    /// persisted bitfield and hashes every selected piece from storage.
+    /// Returns whether the torrent was live and should resume after checking.
+    pub(crate) fn prepare_force_recheck(&self) -> anyhow::Result<bool> {
+        let metadata = self
+            .metadata
+            .load_full()
+            .context("torrent metadata was not loaded")?;
+        let mut locked = self.locked.write();
+        let (files, resume_after_check) = match locked.state.take() {
+            ManagedTorrentState::Initializing(initializing) => {
+                locked.state = ManagedTorrentState::Initializing(initializing);
+                bail!("torrent is already checking")
+            }
+            ManagedTorrentState::Live(live) => {
+                // Cancels all live peer and tracker tasks and returns ownership
+                // of the existing storage for the checker.
+                let paused = match live.pause() {
+                    Ok(paused) => paused,
+                    Err(error) => {
+                        locked.state = ManagedTorrentState::Error(anyhow::anyhow!(
+                            "failed to pause torrent for integrity check: {error:#}"
+                        ));
+                        return Err(error);
+                    }
+                };
+                (paused.files, true)
+            }
+            ManagedTorrentState::Paused(paused) => (paused.files, false),
+            ManagedTorrentState::Error(error) => {
+                match self
+                    .shared
+                    .storage_factory
+                    .create_and_init(self.shared(), &metadata)
+                {
+                    Ok(files) => (files, false),
+                    Err(create_error) => {
+                        locked.state = ManagedTorrentState::Error(error);
+                        return Err(create_error);
+                    }
+                }
+            }
+            ManagedTorrentState::None => {
+                locked.state = ManagedTorrentState::None;
+                bail!("bug: torrent is in empty state")
+            }
+        };
+
+        locked.state = ManagedTorrentState::Initializing(Arc::new(TorrentStateInitializing::new(
+            self.shared.clone(),
+            metadata,
+            locked.only_files.clone(),
+            files,
+            true,
+        )));
+        locked.paused = !resume_after_check;
+        self.state_change_notify.notify_waiters();
+        Ok(resume_after_check)
+    }
+
+    pub(crate) fn add_peer_stream(&self, peer_rx: PeerStream) -> anyhow::Result<()> {
+        let live = self.live().context("torrent is not live")?;
+        let weak = Arc::downgrade(&live);
+        live.spawn(
+            debug_span!(parent: live.shared.span.clone(), "added_peer_source"),
+            format!("[{}]added_peer_source", live.shared.id),
+            async move { drain_peer_stream(&weak, peer_rx).await },
+        );
+        Ok(())
+    }
+
     /// Pause the torrent if it's live or initializing.
     pub(crate) fn pause(&self) -> anyhow::Result<()> {
         let mut g = self.locked.write();
@@ -756,7 +827,7 @@ fn spawn_peer_adder(live: &Arc<TorrentStateLive>, peer_rx: PeerStream) {
                     let is_private = state.metadata.info.info().private;
                     let new_peer_rx = session.make_peer_rx(
                         state.shared.info_hash,
-                        state.shared.trackers.iter().cloned().collect(),
+                        state.shared.trackers.read().iter().cloned().collect(),
                         true, // announce
                         state.shared.options.force_tracker_interval,
                         Vec::new(), // no initial peers on re-discovery

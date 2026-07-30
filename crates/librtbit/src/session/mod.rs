@@ -943,7 +943,7 @@ impl Session {
                 id,
                 span,
                 info_hash,
-                trackers: trackers.into_iter().collect(),
+                trackers: RwLock::new(trackers.into_iter().collect()),
                 spawner: self.spawner.clone(),
                 peer_id: self.peer_id,
                 storage_factory,
@@ -1140,6 +1140,75 @@ impl Session {
         let peer_rx = self.make_peer_rx_managed_torrent(handle, true);
         handle.start(peer_rx, false)?;
         self.try_update_persistence_metadata(handle).await;
+        Ok(())
+    }
+
+    pub async fn force_recheck(
+        self: &Arc<Self>,
+        handle: &ManagedTorrentHandle,
+    ) -> anyhow::Result<()> {
+        let resume_after_check = handle.prepare_force_recheck()?;
+        let peer_rx = resume_after_check
+            .then(|| self.make_peer_rx_managed_torrent(handle, true))
+            .flatten();
+        handle.start(peer_rx, !resume_after_check)?;
+        self.try_update_persistence_metadata(handle).await;
+        Ok(())
+    }
+
+    pub async fn add_trackers(
+        self: &Arc<Self>,
+        handle: &ManagedTorrentHandle,
+        trackers: Vec<String>,
+    ) -> anyhow::Result<()> {
+        if trackers.is_empty() {
+            bail!("at least one tracker URL is required");
+        }
+        let trackers = trackers
+            .into_iter()
+            .map(|tracker| {
+                let url = url::Url::parse(&tracker)
+                    .with_context(|| format!("invalid tracker URL {tracker:?}"))?;
+                match url.scheme() {
+                    "http" | "https" | "udp" => Ok(url),
+                    scheme => bail!("unsupported tracker URL scheme {scheme:?}"),
+                }
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
+        let added = {
+            let mut configured = handle.shared().trackers.write();
+            let mut added = Vec::new();
+            for tracker in trackers {
+                handle.shared().tracker_status.ensure(tracker.as_str());
+                if configured.insert(tracker.clone()) {
+                    added.push(tracker);
+                }
+            }
+            added
+        };
+
+        self.try_update_persistence_metadata(handle).await;
+
+        if !added.is_empty()
+            && matches!(
+                handle.stats().state,
+                crate::torrent_state::TorrentStatsState::Live
+            )
+            && let Some(peer_rx) = self.make_peer_rx(
+                handle.info_hash(),
+                added,
+                true,
+                handle.shared().options.force_tracker_interval,
+                Vec::new(),
+                handle
+                    .with_metadata(|metadata| metadata.info.info().private)
+                    .unwrap_or(false),
+                Some(handle.shared().tracker_status.clone()),
+            )
+        {
+            handle.add_peer_stream(peer_rx)?;
+        }
         Ok(())
     }
 

@@ -259,6 +259,7 @@ impl Api {
                         trackers: Some(
                             mgr.shared()
                                 .trackers
+                                .read()
                                 .iter()
                                 .map(|t| t.to_string())
                                 .collect(),
@@ -347,6 +348,31 @@ impl Api {
         let handle = self.mgr_handle(idx)?;
         self.session
             .unpause(&handle)
+            .await
+            .with_status(StatusCode::BAD_REQUEST)?;
+        Ok(Default::default())
+    }
+
+    pub async fn api_torrent_action_recheck(
+        &self,
+        idx: TorrentIdOrHash,
+    ) -> Result<EmptyJsonResponse> {
+        let handle = self.mgr_handle(idx)?;
+        self.session
+            .force_recheck(&handle)
+            .await
+            .with_status(StatusCode::BAD_REQUEST)?;
+        Ok(Default::default())
+    }
+
+    pub async fn api_torrent_action_add_trackers(
+        &self,
+        idx: TorrentIdOrHash,
+        trackers: Vec<String>,
+    ) -> Result<EmptyJsonResponse> {
+        let handle = self.mgr_handle(idx)?;
+        self.session
+            .add_trackers(&handle, trackers)
             .await
             .with_status(StatusCode::BAD_REQUEST)?;
         Ok(Default::default())
@@ -589,7 +615,7 @@ impl Api {
         let mgr = self.mgr_handle(idx)?;
         let registry = &mgr.shared().tracker_status;
         // Make sure every configured tracker shows up, even before any announce.
-        for t in mgr.shared().trackers.iter() {
+        for t in mgr.shared().trackers.read().iter() {
             registry.ensure(t.as_str());
         }
         Ok(TrackerStatusResponse {

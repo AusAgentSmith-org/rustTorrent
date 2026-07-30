@@ -383,6 +383,19 @@ export const API: RtbitAPI & { getVersion: () => Promise<string> } = {
     return makeRequest("POST", `/torrents/${index}/start`);
   },
 
+  recheck: (index: number): Promise<void> => {
+    return makeRequest("POST", `/torrents/${index}/recheck`);
+  },
+
+  addTrackers: (index: number, trackers: string[]): Promise<void> => {
+    return makeRequest(
+      "POST",
+      `/torrents/${index}/trackers`,
+      { trackers },
+      true,
+    );
+  },
+
   forget: (index: number): Promise<void> => {
     return makeRequest("POST", `/torrents/${index}/forget`);
   },

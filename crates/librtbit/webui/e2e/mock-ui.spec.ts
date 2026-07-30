@@ -69,6 +69,38 @@ test("selects a torrent and exposes safe bulk actions", async ({ page }) => {
     .toBe(pausedBefore + 1);
 });
 
+test("starts an integrity check from the torrent context menu", async ({
+  page,
+}) => {
+  const firstRow = page.locator("tbody tr").first();
+  await firstRow.click({ button: "right" });
+  const recheck = page.getByRole("button", { name: "Force Recheck" });
+  await expect(recheck).toBeVisible();
+  await recheck.click();
+  await expect(firstRow).toContainText("Checking");
+});
+
+test("disables recheck while a torrent is already checking", async ({
+  page,
+}) => {
+  const firstRow = page.locator("tbody tr").first();
+  const torrentName = await firstRow
+    .locator("td div[title]")
+    .first()
+    .getAttribute("title");
+  expect(torrentName).toBeTruthy();
+  await firstRow.click({ button: "right" });
+  await page.getByRole("button", { name: "Force Recheck" }).click();
+  const checkingRow = page.locator("tbody tr").filter({
+    has: page.getByTitle(torrentName!, { exact: true }),
+  });
+  await expect(checkingRow).toContainText("Checking");
+  await checkingRow.click({ button: "right" });
+  await expect(
+    page.getByRole("button", { name: "Force Recheck" }),
+  ).toBeDisabled();
+});
+
 test("supports configuration and responsive card layout", async ({ page }) => {
   await page.getByTitle("Configure").click();
   await expect(
