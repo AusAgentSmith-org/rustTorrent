@@ -146,6 +146,7 @@ impl JsonSessionPersistenceStore {
             trackers: torrent
                 .shared()
                 .trackers
+                .read()
                 .iter()
                 .map(|u| u.to_string())
                 .collect(),

@@ -65,15 +65,13 @@ impl SerializedTorrent {
 
     pub fn into_add_torrent(self) -> anyhow::Result<(AddTorrent<'static>, AddTorrentOptions)> {
         let category = self.category.clone();
+        let trackers = self.trackers.into_iter().collect::<Vec<_>>();
         let add_torrent = if !self.torrent_bytes.is_empty() {
             AddTorrent::TorrentFileBytes(self.torrent_bytes)
         } else {
-            let magnet = Magnet::from_id20(
-                self.info_hash,
-                self.trackers.into_iter().collect(),
-                self.only_files.clone(),
-            )
-            .to_string();
+            let magnet =
+                Magnet::from_id20(self.info_hash, trackers.clone(), self.only_files.clone())
+                    .to_string();
             AddTorrent::from_url(magnet)
         };
 
@@ -102,6 +100,7 @@ impl SerializedTorrent {
             category,
             added_on: self.added_on,
             completion_on: self.completion_on,
+            trackers: Some(trackers),
             ..Default::default()
         };
 

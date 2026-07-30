@@ -851,6 +851,15 @@ export const MockAPI: RtbitAPI & { getVersion: () => Promise<string> } = {
     torrentStates.set(index, "live");
   },
 
+  recheck: async (index: number): Promise<void> => {
+    await new Promise((r) => setTimeout(r, 50));
+    torrentStates.set(index, "initializing");
+  },
+
+  addTrackers: async (): Promise<void> => {
+    await new Promise((r) => setTimeout(r, 50));
+  },
+
   forget: async (index: number): Promise<void> => {
     await new Promise((r) => setTimeout(r, 50));
     deletedTorrents.add(index);

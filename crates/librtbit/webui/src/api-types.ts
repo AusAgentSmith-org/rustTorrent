@@ -509,6 +509,8 @@ export interface RtbitAPI {
   pause: (index: number) => Promise<void>;
   updateOnlyFiles: (index: number, files: number[]) => Promise<void>;
   start: (index: number) => Promise<void>;
+  recheck: (index: number) => Promise<void>;
+  addTrackers: (index: number, trackers: string[]) => Promise<void>;
   forget: (index: number) => Promise<void>;
   delete: (index: number) => Promise<void>;
   stats: () => Promise<SessionStats>;

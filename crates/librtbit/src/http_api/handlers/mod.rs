@@ -67,6 +67,8 @@ async fn h_api_root(parts: Parts) -> impl IntoResponse {
             "POST /torrents/resolve_magnet": "Resolve a magnet to torrent file bytes",
             "POST /torrents/{id_or_infohash}/pause": "Pause torrent",
             "POST /torrents/{id_or_infohash}/start": "Resume torrent",
+            "POST /torrents/{id_or_infohash}/recheck": "Force a full integrity check",
+            "POST /torrents/{id_or_infohash}/trackers": "Attach tracker announce URLs",
             "POST /torrents/{id_or_infohash}/forget": "Forget about the torrent, keep the files",
             "POST /torrents/{id_or_infohash}/delete": "Forget about the torrent, remove the files",
             "POST /torrents/{id_or_infohash}/add_peers": "Add peers (newline-delimited)",
@@ -136,6 +138,14 @@ pub fn make_api_router(state: ApiState) -> Router {
             .route(
                 "/torrents/{id}/start",
                 post(torrents::h_torrent_action_start),
+            )
+            .route(
+                "/torrents/{id}/recheck",
+                post(torrents::h_torrent_action_recheck),
+            )
+            .route(
+                "/torrents/{id}/trackers",
+                post(torrents::h_torrent_action_add_trackers),
             )
             .route(
                 "/torrents/{id}/forget",

@@ -589,12 +589,13 @@ async fn h_torrents_info(
             let tracker = handle
                 .shared()
                 .trackers
+                .read()
                 .iter()
                 .next()
                 .map(|u| u.to_string())
                 .unwrap_or_default();
 
-            let trackers_count = handle.shared().trackers.len();
+            let trackers_count = handle.shared().trackers.read().len();
 
             Some(QbitTorrentInfo {
                 added_on,
@@ -1062,6 +1063,17 @@ async fn h_torrents_resume(State(state): State<Arc<QbitState>>, body: Bytes) -> 
     "Ok."
 }
 
+async fn h_torrents_recheck(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: HashesForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    for idx in resolve_hashes(api, &form.hashes) {
+        if let Err(error) = api.api_torrent_action_recheck(idx).await {
+            warn!(%error, "qbit compat: error rechecking torrent");
+        }
+    }
+    "Ok."
+}
+
 #[derive(Deserialize, Default)]
 struct DeleteForm {
     #[serde(default)]
@@ -1243,6 +1255,7 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/add", post(h_torrents_add))
         .route("/pause", post(h_torrents_pause))
         .route("/resume", post(h_torrents_resume))
+        .route("/recheck", post(h_torrents_recheck))
         .route("/delete", post(h_torrents_delete))
         .route("/setCategory", post(h_torrents_set_category))
         .route("/categories", get(h_categories))
@@ -1304,14 +1317,17 @@ mod tests {
     use http::StatusCode;
 
     use crate::{
-        Api, ListenerMode, Session, SessionOptions,
+        AddTorrent, AddTorrentOptions, Api, CreateTorrentOptions, ListenerMode, Session,
+        SessionOptions, create_torrent,
         http_api::{HttpApi, HttpApiOptions},
         listen::ListenerOptions,
+        spawn_utils::BlockingSpawner,
+        torrent_state::TorrentStatsState,
     };
 
     use super::{
-        QbitSessions, QbitState, h_app_preferences, h_app_set_preferences, matches_category,
-        qbit_file_name,
+        QbitSessions, QbitState, h_app_preferences, h_app_set_preferences, h_torrents_recheck,
+        matches_category, qbit_file_name,
     };
 
     async fn qbit_state() -> (Arc<QbitState>, Arc<Session>, tempfile::TempDir) {
@@ -1407,6 +1423,52 @@ mod tests {
             assert_eq!(response.status(), StatusCode::BAD_REQUEST, "body={body}");
         }
         assert_eq!(session.announce_port(), Some(4241));
+    }
+
+    #[tokio::test]
+    async fn recheck_endpoint_accepts_qbittorrent_hash_form() {
+        let (state, session, output) = qbit_state().await;
+        std::fs::write(output.path().join("payload.bin"), vec![0x71; 32 * 1024]).unwrap();
+        let torrent = create_torrent(
+            output.path(),
+            CreateTorrentOptions {
+                piece_length: Some(16_384),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await
+        .unwrap()
+        .as_bytes()
+        .unwrap()
+        .to_vec();
+        let handle = session
+            .add_torrent(
+                AddTorrent::from_bytes(torrent),
+                Some(AddTorrentOptions {
+                    paused: true,
+                    overwrite: true,
+                    output_folder: Some(output.path().to_string_lossy().into_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .unwrap()
+            .into_handle()
+            .unwrap();
+        handle.wait_until_initialized().await.unwrap();
+
+        let body = Bytes::from(format!("hashes={}", handle.info_hash().as_string()));
+        assert_eq!(
+            h_torrents_recheck(axum::extract::State(state), body).await,
+            "Ok."
+        );
+        assert!(matches!(
+            handle.stats().state,
+            TorrentStatsState::Initializing
+        ));
+        handle.wait_until_initialized().await.unwrap();
+        assert!(matches!(handle.stats().state, TorrentStatsState::Paused));
     }
 
     #[test]
