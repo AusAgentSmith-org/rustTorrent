@@ -5,11 +5,11 @@ rusttorrent.dev website. The historical Forgejo/Woodpecker path is retired.
 
 ## Versioning
 
-The current beta release is `0.1.0-beta.2`.
+The current beta release is `0.1.0-beta.3`.
 
 - Crate version: `crates/rtbit/Cargo.toml`
-- Release tag: `v0.1.0-beta.2`
-- Docker tag: `ghcr.io/thedancingdeveloper-org/rusttorrent:v0.1.0-beta.2`
+- Release tag: `v0.1.0-beta.3`
+- Docker tag: `ghcr.io/thedancingdeveloper-org/rusttorrent:v0.1.0-beta.3`
 
 ## CI Flow
 
@@ -53,15 +53,16 @@ Known permission failure modes:
   MyDevEnv2 container has not picked up the Komodo stack env values. Redeploy
   `prod-mydevenv2` from outside the active session; restarting the current
   container terminates the agent session.
-- Woodpecker API calls must use numeric repo IDs. Owner/name pipeline endpoints
-  can return the frontend HTML with HTTP 200 and do no useful work.
-- GHCR copy and GitHub release steps use the Woodpecker `gh_release_token`
-  secret. If GitHub validation returns `401` or GHCR returns `403`, rotate
-  `GITHUB_PAT` / `GH_RELEASE_TOKEN` in Infisical `cicd`, then refresh the
-  Woodpecker `gh_release_token` secret before tagging a release. The token
-  needs repository release access and GHCR package write access.
+- Binary releases use the workflow-scoped `GITHUB_TOKEN` with `contents: write`.
+- Container publication uses the repository `GHCR_TOKEN` secret and requires
+  `packages: write`. If GHCR login or publication fails, validate or rotate that
+  repository secret with the destination-organization credential documented in
+  the workspace guidance.
+- Download-host publication uses the repository `DEPLOY_SSH_KEY` secret.
+- Do not restore the retired Woodpecker release path or the revoked
+  `GITHUB_PAT` / `GH_RELEASE_TOKEN` credentials.
 
-## v0.1.0-beta.1 Outcome
+## Historical v0.1.0-beta.1 Outcome
 
 Woodpecker pipeline 71 published the Forgejo release and download artifacts on
 2026-06-12. The initial GHCR and GitHub release stages failed because the
@@ -82,9 +83,7 @@ updated with `manual`, `push`, and `tag` event access.
 - GitHub issues `#11` through `#15`: closed with direct links to the `librtbit`
   implementation commit and the rustTorrent release-integration commit
 
-The PAT used for the repair was provided in chat. Rotate it again after the
-release repair is complete, then update Infisical `GITHUB_PAT` /
-`GH_RELEASE_TOKEN` and the Woodpecker `gh_release_token` secret with the
-replacement value.
+This section records the retired Forgejo/Woodpecker release outcome only. The
+credentials and repair procedure used for beta.1 must not be reused.
 
 Do not print tokens, use `set -x`, or write credentials to repo files.
