@@ -1,6 +1,8 @@
 use anyhow::{Context, bail};
 use std::path::Path;
 use std::process::Command;
+use std::thread;
+use std::time::Duration;
 
 #[allow(dead_code)]
 fn run_cmd(cwd: &Path, cmd: &str) -> anyhow::Result<()> {
@@ -39,6 +41,25 @@ fn run_cmd(cwd: &Path, cmd: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
+fn run_cmd_with_retry(cwd: &Path, cmd: &str, attempts: usize) -> anyhow::Result<()> {
+    let mut last_error = None;
+
+    for attempt in 1..=attempts {
+        match run_cmd(cwd, cmd) {
+            Ok(()) => return Ok(()),
+            Err(error) if attempt < attempts => {
+                println!("cargo:warning={cmd} attempt {attempt}/{attempts} failed; retrying");
+                last_error = Some(error);
+                thread::sleep(Duration::from_secs(5 * attempt as u64));
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    Err(last_error.expect("attempts must be greater than zero"))
+}
+
 fn main() {
     #[cfg(feature = "webui")]
     {
@@ -47,9 +68,10 @@ fn main() {
 
         println!("cargo:rerun-if-changed={}", webui_src_dir.to_str().unwrap());
 
-        // Run "npm install && npm run build" in the webui directory
-        for cmd in ["npm install", "npm run build"] {
-            run_cmd(webui_dir, cmd).unwrap();
-        }
+        // Registry connections can reset during slow cross-architecture
+        // container builds. Retry only the network-dependent install step;
+        // keep the deterministic build command fail-fast.
+        run_cmd_with_retry(webui_dir, "npm ci --no-audit --no-fund", 3).unwrap();
+        run_cmd(webui_dir, "npm run build").unwrap();
     }
 }
