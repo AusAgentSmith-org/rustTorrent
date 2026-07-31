@@ -21,6 +21,13 @@ atomically. Mixing old and new package identities can duplicate shared types and
 break trait coherence. The historical repositories and packages remain available
 as rollback sources while downstream consumers migrate.
 
+The first independently verified downstream source/build migration is NGMS,
+which moved all 12 active dependencies to exact crates.io SwarmForge 0.1.0
+aliases and passed its public dependency, Rust, UI, E2E, and GHCR publication
+gates on 2026-07-30/31 UTC. This does not indicate a production deployment or
+soak. Commit, workflow, image, and rollback evidence is recorded in the
+[SwarmForge 0.1.0 release record](../docs/SWARMFORGE-0.1.0-RELEASE.md#downstream-consumer-checkpoint-ngms).
+
 SwarmForge is derived from [rqbit](https://github.com/ikatson/rqbit) by Igor
 Katson. Copyright 2021 Igor Katson. The original Apache-2.0 license applies; see
 the rustTorrent repository's [license](https://github.com/TheDancingDeveloper-org/rustTorrent/blob/main/LICENSE)
