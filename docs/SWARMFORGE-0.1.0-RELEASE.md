@@ -175,3 +175,40 @@ cargo clippy --locked -p rtbit --no-default-features --features default-tls -- -
 
 The consumer test result was 2 passed, 0 failed. This clean checkout did not
 use Forgejo packages, credentials, or locally patched SwarmForge crates.
+
+## Downstream consumer checkpoint: NGMS
+
+NGMS became the first independently migrated external consumer of the complete
+SwarmForge 0.1.0 family on 2026-07-30/31 UTC. Canonical GitHub PR
+[`TheDancingDeveloper-org/NGMS#3`](https://github.com/TheDancingDeveloper-org/NGMS/pull/3)
+was squash-merged as source-migration commit
+`dbfacacac873c4f7faeaf8576465620a580587ba`. It atomically replaced all 12
+active Forgejo Cargo dependencies with exact crates.io `swarmforge-* = 0.1.0`
+aliases, regenerated the lockfile, retained the old vendored tree as an
+explicitly inactive rollback snapshot, and added a public-dependency boundary
+check that rejects private Git, Forgejo, and path fallback.
+
+Initial main run `30591519527` passed the dependency, Rust, UI, Playwright, and
+GHCR publication gates and published immutable image
+`ghcr.io/thedancingdeveloper-org/ngms:sha-dbfacacac873c4f7faeaf8576465620a580587ba`
+at public digest
+`sha256:d70574a4293805bfe1a8752aaa1df9942881579a664cd7a8e9c4080d7fa97d7a`.
+The run was cancelled after artifact verification because an optional BuildKit
+GHA cache export wedged after the image push.
+
+Follow-up PR
+[`TheDancingDeveloper-org/NGMS#21`](https://github.com/TheDancingDeveloper-org/NGMS/pull/21)
+retained cache reads, removed the non-essential cache write, and merged as
+current NGMS `main` commit `e1ab4b2296bbf9280e107768fb991f8de85298cd`.
+[Main run `30595845085`](https://github.com/TheDancingDeveloper-org/NGMS/actions/runs/30595845085)
+then completed successfully across the public dependency check, formatting,
+locked all-feature workspace check/test/clippy, both UI builds, Playwright E2E,
+and container publication. Its immutable tag
+`ghcr.io/thedancingdeveloper-org/ngms:sha-e1ab4b2296bbf9280e107768fb991f8de85298cd`
+and `latest` resolve to public, canonical-repository manifest digest
+`sha256:7d929bf55a742b661b4db8cf7a980569e4ca54d902f7a9053a1bbb88f9326568`.
+
+This checkpoint proves crates.io consumption and canonical source/build
+publication only. It did not deploy NGMS, alter an ops or Komodo stack, change
+ARR or seed state, migrate another consumer, retire Forgejo rollback surfaces,
+or rotate/remediate credentials. Those remain separately reviewed gates.
