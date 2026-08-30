@@ -87,7 +87,7 @@ struct Opts {
     /// The interval to poll trackers, e.g. 30s.
     /// Trackers send the refresh interval when we connect to them. Often this is
     /// pretty big, e.g. 30 minutes. This can force a certain value.
-    #[arg(short = 'i', long = "tracker-refresh-interval", value_parser = parse_duration::parse, env="RTBIT_TRACKER_REFRESH_INTERVAL")]
+    #[arg(short = 'i', long = "tracker-refresh-interval", value_parser = humantime::parse_duration, env="RTBIT_TRACKER_REFRESH_INTERVAL")]
     force_tracker_interval: Option<Duration>,
 
     /// The listen address for HTTP API.
@@ -124,7 +124,7 @@ struct Opts {
     /// How often to write DHT routing table to disk, e.g. 60s, 5m, 10m.
     /// Default is 60s. Higher values reduce disk I/O at the cost of potentially losing
     /// more DHT state if the process crashes.
-    #[arg(long = "dht-dump-interval", value_parser = parse_duration::parse, env = "RTBIT_DHT_DUMP_INTERVAL")]
+    #[arg(long = "dht-dump-interval", value_parser = humantime::parse_duration, env = "RTBIT_DHT_DUMP_INTERVAL")]
     dht_dump_interval: Option<Duration>,
 
     /// Set DHT bootstrap addrs
@@ -133,11 +133,11 @@ struct Opts {
     dht_bootstrap_addrs: Option<String>,
 
     /// The connect timeout, e.g. 1s, 1.5s, 100ms etc.
-    #[arg(long = "peer-connect-timeout", value_parser = parse_duration::parse, default_value="2s", env="RTBIT_PEER_CONNECT_TIMEOUT")]
+    #[arg(long = "peer-connect-timeout", value_parser = humantime::parse_duration, default_value="2s", env="RTBIT_PEER_CONNECT_TIMEOUT")]
     peer_connect_timeout: Duration,
 
     /// The timeout for read() and write() operations, e.g. 1s, 1.5s, 100ms etc.
-    #[arg(long = "peer-read-write-timeout" , value_parser = parse_duration::parse, default_value="10s", env="RTBIT_PEER_READ_WRITE_TIMEOUT")]
+    #[arg(long = "peer-read-write-timeout" , value_parser = humantime::parse_duration, default_value="10s", env="RTBIT_PEER_READ_WRITE_TIMEOUT")]
     peer_read_write_timeout: Duration,
 
     /// The maximum number of connected peers per torrent.
