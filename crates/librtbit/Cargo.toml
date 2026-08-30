@@ -145,7 +145,7 @@ anyhow = "1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std"] }
 tokio-test = "0.4"
 tempfile = "3"
-pollster = "0.4"
+pollster = "1.0"
 
 [[example]]
 name = "simulate_traffic"
