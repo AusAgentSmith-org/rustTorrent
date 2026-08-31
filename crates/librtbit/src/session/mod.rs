@@ -965,6 +965,7 @@ impl Session {
                 web_seed_urls,
                 category: RwLock::new(opts.category.clone()),
                 ratelimit_override: RwLock::new(opts.ratelimits),
+                name_override: RwLock::new(None),
                 tracker_status,
                 added_on: opts.added_on.unwrap_or_else(|| {
                     std::time::SystemTime::now()

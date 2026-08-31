@@ -155,6 +155,32 @@ impl OpenedFile {
         })
     }
 
+    /// Move this file on disk to `new_full` and re-point the cached handle at
+    /// the new location. A dummy (padding / not-present) file just records the
+    /// new path. Takes the write lock, so it serialises against in-flight I/O.
+    pub fn rename_to(&self, new_full: &std::path::Path) -> anyhow::Result<()> {
+        use std::fs::OpenOptions;
+        let mut g = self.file.write();
+        if g.fd.is_none() {
+            g.path = new_full.to_owned();
+            return Ok(());
+        }
+        std::fs::rename(&g.path, new_full)
+            .with_context(|| format!("error renaming {:?} -> {new_full:?}", g.path))?;
+        let f = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(new_full)
+            .with_context(|| format!("error reopening {new_full:?} after rename"))?;
+        g.fd = Some(f);
+        #[cfg(windows)]
+        {
+            g.tried_marking_sparse = false;
+        }
+        g.path = new_full.to_owned();
+        Ok(())
+    }
+
     pub fn lock_read(&self) -> crate::Result<impl Deref<Target = File>> {
         RwLockReadGuard::try_map(self.file.read(), |f| f.as_ref())
             .ok()

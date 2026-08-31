@@ -113,6 +113,17 @@ impl TorrentStorage for FilesystemStorage {
         Ok(std::fs::remove_file(self.output_folder.join(filename))?)
     }
 
+    fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
+        self.require_writable()?;
+        let of = self.opened_files.get(file_id).context("no such file")?;
+        let new_full = self.output_folder.join(new_relative);
+        if let Some(parent) = new_full.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("error creating parent directory for {new_full:?}"))?;
+        }
+        of.rename_to(&new_full)
+    }
+
     fn ensure_file_length(&self, file_id: usize, len: u64) -> anyhow::Result<()> {
         let f = &self.opened_files.get(file_id).context("no such file")?;
         if self.read_only {
@@ -386,6 +397,45 @@ mod tests {
         assert!(!file0_path.exists());
         // File 1 should still exist.
         assert!(file1_path.exists());
+    }
+
+    #[test]
+    fn test_storage_rename_file_moves_and_keeps_handle_usable() {
+        let (storage, dir) = make_test_storage(1);
+        storage.ensure_file_length(0, 64).unwrap();
+        storage.pwrite_all(0, 0, b"payload").unwrap();
+
+        // Rename into a fresh subdirectory (must be created).
+        storage
+            .rename_file(0, Path::new("sub/renamed.dat"))
+            .unwrap();
+
+        // Old path is gone, new path exists with the data.
+        assert!(!dir.path().join("file_0.dat").exists());
+        let new_path = dir.path().join("sub/renamed.dat");
+        assert!(new_path.exists());
+        assert_eq!(&std::fs::read(&new_path).unwrap()[..7], b"payload");
+
+        // The cached handle still reads/writes at the new location.
+        let mut buf = vec![0u8; 7];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"payload");
+        storage.pwrite_all(0, 0, b"updated").unwrap();
+        assert_eq!(&std::fs::read(&new_path).unwrap()[..7], b"updated");
+    }
+
+    #[test]
+    fn test_storage_rename_file_rejected_when_read_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("payload.dat");
+        std::fs::write(&path, b"x").unwrap();
+        let file = OpenOptions::new().read(true).open(&path).unwrap();
+        let storage = FilesystemStorage {
+            output_folder: dir.path().to_owned(),
+            opened_files: vec![OpenedFile::new(path, file)],
+            read_only: true,
+        };
+        assert!(storage.rename_file(0, Path::new("other.dat")).is_err());
     }
 
     #[test]

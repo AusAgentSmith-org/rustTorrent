@@ -154,6 +154,15 @@ pub trait TorrentStorage: Send + Sync {
     /// Remove a file from the storage. If not supported, or it doesn't matter, just return Ok(())
     fn remove_file(&self, file_id: usize, filename: &Path) -> anyhow::Result<()>;
 
+    /// Move the file identified by `file_id` to `new_relative` (a path relative
+    /// to the storage root), keeping any cached handle valid. Backends that
+    /// cannot rename should return an error (the default). Callers are
+    /// responsible for keeping torrent metadata (`FileInfo.relative_filename`)
+    /// in sync.
+    fn rename_file(&self, _file_id: usize, _new_relative: &Path) -> anyhow::Result<()> {
+        anyhow::bail!("this storage backend does not support renaming files")
+    }
+
     fn remove_directory_if_empty(&self, path: &Path) -> anyhow::Result<()>;
 
     /// E.g. for filesystem backend ensure that the file has a certain length, and grow/shrink as needed.
@@ -181,6 +190,10 @@ impl<U: TorrentStorage + ?Sized> TorrentStorage for Box<U> {
 
     fn remove_file(&self, file_id: usize, filename: &Path) -> anyhow::Result<()> {
         (**self).remove_file(file_id, filename)
+    }
+
+    fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
+        (**self).rename_file(file_id, new_relative)
     }
 
     fn ensure_file_length(&self, file_id: usize, length: u64) -> anyhow::Result<()> {

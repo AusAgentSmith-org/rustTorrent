@@ -7,6 +7,7 @@
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
     num::{NonZeroU16, NonZeroU32},
+    path::PathBuf,
     path::Path,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
@@ -1117,6 +1118,19 @@ async fn h_torrents_files(
     let is_multi_file = handle
         .with_metadata(|metadata| metadata.info.info().files.is_some())
         .unwrap_or(false);
+    // Source per-file names from file_infos (which reflects renames) when its
+    // count lines up with the details file list; otherwise fall back to the
+    // metadata names to avoid any index skew (e.g. padding files).
+    let rel_names: Vec<String> = handle
+        .with_metadata(|metadata| {
+            metadata
+                .file_infos
+                .iter()
+                .map(|fi| fi.relative_filename.to_string_lossy().into_owned())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let use_rel_names = rel_names.len() == details_files.len();
     let files: Vec<QbitFileInfo> = details_files
         .iter()
         .enumerate()
@@ -1127,7 +1141,12 @@ async fn h_torrents_files(
             } else {
                 1.0
             };
-            let name = qbit_file_name(details_name.as_deref(), &f.name, is_multi_file, qbit_root);
+            let base_name = if use_rel_names {
+                rel_names[i].as_str()
+            } else {
+                f.name.as_str()
+            };
+            let name = qbit_file_name(details_name.as_deref(), base_name, is_multi_file, qbit_root);
             QbitFileInfo {
                 index: i,
                 name,
@@ -1514,6 +1533,134 @@ async fn h_torrents_reannounce(State(state): State<Arc<QbitState>>, body: Bytes)
         }
     }
     "Ok."
+}
+
+/// Relative paths of every file in the torrent, indexed by file id.
+fn torrent_file_paths(handle: &crate::torrent_state::ManagedTorrentHandle) -> Vec<PathBuf> {
+    handle
+        .with_metadata(|metadata| {
+            metadata
+                .file_infos
+                .iter()
+                .map(|fi| fi.relative_filename.clone())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
+}
+
+/// Map a rename engine error onto qBittorrent's 409 Conflict (used for
+/// "torrent must be stopped", path collisions, invalid paths, etc.).
+fn rename_conflict(error: anyhow::Error) -> axum::response::Response {
+    (StatusCode::CONFLICT, format!("{error:#}")).into_response()
+}
+
+#[derive(Deserialize, Default)]
+struct RenamePathForm {
+    #[serde(default)]
+    hash: String,
+    #[serde(default, alias = "oldPath")]
+    old_path: String,
+    #[serde(default, alias = "newPath")]
+    new_path: String,
+}
+
+async fn h_torrents_rename_file(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> axum::response::Response {
+    let form: RenamePathForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required").into_response();
+    }
+    if form.old_path.is_empty() || form.new_path.is_empty() {
+        return (StatusCode::BAD_REQUEST, "oldPath and newPath are required").into_response();
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let paths = torrent_file_paths(&handle);
+    let old = PathBuf::from(&form.old_path);
+    let file_id = match paths.iter().position(|p| *p == old) {
+        Some(id) => id,
+        None => return (StatusCode::CONFLICT, "oldPath does not exist").into_response(),
+    };
+    match handle.rename_files(&[(file_id, PathBuf::from(&form.new_path))]) {
+        Ok(()) => (StatusCode::OK, "Ok.").into_response(),
+        Err(error) => rename_conflict(error),
+    }
+}
+
+async fn h_torrents_rename_folder(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> axum::response::Response {
+    let form: RenamePathForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required").into_response();
+    }
+    if form.old_path.is_empty() || form.new_path.is_empty() {
+        return (StatusCode::BAD_REQUEST, "oldPath and newPath are required").into_response();
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    // Rename every file whose path is under the old folder prefix.
+    let old_prefix = PathBuf::from(&form.old_path);
+    let new_prefix = PathBuf::from(&form.new_path);
+    let mut renames: Vec<(usize, PathBuf)> = Vec::new();
+    for (id, path) in torrent_file_paths(&handle).into_iter().enumerate() {
+        if let Ok(rest) = path.strip_prefix(&old_prefix) {
+            renames.push((id, new_prefix.join(rest)));
+        }
+    }
+    if renames.is_empty() {
+        return (StatusCode::CONFLICT, "no files under oldPath").into_response();
+    }
+    match handle.rename_files(&renames) {
+        Ok(()) => (StatusCode::OK, "Ok.").into_response(),
+        Err(error) => rename_conflict(error),
+    }
+}
+
+#[derive(Deserialize, Default)]
+struct RenameForm {
+    #[serde(default)]
+    hash: String,
+    #[serde(default)]
+    name: String,
+}
+
+async fn h_torrents_rename(State(state): State<Arc<QbitState>>, body: Bytes) -> impl IntoResponse {
+    let form: RenameForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required");
+    }
+    if form.name.trim().is_empty() {
+        return (StatusCode::CONFLICT, "name must not be empty");
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+    handle.set_display_name(Some(form.name));
+    (StatusCode::OK, "Ok.")
 }
 
 #[derive(Deserialize, Default)]
@@ -2188,6 +2335,9 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/start", post(h_torrents_start))
         .route("/recheck", post(h_torrents_recheck))
         .route("/reannounce", post(h_torrents_reannounce))
+        .route("/rename", post(h_torrents_rename))
+        .route("/renameFile", post(h_torrents_rename_file))
+        .route("/renameFolder", post(h_torrents_rename_folder))
         .route("/delete", post(h_torrents_delete))
         .route("/addTrackers", post(h_torrents_add_trackers))
         .route("/removeTrackers", post(h_torrents_remove_trackers))
@@ -2494,6 +2644,74 @@ mod tests {
         // None clears the limit.
         handle.set_download_limit(None);
         assert_eq!(handle.rate_limits().download_bps, None);
+    }
+
+    #[tokio::test]
+    async fn rename_file_moves_on_disk_and_updates_metadata_when_paused() {
+        let (_state, session, output) = qbit_state().await;
+        std::fs::write(output.path().join("payload.bin"), vec![0x71; 32 * 1024]).unwrap();
+        let torrent = create_torrent(
+            output.path(),
+            CreateTorrentOptions {
+                piece_length: Some(16_384),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await
+        .unwrap()
+        .as_bytes()
+        .unwrap()
+        .to_vec();
+        let handle = session
+            .add_torrent(
+                AddTorrent::from_bytes(torrent),
+                Some(AddTorrentOptions {
+                    paused: true,
+                    overwrite: true,
+                    output_folder: Some(output.path().to_string_lossy().into_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .unwrap()
+            .into_handle()
+            .unwrap();
+        handle.wait_until_initialized().await.unwrap();
+
+        // Discover file 0's real on-disk location from the metadata.
+        let old_rel = handle
+            .with_metadata(|m| m.file_infos[0].relative_filename.clone())
+            .unwrap();
+        let old_abs = output.path().join(&old_rel);
+        assert!(old_abs.exists(), "expected file at {old_abs:?}");
+
+        // A path escaping the root is rejected before anything moves.
+        assert!(
+            handle
+                .rename_files(&[(0, std::path::PathBuf::from("../escape.bin"))])
+                .is_err()
+        );
+        assert!(old_abs.exists(), "rejected rename must not move anything");
+
+        // A valid rename moves the file on disk and updates file_infos.
+        let new_rel = std::path::PathBuf::from("renamed_dir/renamed.bin");
+        handle.rename_files(&[(0, new_rel.clone())]).unwrap();
+        assert_eq!(
+            handle
+                .with_metadata(|m| m.file_infos[0].relative_filename.clone())
+                .unwrap(),
+            new_rel
+        );
+        assert!(!old_abs.exists(), "old path should be gone");
+        assert!(output.path().join(&new_rel).exists(), "new path should exist");
+
+        // The display-name override is independent of file renames.
+        assert!(handle.name().is_some());
+        handle.set_display_name(Some("Custom Name".to_string()));
+        assert_eq!(handle.name().as_deref(), Some("Custom Name"));
+        handle.set_display_name(Some("   ".to_string()));
+        assert_ne!(handle.name().as_deref(), Some("   "), "blank name clears override");
     }
 
     #[test]

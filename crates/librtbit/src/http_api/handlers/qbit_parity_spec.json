@@ -530,17 +530,20 @@
     {
       "endpoint": "torrents/rename",
       "method": "POST",
-      "status": "missing"
+      "status": "full",
+      "notes": "Sets the torrent's display name (name override); surfaced in torrents/info and sync/maindata. Not persisted across restarts."
     },
     {
       "endpoint": "torrents/renameFile",
       "method": "POST",
-      "status": "missing"
+      "status": "partial",
+      "notes": "Moves the file on disk and updates metadata; requires the torrent stopped (409 if running). Not persisted across restarts."
     },
     {
       "endpoint": "torrents/renameFolder",
       "method": "POST",
-      "status": "missing"
+      "status": "partial",
+      "notes": "Moves every file under the folder prefix; requires the torrent stopped (409 if running). Not persisted across restarts."
     },
     {
       "endpoint": "torrents/resume",

@@ -107,6 +107,10 @@ impl<U: TorrentStorage> TorrentStorage for WriteThroughCacheStorage<U> {
         self.underlying.remove_file(file_id, filename)
     }
 
+    fn rename_file(&self, file_id: usize, new_relative: &std::path::Path) -> anyhow::Result<()> {
+        self.underlying.rename_file(file_id, new_relative)
+    }
+
     fn ensure_file_length(&self, file_id: usize, length: u64) -> anyhow::Result<()> {
         self.underlying.ensure_file_length(file_id, length)
     }

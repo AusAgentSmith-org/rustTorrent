@@ -8,7 +8,7 @@ and enforced, and where we currently stand.
 
 ## Current standing (upstream WebAPI 2.16.2, 2026-08-30)
 
-**54 of 93 in-scope endpoints routed (~58%)** — 22 full, 32 partial — plus 2
+**57 of 93 in-scope endpoints routed (~61%)** — 23 full, 34 partial — plus 2
 legacy aliases (`torrents/pause`, `torrents/resume`) that upstream removed in
 WebAPI 2.11. 37 of the 130 upstream endpoints were descoped on 2026-08-30
 (marked `out_of_scope`, enforced as unrouted): `search/*` (Indexarr covers
@@ -26,7 +26,7 @@ in-scope endpoints.
 |---|---|---|
 | `auth` | 2 / 2 | login/logout with SID cookies |
 | `app` | 6 / 10 | version info, `defaultSavePath`, minimal preferences (7 descoped) |
-| `torrents` | 35 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, pieces, file prio, per-torrent limits, export, webseeds |
+| `torrents` | 38 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), pieces, file prio, per-torrent limits, export, webseeds |
 | `transfer` | 10 / 13 | info (real session limits) + session rate limits + alt-speed mode + session pause/resume |
 | `sync` | 1 / 2 | `maindata` (full-update snapshots; no per-client rid deltas) |
 | `torrentcreator` | 0 / 4 | native `/torrents/create` exists, unbridged |
@@ -103,16 +103,34 @@ done: `torrents/stop`/`start`, `sync/maindata`, `app/defaultSavePath`,
 
 Remaining work, roughly by cost:
 
-1. **Needs a new engine method** (the `will be built` items): `torrents/rename`
-   / `renameFile` / `renameFolder`, `torrents/setLocation` / `setSavePath`,
-   queueing (`topPrio` / `bottomPrio` / `increasePrio` / `decreasePrio`),
+1. **Needs a new engine method** (the `will be built` items): `torrents/setLocation`
+   / `setSavePath` (whole-torrent relocation — needs a mutable `output_folder`,
+   which is deliberately immutable today; see `session/mod.rs:1451`), queueing
+   (`topPrio` / `bottomPrio` / `increasePrio` / `decreasePrio`),
    `torrents/setShareLimits`, `setSuperSeeding`, `toggleSequentialDownload`,
-   `setForceStart`, `setAutoManagement`. Rename and set-location need a new
-   storage-trait rename primitive plus a mutable file-path mapping (the metadata
-   is currently immutable) — a deliberate design, not a quick bridge.
+   `setForceStart`, `setAutoManagement`.
    Done since: per-torrent rate limits (`ratelimit_override` on
-   `ManagedTorrentShared`, enforced by the live limiter) and `reannounce`
-   (signals the live re-discovery notify).
+   `ManagedTorrentShared`, enforced by the live limiter), `reannounce` (signals
+   the live re-discovery notify), and **file/folder/display rename** (see below).
+
+### File rename (v1, 2026-08-31)
+
+`torrents/renameFile`, `renameFolder`, and `rename` (display name) are
+implemented:
+
+- New `TorrentStorage::rename_file(file_id, new_relative)` primitive: the
+  filesystem backend moves the file on disk and re-points its cached open
+  handle at the new path (mmap forwards; other backends default to an error).
+- `ManagedTorrent::rename_files()` is **stopped-only** (returns 409 when live,
+  which sidesteps live-handle / Windows-open-file / mmap-remap hazards): it
+  validates the batch (relative paths, no `.`/`..`/root, no collisions),
+  moves each file, then swaps in rebuilt `TorrentMetadata` with updated
+  `file_infos` and prunes emptied source dirs. All-or-nothing with rollback.
+- `torrents/rename` sets a `name_override` on `ManagedTorrentShared`, surfaced
+  in `torrents/info` / `sync/maindata` via `ManagedTorrent::name()`.
+- **v1 limitations**: renames are not persisted across restarts (re-derived
+  from the immutable `.torrent` info on load), and require the torrent stopped.
+  Live rename is the documented v2, gated behind the differential-test harness.
 2. **Thin bridges still open**: `torrentcreator/*` (native `/torrents/create`,
    needs a task-lifecycle store), `torrents/setComment`, web-seed mutation
    (`addWebSeeds` / `editWebSeed` / `removeWebSeeds` — `web_seed_urls` is
