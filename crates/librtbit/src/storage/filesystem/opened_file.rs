@@ -125,6 +125,42 @@ impl DerefMut for OpenedFileLocked {
     }
 }
 
+/// Move the file behind an already-write-locked handle to `new_full` and
+/// re-point the handle at it. Never clobbers (refuses an existing destination),
+/// creates missing parent directories, and fails on a cross-filesystem move
+/// rather than copying. A dummy/not-present file just records the new path.
+fn rename_locked(g: &mut OpenedFileLocked, new_full: &std::path::Path) -> anyhow::Result<()> {
+    use std::fs::OpenOptions;
+    if g.fd.is_none() {
+        g.path = new_full.to_owned();
+        return Ok(());
+    }
+    if new_full == g.path {
+        return Ok(());
+    }
+    if new_full.try_exists().unwrap_or(true) {
+        anyhow::bail!("cannot move to {new_full:?}: destination already exists");
+    }
+    if let Some(parent) = new_full.parent() {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("error creating parent directory for {new_full:?}"))?;
+    }
+    std::fs::rename(&g.path, new_full)
+        .with_context(|| format!("error renaming {:?} -> {new_full:?}", g.path))?;
+    let f = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(new_full)
+        .with_context(|| format!("error reopening {new_full:?} after rename"))?;
+    g.fd = Some(f);
+    #[cfg(windows)]
+    {
+        g.tried_marking_sparse = false;
+    }
+    g.path = new_full.to_owned();
+    Ok(())
+}
+
 #[derive(Debug)]
 pub(crate) struct OpenedFile {
     file: RwLock<OpenedFileLocked>,
@@ -159,34 +195,26 @@ impl OpenedFile {
     /// the new location. A dummy (padding / not-present) file just records the
     /// new path. Takes the write lock, so it serialises against in-flight I/O.
     pub fn rename_to(&self, new_full: &std::path::Path) -> anyhow::Result<()> {
-        use std::fs::OpenOptions;
         let mut g = self.file.write();
-        if g.fd.is_none() {
-            g.path = new_full.to_owned();
-            return Ok(());
-        }
-        // Never clobber: fs::rename atomically replaces an existing destination,
-        // so refuse when something is already there (unless it is this very
-        // file). This is the guard that keeps a rename from destroying an
-        // unrelated file that happens to sit at the target path, and makes a
-        // colliding batch fail safely instead of overwriting.
-        if new_full != g.path && new_full.try_exists().unwrap_or(true) {
-            anyhow::bail!("cannot rename to {new_full:?}: destination already exists");
-        }
-        std::fs::rename(&g.path, new_full)
-            .with_context(|| format!("error renaming {:?} -> {new_full:?}", g.path))?;
-        let f = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(new_full)
-            .with_context(|| format!("error reopening {new_full:?} after rename"))?;
-        g.fd = Some(f);
-        #[cfg(windows)]
-        {
-            g.tried_marking_sparse = false;
-        }
-        g.path = new_full.to_owned();
-        Ok(())
+        rename_locked(&mut g, new_full)
+    }
+
+    /// Move this file from under `old_root` to the same relative location under
+    /// `new_root` (whole-torrent relocation). Fails on a cross-filesystem move
+    /// (the underlying rename returns an error) rather than copying.
+    pub fn rebase(
+        &self,
+        old_root: &std::path::Path,
+        new_root: &std::path::Path,
+    ) -> anyhow::Result<()> {
+        let mut g = self.file.write();
+        let relative = g
+            .path
+            .strip_prefix(old_root)
+            .with_context(|| format!("file {:?} is not under root {old_root:?}", g.path))?
+            .to_owned();
+        let new_full = new_root.join(&relative);
+        rename_locked(&mut g, &new_full)
     }
 
     pub fn lock_read(&self) -> crate::Result<impl Deref<Target = File>> {

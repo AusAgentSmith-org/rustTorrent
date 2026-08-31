@@ -287,12 +287,19 @@ struct QbitFileInfo {
 }
 
 fn qbit_save_path(handle: &crate::torrent_state::ManagedTorrentHandle) -> String {
-    handle
-        .shared()
+    let shared = handle.shared();
+    // After a relocation the override diverges from the add-time output_folder;
+    // report the current root. Otherwise keep the qbit-savepath (output_folder_root)
+    // behaviour used for multi-file name prefixing.
+    let current_root = shared.output_folder_override.read();
+    if *current_root != shared.options.output_folder {
+        return current_root.to_string_lossy().into_owned();
+    }
+    shared
         .options
         .output_folder_root
         .as_ref()
-        .unwrap_or(&handle.shared().options.output_folder)
+        .unwrap_or(&shared.options.output_folder)
         .to_string_lossy()
         .into_owned()
 }
@@ -2087,6 +2094,40 @@ async fn h_torrents_set_tags(State(state): State<Arc<QbitState>>, body: Bytes) -
     "Ok."
 }
 
+#[derive(Deserialize, Default)]
+struct SetLocationForm {
+    // setLocation uses `hashes`/`location`; setSavePath uses `id`/`path`.
+    #[serde(default, alias = "id")]
+    hashes: String,
+    #[serde(default, alias = "path")]
+    location: String,
+}
+
+async fn h_torrents_set_location(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> axum::response::Response {
+    let form: SetLocationForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    let location = form.location.trim();
+    if location.is_empty() {
+        return (StatusCode::BAD_REQUEST, "location is required").into_response();
+    }
+    let new_root = PathBuf::from(location);
+    let mut last_error = None;
+    for idx in resolve_hashes(api, &form.hashes) {
+        if let Ok(handle) = api.mgr_handle(idx)
+            && let Err(error) = handle.set_location(new_root.clone())
+        {
+            last_error = Some(error);
+        }
+    }
+    match last_error {
+        Some(error) => rename_conflict(error),
+        None => (StatusCode::OK, "Ok.").into_response(),
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Category endpoints
 // ---------------------------------------------------------------------------
@@ -2348,6 +2389,8 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/uploadLimit", get(h_torrents_upload_limit))
         .route("/setDownloadLimit", post(h_torrents_set_download_limit))
         .route("/setUploadLimit", post(h_torrents_set_upload_limit))
+        .route("/setLocation", post(h_torrents_set_location))
+        .route("/setSavePath", post(h_torrents_set_location))
         .route("/setCategory", post(h_torrents_set_category))
         .route("/tags", get(h_torrents_tags))
         .route("/createTags", post(h_torrents_create_tags))
@@ -2712,6 +2755,56 @@ mod tests {
         assert_eq!(handle.name().as_deref(), Some("Custom Name"));
         handle.set_display_name(Some("   ".to_string()));
         assert_ne!(handle.name().as_deref(), Some("   "), "blank name clears override");
+    }
+
+    #[tokio::test]
+    async fn set_location_relocates_torrent_files_when_paused() {
+        let (_state, session, output) = qbit_state().await;
+        std::fs::write(output.path().join("payload.bin"), vec![0x71; 32 * 1024]).unwrap();
+        let torrent = create_torrent(
+            output.path(),
+            CreateTorrentOptions {
+                piece_length: Some(16_384),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await
+        .unwrap()
+        .as_bytes()
+        .unwrap()
+        .to_vec();
+        let handle = session
+            .add_torrent(
+                AddTorrent::from_bytes(torrent),
+                Some(AddTorrentOptions {
+                    paused: true,
+                    overwrite: true,
+                    output_folder: Some(output.path().to_string_lossy().into_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .unwrap()
+            .into_handle()
+            .unwrap();
+        handle.wait_until_initialized().await.unwrap();
+
+        let rel = handle
+            .with_metadata(|m| m.file_infos[0].relative_filename.clone())
+            .unwrap();
+        let old_abs = output.path().join(&rel);
+        assert!(old_abs.exists(), "expected file at {old_abs:?}");
+
+        // Relocate to a sibling directory on the same filesystem.
+        let new_root = output.path().join("relocated");
+        handle.set_location(new_root.clone()).unwrap();
+
+        assert!(!old_abs.exists(), "old location should be gone");
+        assert!(
+            new_root.join(&rel).exists(),
+            "file should now live under the new root"
+        );
     }
 
     #[test]

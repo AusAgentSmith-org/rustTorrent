@@ -274,6 +274,12 @@ pub struct ManagedTorrentShared {
     /// own name. Not persisted across restarts.
     pub(crate) name_override: RwLock<Option<String>>,
 
+    /// Current storage root, mutable at runtime so a whole-torrent relocation
+    /// (`set_location`) can re-anchor storage. Seeded from
+    /// `options.output_folder`; read by the storage factory's `create`. Not
+    /// persisted across restarts.
+    pub(crate) output_folder_override: RwLock<std::path::PathBuf>,
+
     /// Live per-tracker announce status (seeds/peers per tracker etc).
     pub tracker_status: Arc<tracker_comms::TrackerStatusRegistry>,
 
@@ -335,6 +341,12 @@ impl ManagedTorrent {
                 .or_else(|| self.shared.magnet_name.clone());
         }
         self.shared.magnet_name.clone()
+    }
+
+    /// The torrent's current storage root. Reflects a `set_location`
+    /// relocation, unlike the add-time `options.output_folder`.
+    pub fn output_folder(&self) -> std::path::PathBuf {
+        self.shared.output_folder_override.read().clone()
     }
 
     /// Set (or clear, with `None`) the display-name override for this torrent.
@@ -402,6 +414,29 @@ impl ManagedTorrent {
             }
         }
 
+        Ok(())
+    }
+
+    /// Relocate the torrent's files to a new root directory. Only supported
+    /// while the torrent is stopped (paused): moves every file to the same
+    /// relative path under `new_root`, keeps the storage handles valid, and
+    /// re-anchors the storage root. Same-filesystem only — a cross-device move
+    /// is refused (and rolled back) rather than copied. Not persisted across
+    /// restarts.
+    pub fn set_location(&self, new_root: std::path::PathBuf) -> anyhow::Result<()> {
+        let mut g = self.locked.write();
+        let paused = match &mut g.state {
+            ManagedTorrentState::Paused(paused) => paused,
+            ManagedTorrentState::Live(_) => {
+                bail!("torrent must be stopped before changing its location")
+            }
+            _ => bail!("torrent is not in a relocatable state (must be stopped)"),
+        };
+
+        std::fs::create_dir_all(&new_root)
+            .with_context(|| format!("error creating destination directory {new_root:?}"))?;
+        paused.files.move_root(&new_root)?;
+        *self.shared.output_folder_override.write() = new_root;
         Ok(())
     }
 

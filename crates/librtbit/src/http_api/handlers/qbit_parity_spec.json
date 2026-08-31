@@ -592,7 +592,8 @@
     {
       "endpoint": "torrents/setLocation",
       "method": "POST",
-      "status": "missing"
+      "status": "partial",
+      "notes": "Moves all files to a new root; stopped-only (409 if running) and same-filesystem only (cross-device rejected). Not persisted across restarts."
     },
     {
       "endpoint": "torrents/setSSLParameters",
@@ -603,7 +604,8 @@
     {
       "endpoint": "torrents/setSavePath",
       "method": "POST",
-      "status": "missing"
+      "status": "partial",
+      "notes": "Alias of setLocation (id/path form): stopped-only, same-filesystem move. Not persisted across restarts."
     },
     {
       "endpoint": "torrents/setShareLimits",

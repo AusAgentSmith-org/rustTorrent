@@ -952,7 +952,7 @@ impl Session {
                     peer_connect_timeout: peer_opts.connect_timeout,
                     peer_read_write_timeout: peer_opts.read_write_timeout,
                     allow_overwrite: opts.overwrite,
-                    output_folder,
+                    output_folder: output_folder.clone(),
                     output_folder_root,
                     initial_peers: opts.initial_peers.clone().unwrap_or_default(),
                     peer_limit: opts.peer_limit.or(self.peer_limit),
@@ -966,6 +966,7 @@ impl Session {
                 category: RwLock::new(opts.category.clone()),
                 ratelimit_override: RwLock::new(opts.ratelimits),
                 name_override: RwLock::new(None),
+                output_folder_override: RwLock::new(output_folder),
                 tracker_status,
                 added_on: opts.added_on.unwrap_or_else(|| {
                     std::time::SystemTime::now()
@@ -1104,7 +1105,7 @@ impl Session {
             (Ok(storage), true) => {
                 debug!("will delete files");
                 remove_files_and_dirs(&metadata.file_infos, &storage);
-                if removed.shared().options.output_folder != *self.output_folder.read()
+                if removed.output_folder() != *self.output_folder.read()
                     && let Err(e) = storage.remove_directory_if_empty(Path::new(""))
                 {
                     warn!(
@@ -1358,7 +1359,9 @@ impl Session {
         handle: &ManagedTorrentHandle,
         target_folder: PathBuf,
     ) -> anyhow::Result<()> {
-        let current_output = handle.shared().options.output_folder.clone();
+        // Use the torrent's current root so a relocated torrent moves from
+        // where its files actually are, not the stale add-time folder.
+        let current_output = handle.output_folder();
 
         // Don't move if already in the target folder
         if current_output == target_folder {

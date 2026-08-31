@@ -98,6 +98,10 @@ impl<U: TorrentStorage> TorrentStorage for TimingStorage<U> {
         self.underlying.rename_file(file_id, new_relative)
     }
 
+    fn move_root(&self, new_root: &std::path::Path) -> anyhow::Result<()> {
+        self.underlying.move_root(new_root)
+    }
+
     fn ensure_file_length(&self, file_id: usize, length: u64) -> anyhow::Result<()> {
         self.underlying.ensure_file_length(file_id, length)
     }

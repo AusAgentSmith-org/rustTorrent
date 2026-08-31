@@ -8,7 +8,7 @@ and enforced, and where we currently stand.
 
 ## Current standing (upstream WebAPI 2.16.2, 2026-08-30)
 
-**57 of 93 in-scope endpoints routed (~61%)** — 23 full, 34 partial — plus 2
+**59 of 93 in-scope endpoints routed (~63%)** — 23 full, 36 partial — plus 2
 legacy aliases (`torrents/pause`, `torrents/resume`) that upstream removed in
 WebAPI 2.11. 37 of the 130 upstream endpoints were descoped on 2026-08-30
 (marked `out_of_scope`, enforced as unrouted): `search/*` (Indexarr covers
@@ -26,7 +26,7 @@ in-scope endpoints.
 |---|---|---|
 | `auth` | 2 / 2 | login/logout with SID cookies |
 | `app` | 6 / 10 | version info, `defaultSavePath`, minimal preferences (7 descoped) |
-| `torrents` | 38 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), pieces, file prio, per-torrent limits, export, webseeds |
+| `torrents` | 40 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), setLocation/setSavePath, pieces, file prio, per-torrent limits, export, webseeds |
 | `transfer` | 10 / 13 | info (real session limits) + session rate limits + alt-speed mode + session pause/resume |
 | `sync` | 1 / 2 | `maindata` (full-update snapshots; no per-client rid deltas) |
 | `torrentcreator` | 0 / 4 | native `/torrents/create` exists, unbridged |
@@ -103,15 +103,39 @@ done: `torrents/stop`/`start`, `sync/maindata`, `app/defaultSavePath`,
 
 Remaining work, roughly by cost:
 
-1. **Needs a new engine method** (the `will be built` items): `torrents/setLocation`
-   / `setSavePath` (whole-torrent relocation — needs a mutable `output_folder`,
-   which is deliberately immutable today; see `session/mod.rs:1451`), queueing
+1. **Needs a new engine method** (the `will be built` items): queueing
    (`topPrio` / `bottomPrio` / `increasePrio` / `decreasePrio`),
    `torrents/setShareLimits`, `setSuperSeeding`, `toggleSequentialDownload`,
-   `setForceStart`, `setAutoManagement`.
-   Done since: per-torrent rate limits (`ratelimit_override` on
+   `setForceStart`, `setAutoManagement`, `setDownloadPath` (incomplete-file
+   path). Done since: per-torrent rate limits (`ratelimit_override` on
    `ManagedTorrentShared`, enforced by the live limiter), `reannounce` (signals
-   the live re-discovery notify), and **file/folder/display rename** (see below).
+   the live re-discovery notify), **file/folder/display rename**, and
+   **`setLocation`/`setSavePath`** (whole-torrent relocation — see below).
+
+### Relocation (setLocation, v1, 2026-08-31)
+
+`torrents/setLocation` and `torrents/setSavePath` move every file to a new root:
+
+- New `TorrentStorage::move_root(new_root)` primitive: the filesystem backend
+  moves each file to the same relative path under the new root (reusing the
+  no-clobber rename core) and re-anchors its (now `RwLock`-wrapped) root; mmap
+  forwards. All-or-nothing with rollback.
+- The persistent anchor is a new `output_folder_override` on
+  `ManagedTorrentShared` (seeded from `options.output_folder`, read by the
+  storage factory's `create`), rather than unfreezing the immutable `options`.
+- `ManagedTorrent::set_location()` is **stopped-only** (409 when live) and
+  **same-filesystem only** — a cross-device `rename` (EXDEV) is refused and
+  rolled back, not copied. `qbit_save_path` reports the new root after a move.
+- **v2**: cross-filesystem relocation (async copy+delete, à la
+  `move_completed_torrent`), live relocation, and persistence across restart.
+
+> **⚠️ Restart caveat (rename and relocation both).** These overrides are
+> in-memory only. Persistence still records the add-time `output_folder` and
+> derives filenames from the immutable `.torrent` info, so after a
+> rename/relocation **and a restart** the torrent re-adds at its original root
+> with original names while the data sits at the new location — a recheck finds
+> nothing and re-downloads, orphaning the moved copy. Until v2 persistence
+> lands, treat rename/relocation as effective only within the running session.
 
 ### File rename (v1, 2026-08-31)
 

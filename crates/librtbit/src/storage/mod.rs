@@ -163,6 +163,13 @@ pub trait TorrentStorage: Send + Sync {
         anyhow::bail!("this storage backend does not support renaming files")
     }
 
+    /// Relocate every file to the same relative path under a new storage root,
+    /// keeping cached handles valid. Backends that cannot relocate should return
+    /// an error (the default). Callers keep the torrent's root anchor in sync.
+    fn move_root(&self, _new_root: &Path) -> anyhow::Result<()> {
+        anyhow::bail!("this storage backend does not support relocation")
+    }
+
     fn remove_directory_if_empty(&self, path: &Path) -> anyhow::Result<()>;
 
     /// E.g. for filesystem backend ensure that the file has a certain length, and grow/shrink as needed.
@@ -194,6 +201,10 @@ impl<U: TorrentStorage + ?Sized> TorrentStorage for Box<U> {
 
     fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
         (**self).rename_file(file_id, new_relative)
+    }
+
+    fn move_root(&self, new_root: &Path) -> anyhow::Result<()> {
+        (**self).move_root(new_root)
     }
 
     fn ensure_file_length(&self, file_id: usize, length: u64) -> anyhow::Result<()> {
