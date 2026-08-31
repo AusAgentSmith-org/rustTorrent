@@ -5,8 +5,8 @@
 //! pretending to be qBittorrent.
 
 use std::{
-    collections::HashMap,
-    num::NonZeroU16,
+    collections::{BTreeSet, HashMap, HashSet},
+    num::{NonZeroU16, NonZeroU32},
     path::Path,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
@@ -27,6 +27,7 @@ use tracing::warn;
 use crate::{
     AddTorrent, AddTorrentOptions,
     api::{Api, TorrentIdOrHash},
+    limits::LimitsConfig,
     torrent_state::stats::TorrentStatsState,
 };
 
@@ -71,6 +72,99 @@ impl QbitSessions {
     }
 }
 
+/// In-memory tag store for the compat layer. rtbit has no native tag concept,
+/// so tags live here (a global set plus a per-torrent, info-hash-keyed set) and
+/// are not persisted across restarts.
+#[derive(Default)]
+struct QbitTags {
+    all: RwLock<BTreeSet<String>>,
+    per_torrent: RwLock<HashMap<String, BTreeSet<String>>>,
+}
+
+impl QbitTags {
+    fn all_tags(&self) -> Vec<String> {
+        self.all.read().iter().cloned().collect()
+    }
+
+    fn create(&self, tags: &[String]) {
+        let mut all = self.all.write();
+        all.extend(tags.iter().cloned());
+    }
+
+    fn delete(&self, tags: &[String]) {
+        let mut all = self.all.write();
+        let mut per = self.per_torrent.write();
+        for tag in tags {
+            all.remove(tag);
+        }
+        for set in per.values_mut() {
+            for tag in tags {
+                set.remove(tag);
+            }
+        }
+    }
+
+    fn add_to(&self, hashes: &[String], tags: &[String]) {
+        if tags.is_empty() {
+            return;
+        }
+        self.create(tags);
+        let mut per = self.per_torrent.write();
+        for hash in hashes {
+            per.entry(hash.clone())
+                .or_default()
+                .extend(tags.iter().cloned());
+        }
+    }
+
+    fn remove_from(&self, hashes: &[String], tags: &[String]) {
+        let mut per = self.per_torrent.write();
+        for hash in hashes {
+            if let Some(set) = per.get_mut(hash) {
+                // An empty tag list clears every tag, matching qBittorrent.
+                if tags.is_empty() {
+                    set.clear();
+                } else {
+                    for tag in tags {
+                        set.remove(tag);
+                    }
+                }
+            }
+        }
+    }
+
+    fn set(&self, hashes: &[String], tags: &[String]) {
+        self.create(tags);
+        let mut per = self.per_torrent.write();
+        for hash in hashes {
+            per.insert(hash.clone(), tags.iter().cloned().collect());
+        }
+    }
+
+    fn tags_for(&self, hash: &str) -> String {
+        self.per_torrent
+            .read()
+            .get(hash)
+            .map(|set| set.iter().cloned().collect::<Vec<_>>().join(", "))
+            .unwrap_or_default()
+    }
+
+    fn has_tag(&self, hash: &str, tag: &str) -> bool {
+        self.per_torrent
+            .read()
+            .get(hash)
+            .is_some_and(|set| set.contains(tag))
+    }
+}
+
+fn parse_tags(raw: &str) -> Vec<String> {
+    raw.split(',')
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
 #[derive(Clone, Serialize)]
 struct QbitCategory {
     name: String,
@@ -82,6 +176,7 @@ struct QbitCategory {
 pub(crate) struct QbitState {
     api_state: ApiState,
     sessions: QbitSessions,
+    tags: QbitTags,
 }
 
 // ---------------------------------------------------------------------------
@@ -343,6 +438,10 @@ async fn h_app_webapi_version() -> &'static str {
     "2.11.3"
 }
 
+async fn h_app_default_save_path(State(state): State<Arc<QbitState>>) -> String {
+    state.api_state.api.api_output_folder()
+}
+
 async fn h_app_build_info() -> impl IntoResponse {
     axum::Json(QbitBuildInfo {
         qt: "N/A",
@@ -417,16 +516,122 @@ async fn h_app_set_preferences(
 
 async fn h_transfer_info(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
     let session_stats = state.api_state.api.api_session_stats();
+    let config = state.api_state.api.session().ratelimits.get_config();
     axum::Json(QbitTransferInfo {
         dl_info_speed: session_stats.download_speed.as_bytes(),
         dl_info_data: session_stats.counters.fetched_bytes,
         up_info_speed: session_stats.upload_speed.as_bytes(),
         up_info_data: session_stats.counters.uploaded_bytes,
-        dl_rate_limit: 0,
-        up_rate_limit: 0,
+        dl_rate_limit: bps_to_u64(config.download_bps),
+        up_rate_limit: bps_to_u64(config.upload_bps),
         dht_nodes: 0,
         connection_status: "connected",
     })
+}
+
+fn bps_to_u64(bps: Option<NonZeroU32>) -> u64 {
+    bps.map_or(0, |v| u64::from(v.get()))
+}
+
+/// Parse a qBittorrent byte-rate limit (0 means unlimited).
+fn limit_to_bps(limit: u64) -> Option<NonZeroU32> {
+    NonZeroU32::new(u32::try_from(limit).unwrap_or(u32::MAX))
+}
+
+#[derive(Deserialize, Default)]
+struct LimitForm {
+    #[serde(default)]
+    limit: u64,
+}
+
+#[derive(Deserialize, Default)]
+struct ModeForm {
+    #[serde(default)]
+    mode: u8,
+}
+
+async fn h_transfer_download_limit(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
+    let config = state.api_state.api.session().ratelimits.get_config();
+    axum::Json(bps_to_u64(config.download_bps))
+}
+
+async fn h_transfer_upload_limit(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
+    let config = state.api_state.api.session().ratelimits.get_config();
+    axum::Json(bps_to_u64(config.upload_bps))
+}
+
+async fn h_transfer_set_download_limit(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: LimitForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let session = state.api_state.api.session();
+    let upload = session.ratelimits.get_config().upload_bps;
+    session.set_normal_rate_limits(limit_to_bps(form.limit), upload);
+    "Ok."
+}
+
+async fn h_transfer_set_upload_limit(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: LimitForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let session = state.api_state.api.session();
+    let download = session.ratelimits.get_config().download_bps;
+    session.set_normal_rate_limits(download, limit_to_bps(form.limit));
+    "Ok."
+}
+
+/// qBittorrent alternative-speed mode maps onto our alt-speed toggle: `1` when
+/// alternative limits are active, `0` otherwise.
+async fn h_transfer_speed_limits_mode(State(state): State<Arc<QbitState>>) -> &'static str {
+    if state.api_state.api.session().alt_speed_enabled() {
+        "1"
+    } else {
+        "0"
+    }
+}
+
+async fn h_transfer_toggle_speed_limits_mode(State(state): State<Arc<QbitState>>) -> &'static str {
+    let session = state.api_state.api.session();
+    session.set_alt_speed_enabled(!session.alt_speed_enabled());
+    "Ok."
+}
+
+async fn h_transfer_set_speed_limits_mode(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: ModeForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    state
+        .api_state
+        .api
+        .session()
+        .set_alt_speed_enabled(form.mode != 0);
+    "Ok."
+}
+
+/// `transfer/pauseSession` — qBittorrent pauses the whole session; we have no
+/// global pause, so we pause every torrent.
+async fn h_transfer_pause_session(State(state): State<Arc<QbitState>>) -> &'static str {
+    let api = &state.api_state.api;
+    for idx in resolve_hashes(api, "all") {
+        if let Err(error) = api.api_torrent_action_pause(idx).await {
+            warn!(%error, "qbit compat: error pausing session torrent");
+        }
+    }
+    "Ok."
+}
+
+/// `transfer/resumeSession` — resume every torrent (see pauseSession).
+async fn h_transfer_resume_session(State(state): State<Arc<QbitState>>) -> &'static str {
+    let api = &state.api_state.api;
+    for idx in resolve_hashes(api, "all") {
+        if let Err(error) = api.api_torrent_action_start(idx).await {
+            warn!(%error, "qbit compat: error resuming session torrent");
+        }
+    }
+    "Ok."
 }
 
 // ---------------------------------------------------------------------------
@@ -441,13 +646,17 @@ fn now_unix() -> u64 {
 }
 
 /// Map rtbit torrent state to qBittorrent state string.
+///
+/// We advertise WebAPI 2.11.3, so we emit the post-2.11 `stoppedDL`/`stoppedUP`
+/// names (renamed from `pausedDL`/`pausedUP` in 2.11); clients that switch on
+/// the advertised version expect these.
 fn map_state(state: TorrentStatsState, finished: bool) -> &'static str {
     match (state, finished) {
         (TorrentStatsState::Initializing, _) => "metaDL",
         (TorrentStatsState::Live, false) => "downloading",
         (TorrentStatsState::Live, true) => "uploading",
-        (TorrentStatsState::Paused, false) => "pausedDL",
-        (TorrentStatsState::Paused, true) => "pausedUP",
+        (TorrentStatsState::Paused, false) => "stoppedDL",
+        (TorrentStatsState::Paused, true) => "stoppedUP",
         (TorrentStatsState::Error, _) => "error",
     }
 }
@@ -456,6 +665,7 @@ fn map_state(state: TorrentStatsState, finished: bool) -> &'static str {
 struct TorrentsInfoQuery {
     filter: Option<String>,
     category: Option<String>,
+    tag: Option<String>,
     hashes: Option<String>,
     sort: Option<String>,
     reverse: Option<bool>,
@@ -474,10 +684,12 @@ fn matches_filter(
         "downloading" => qbit_state == "downloading" || qbit_state == "metaDL",
         "seeding" => qbit_state == "uploading",
         "completed" => stats.finished,
-        "paused" => qbit_state == "pausedDL" || qbit_state == "pausedUP",
+        // `paused` was renamed to `stopped` in 2.11; accept both spellings.
+        "paused" | "stopped" => qbit_state == "stoppedDL" || qbit_state == "stoppedUP",
         "active" => qbit_state == "downloading" || qbit_state == "uploading",
         "inactive" => qbit_state != "downloading" && qbit_state != "uploading",
-        "resumed" => qbit_state != "pausedDL" && qbit_state != "pausedUP",
+        // `resumed` was renamed to `running` in 2.11; accept both spellings.
+        "resumed" | "running" => qbit_state != "stoppedDL" && qbit_state != "stoppedUP",
         "stalled" | "stalled_uploading" | "stalled_downloading" => {
             matches!(stats.state, TorrentStatsState::Live)
                 && stats
@@ -489,6 +701,164 @@ fn matches_filter(
         "errored" => qbit_state == "error",
         _ => true,
     }
+}
+
+/// Build the qBittorrent `torrents/info` view of a single torrent. Shared by
+/// `torrents/info` and `sync/maindata`.
+fn build_torrent_info(
+    handle: &crate::torrent_state::ManagedTorrentHandle,
+    stats: &crate::torrent_state::stats::TorrentStats,
+    now: u64,
+) -> QbitTorrentInfo {
+    let info_hash = handle.shared().info_hash.as_string();
+    let name = handle
+        .name()
+        .unwrap_or_else(|| format!("torrent_{}", handle.id()));
+    let output_folder = qbit_save_path(handle);
+    let content_path = qbit_content_path(handle, &name);
+    let qbit_state = map_state(stats.state, stats.finished);
+    let category = handle.shared().category.read().clone().unwrap_or_default();
+
+    let dl_speed = stats
+        .live
+        .as_ref()
+        .map(|l| l.download_speed.as_bytes())
+        .unwrap_or(0);
+    let up_speed = stats
+        .live
+        .as_ref()
+        .map(|l| l.upload_speed.as_bytes())
+        .unwrap_or(0);
+
+    let progress = if stats.total_bytes > 0 {
+        stats.progress_bytes as f64 / stats.total_bytes as f64
+    } else {
+        0.0
+    };
+
+    let eta = stats
+        .total_bytes
+        .saturating_sub(stats.progress_bytes)
+        .checked_div(dl_speed)
+        .map(|seconds| i64::try_from(seconds.min(8_640_000)).unwrap_or(8_640_000))
+        .unwrap_or(8_640_000);
+
+    let num_seeds = stats
+        .live
+        .as_ref()
+        .map(|l| l.snapshot.connected_seeders)
+        .unwrap_or(0);
+    let num_leechs = stats
+        .live
+        .as_ref()
+        .map(|l| l.snapshot.connected_leechers)
+        .unwrap_or(0);
+    let added_on = handle.shared().added_on;
+    let completion_on = handle
+        .shared()
+        .completion_on
+        .load(std::sync::atomic::Ordering::Relaxed);
+    let ratio = if stats.progress_bytes == 0 {
+        0.0
+    } else {
+        stats.uploaded_bytes as f64 / stats.progress_bytes as f64
+    };
+    let time_active = now.saturating_sub(added_on);
+    let seeding_time = completion_on
+        .checked_sub(added_on)
+        .map_or(0, |_| now.saturating_sub(completion_on));
+
+    let tracker = handle
+        .shared()
+        .trackers
+        .read()
+        .iter()
+        .next()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+
+    let trackers_count = handle.shared().trackers.read().len();
+
+    QbitTorrentInfo {
+        added_on,
+        amount_left: stats.total_bytes.saturating_sub(stats.progress_bytes),
+        auto_tmm: false,
+        availability: -1,
+        category,
+        completed: stats.progress_bytes,
+        completion_on: if completion_on > 0 {
+            i64::try_from(completion_on).unwrap_or(i64::MAX)
+        } else {
+            -1
+        },
+        content_path,
+        dl_limit: -1,
+        dlspeed: dl_speed,
+        download_path: String::new(),
+        downloaded: stats.progress_bytes,
+        downloaded_session: 0,
+        eta,
+        f_l_piece_prio: false,
+        force_start: false,
+        hash: info_hash.clone(),
+        infohash_v1: info_hash,
+        infohash_v2: String::new(),
+        last_activity: if completion_on > 0 {
+            completion_on
+        } else {
+            added_on
+        },
+        magnet_uri: String::new(),
+        max_ratio: -1,
+        max_seeding_time: -1,
+        name,
+        num_complete: num_seeds,
+        num_incomplete: num_leechs,
+        num_leechs,
+        num_seeds,
+        priority: 0,
+        progress,
+        ratio,
+        ratio_limit: -1,
+        save_path: output_folder,
+        seeding_time,
+        seeding_time_limit: -1,
+        seen_complete: if completion_on > 0 {
+            i64::try_from(completion_on).unwrap_or(i64::MAX)
+        } else {
+            -1
+        },
+        seq_dl: false,
+        size: stats.total_bytes,
+        state: qbit_state.to_string(),
+        super_seeding: false,
+        tags: String::new(),
+        time_active,
+        total_size: stats.total_bytes,
+        tracker,
+        trackers_count,
+        up_limit: -1,
+        uploaded: stats.uploaded_bytes,
+        uploaded_session: stats.uploaded_bytes,
+        upspeed: up_speed,
+    }
+}
+
+/// Apply qBittorrent `offset`/`limit` pagination. An offset at or past the end
+/// yields an empty list (not the whole list); a `limit` of 0 means "no limit".
+fn apply_offset_limit<T>(mut items: Vec<T>, offset: usize, limit: Option<usize>) -> Vec<T> {
+    if offset >= items.len() {
+        return Vec::new();
+    }
+    if offset > 0 {
+        items = items.split_off(offset);
+    }
+    if let Some(limit) = limit
+        && limit > 0
+    {
+        items.truncate(limit);
+    }
+    items
 }
 
 async fn h_torrents_info(
@@ -504,162 +874,42 @@ async fn h_torrents_info(
         .map(|h| h.split('|').map(|s| s.to_lowercase()).collect());
 
     let mut torrents: Vec<QbitTorrentInfo> = api.session().with_torrents(|iter| {
-        iter.filter_map(|(id, handle)| {
-            let info_hash = handle.shared().info_hash.as_string();
+        iter.filter_map(|(_id, handle)| {
+            let stats = handle.stats();
+            let mut info = build_torrent_info(handle, &stats, now);
+            info.tags = state.tags.tags_for(&info.hash);
 
-            // Filter by hash if specified
+            // Filter by hash if specified.
             if let Some(ref hashes) = hash_filter
-                && !hashes.contains(&info_hash)
+                && !hashes.contains(&info.hash)
             {
                 return None;
             }
-
-            let stats = handle.stats();
-            let name = handle.name().unwrap_or_else(|| format!("torrent_{id}"));
-            let output_folder = qbit_save_path(handle);
-            let content_path = qbit_content_path(handle, &name);
-
-            let qbit_state = map_state(stats.state, stats.finished);
-            let category = handle.shared().category.read().clone().unwrap_or_default();
 
             // qBittorrent treats an empty category and "uncategorized" as the
             // uncategorized bucket; otherwise category matching is exact.
             if let Some(ref requested) = query.category
-                && !matches_category(requested, &category)
+                && !matches_category(requested, &info.category)
             {
                 return None;
             }
 
-            // Apply filter
+            // A non-empty tag query filters to torrents carrying that tag.
+            if let Some(ref tag) = query.tag
+                && !tag.is_empty()
+                && !state.tags.has_tag(&info.hash, tag)
+            {
+                return None;
+            }
+
+            // Apply the state filter.
             if let Some(ref filter) = query.filter
-                && !matches_filter(filter, qbit_state, &stats)
+                && !matches_filter(filter, &info.state, &stats)
             {
                 return None;
             }
 
-            let dl_speed = stats
-                .live
-                .as_ref()
-                .map(|l| l.download_speed.as_bytes())
-                .unwrap_or(0);
-            let up_speed = stats
-                .live
-                .as_ref()
-                .map(|l| l.upload_speed.as_bytes())
-                .unwrap_or(0);
-
-            let progress = if stats.total_bytes > 0 {
-                stats.progress_bytes as f64 / stats.total_bytes as f64
-            } else {
-                0.0
-            };
-
-            let eta = stats
-                .total_bytes
-                .saturating_sub(stats.progress_bytes)
-                .checked_div(dl_speed)
-                .map(|seconds| i64::try_from(seconds.min(8_640_000)).unwrap_or(8_640_000))
-                .unwrap_or(8_640_000);
-
-            let num_seeds = stats
-                .live
-                .as_ref()
-                .map(|l| l.snapshot.connected_seeders)
-                .unwrap_or(0);
-            let num_leechs = stats
-                .live
-                .as_ref()
-                .map(|l| l.snapshot.connected_leechers)
-                .unwrap_or(0);
-            let added_on = handle.shared().added_on;
-            let completion_on = handle
-                .shared()
-                .completion_on
-                .load(std::sync::atomic::Ordering::Relaxed);
-            let ratio = if stats.progress_bytes == 0 {
-                0.0
-            } else {
-                stats.uploaded_bytes as f64 / stats.progress_bytes as f64
-            };
-            let time_active = now.saturating_sub(added_on);
-            let seeding_time = completion_on
-                .checked_sub(added_on)
-                .map_or(0, |_| now.saturating_sub(completion_on));
-
-            let tracker = handle
-                .shared()
-                .trackers
-                .read()
-                .iter()
-                .next()
-                .map(|u| u.to_string())
-                .unwrap_or_default();
-
-            let trackers_count = handle.shared().trackers.read().len();
-
-            Some(QbitTorrentInfo {
-                added_on,
-                amount_left: stats.total_bytes.saturating_sub(stats.progress_bytes),
-                auto_tmm: false,
-                availability: -1,
-                category,
-                completed: stats.progress_bytes,
-                completion_on: if completion_on > 0 {
-                    i64::try_from(completion_on).unwrap_or(i64::MAX)
-                } else {
-                    -1
-                },
-                content_path,
-                dl_limit: -1,
-                dlspeed: dl_speed,
-                download_path: String::new(),
-                downloaded: stats.progress_bytes,
-                downloaded_session: 0,
-                eta,
-                f_l_piece_prio: false,
-                force_start: false,
-                hash: info_hash.clone(),
-                infohash_v1: info_hash,
-                infohash_v2: String::new(),
-                last_activity: if completion_on > 0 {
-                    completion_on
-                } else {
-                    added_on
-                },
-                magnet_uri: String::new(),
-                max_ratio: -1,
-                max_seeding_time: -1,
-                name,
-                num_complete: num_seeds,
-                num_incomplete: num_leechs,
-                num_leechs,
-                num_seeds,
-                priority: 0,
-                progress,
-                ratio,
-                ratio_limit: -1,
-                save_path: output_folder,
-                seeding_time,
-                seeding_time_limit: -1,
-                seen_complete: if completion_on > 0 {
-                    i64::try_from(completion_on).unwrap_or(i64::MAX)
-                } else {
-                    -1
-                },
-                seq_dl: false,
-                size: stats.total_bytes,
-                state: qbit_state.to_string(),
-                super_seeding: false,
-                tags: String::new(),
-                time_active,
-                total_size: stats.total_bytes,
-                tracker,
-                trackers_count,
-                up_limit: -1,
-                uploaded: stats.uploaded_bytes,
-                uploaded_session: stats.uploaded_bytes,
-                upspeed: up_speed,
-            })
+            Some(info)
         })
         .collect()
     });
@@ -693,15 +943,7 @@ async fn h_torrents_info(
         });
     }
 
-    // Offset and limit
-    let offset = query.offset.unwrap_or(0);
-    if offset > 0 && offset < torrents.len() {
-        torrents = torrents.split_off(offset);
-    }
-    if let Some(limit) = query.limit {
-        torrents.truncate(limit);
-    }
-
+    let torrents = apply_offset_limit(torrents, query.offset.unwrap_or(0), query.limit);
     axum::Json(torrents)
 }
 
@@ -902,6 +1144,181 @@ async fn h_torrents_files(
     axum::Json(files).into_response()
 }
 
+#[derive(Serialize)]
+struct QbitTrackerInfo {
+    url: String,
+    /// qBittorrent tracker status: 0 disabled, 1 not contacted, 2 working,
+    /// 3 updating, 4 not working.
+    status: u8,
+    tier: i32,
+    num_peers: i64,
+    num_seeds: i64,
+    num_leeches: i64,
+    num_downloaded: i64,
+    msg: String,
+}
+
+/// Map our tracker announce state to qBittorrent's integer status code.
+fn qbit_tracker_status(state: tracker_comms::TrackerAnnounceState) -> u8 {
+    use tracker_comms::TrackerAnnounceState::*;
+    match state {
+        Disabled => 0,
+        NotContacted => 1,
+        Working => 2,
+        Updating => 3,
+        Error => 4,
+    }
+}
+
+async fn h_torrents_trackers(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let idx = match TorrentIdOrHash::parse(&query.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let response = match api.api_tracker_status(idx) {
+        Ok(r) => r,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+
+    let trackers: Vec<QbitTrackerInfo> = response
+        .trackers
+        .into_iter()
+        .map(|t| QbitTrackerInfo {
+            status: qbit_tracker_status(t.state),
+            tier: 0,
+            num_peers: t.peers_returned.map_or(-1, i64::from),
+            num_seeds: t.seeders.map_or(-1, i64::from),
+            num_leeches: t.leechers.map_or(-1, i64::from),
+            num_downloaded: -1,
+            msg: t.last_error.unwrap_or_default(),
+            url: t.url,
+        })
+        .collect();
+    axum::Json(trackers).into_response()
+}
+
+async fn h_torrents_piece_states(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let idx = match TorrentIdOrHash::parse(&query.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let (bf, len) = match api.api_dump_haves(idx) {
+        Ok(v) => v,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    // qBittorrent: 0 not downloaded, 1 downloading (requested), 2 downloaded.
+    // We only distinguish have/not-have, so emit 0 or 2.
+    let states: Vec<u8> = bf
+        .iter()
+        .take(len as usize)
+        .map(|b| if *b { 2 } else { 0 })
+        .collect();
+    axum::Json(states).into_response()
+}
+
+async fn h_torrents_piece_hashes(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let idx = match TorrentIdOrHash::parse(&query.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let hashes: Option<Vec<String>> = handle
+        .with_metadata(|m| {
+            let info = m.info.info();
+            let total = m.info.lengths().total_pieces();
+            (0..total)
+                .map(|p| {
+                    info.get_hash(p).map(|h| {
+                        h.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+                    })
+                })
+                .collect::<Option<Vec<String>>>()
+        })
+        .ok()
+        .flatten();
+    match hashes {
+        Some(hashes) => axum::Json(hashes).into_response(),
+        // Metadata not yet available (magnet still resolving) or v2-only torrent.
+        None => axum::Json(Vec::<String>::new()).into_response(),
+    }
+}
+
+async fn h_torrents_count(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
+    let count = state
+        .api_state
+        .api
+        .session()
+        .with_torrents(|iter| iter.count());
+    axum::Json(count)
+}
+
+/// `torrents/export` — return the raw `.torrent` file bytes for one torrent.
+async fn h_torrents_export(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let idx = match TorrentIdOrHash::parse(&query.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    match handle.with_metadata(|meta| meta.torrent_bytes.clone()) {
+        Ok(bytes) => (
+            [("content-type", "application/x-bittorrent")],
+            bytes,
+        )
+            .into_response(),
+        // Metadata not resolved yet (magnet) — no file to export.
+        Err(_) => (StatusCode::CONFLICT, "Metadata not available").into_response(),
+    }
+}
+
+#[derive(Serialize)]
+struct QbitWebSeed {
+    url: String,
+}
+
+async fn h_torrents_webseeds(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let idx = match TorrentIdOrHash::parse(&query.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let seeds: Vec<QbitWebSeed> = handle
+        .shared()
+        .web_seed_urls
+        .iter()
+        .map(|url| QbitWebSeed { url: url.clone() })
+        .collect();
+    axum::Json(seeds).into_response()
+}
+
 // ---------------------------------------------------------------------------
 // Torrent actions (add, pause, resume, delete)
 // ---------------------------------------------------------------------------
@@ -953,9 +1370,12 @@ async fn h_torrents_add(
                     savepath = Some(text);
                 }
             }
-            "paused" => {
-                if let Ok(text) = field.text().await {
-                    paused = text.eq_ignore_ascii_case("true");
+            // `paused` was renamed to `stopped` in WebAPI 2.11; accept both.
+            "paused" | "stopped" => {
+                if let Ok(text) = field.text().await
+                    && text.eq_ignore_ascii_case("true")
+                {
+                    paused = true;
                 }
             }
             _ => {
@@ -1063,12 +1483,34 @@ async fn h_torrents_resume(State(state): State<Arc<QbitState>>, body: Bytes) -> 
     "Ok."
 }
 
+/// `torrents/stop` — the WebAPI 2.11+ name for `torrents/pause`. We advertise
+/// 2.11.3, so modern clients (qbittorrent-api, newer *arr) call this.
+async fn h_torrents_stop(state: State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    h_torrents_pause(state, body).await
+}
+
+/// `torrents/start` — the WebAPI 2.11+ name for `torrents/resume`.
+async fn h_torrents_start(state: State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    h_torrents_resume(state, body).await
+}
+
 async fn h_torrents_recheck(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
     let form: HashesForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
     let api = &state.api_state.api;
     for idx in resolve_hashes(api, &form.hashes) {
         if let Err(error) = api.api_torrent_action_recheck(idx).await {
             warn!(%error, "qbit compat: error rechecking torrent");
+        }
+    }
+    "Ok."
+}
+
+async fn h_torrents_reannounce(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: HashesForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    for idx in resolve_hashes(api, &form.hashes) {
+        if let Ok(handle) = api.mgr_handle(idx) {
+            handle.reannounce();
         }
     }
     "Ok."
@@ -1122,6 +1564,379 @@ async fn h_torrents_set_category(State(state): State<Arc<QbitState>>, body: Byte
             warn!(%error, "qbit compat: error setting torrent category");
         }
     }
+    "Ok."
+}
+
+#[derive(Deserialize, Default)]
+struct AddTrackersForm {
+    #[serde(default)]
+    hash: String,
+    #[serde(default)]
+    urls: String,
+}
+
+async fn h_torrents_add_trackers(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> impl IntoResponse {
+    let form: AddTrackersForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required");
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+    let trackers: Vec<String> = form
+        .urls
+        .lines()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect();
+    if trackers.is_empty() {
+        return (StatusCode::OK, "Ok.");
+    }
+    match api.api_torrent_action_add_trackers(idx, trackers).await {
+        Ok(_) => (StatusCode::OK, "Ok."),
+        Err(error) => {
+            warn!(%error, "qbit compat: error adding trackers");
+            (StatusCode::NOT_FOUND, "Not found")
+        }
+    }
+}
+
+#[derive(Deserialize, Default)]
+struct RemoveTrackersForm {
+    #[serde(default)]
+    hash: String,
+    /// Pipe-separated tracker URLs.
+    #[serde(default)]
+    urls: String,
+}
+
+async fn h_torrents_remove_trackers(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> impl IntoResponse {
+    let form: RemoveTrackersForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required").into_response();
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let urls: Vec<String> = form
+        .urls
+        .split('|')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect();
+    if let Err(error) = api.session().remove_trackers(&handle, &urls).await {
+        warn!(%error, "qbit compat: error removing trackers");
+    }
+    (StatusCode::OK, "Ok.").into_response()
+}
+
+#[derive(Deserialize, Default)]
+struct EditTrackerForm {
+    #[serde(default)]
+    hash: String,
+    #[serde(default, alias = "origUrl")]
+    orig_url: String,
+    #[serde(default, alias = "newUrl")]
+    new_url: String,
+}
+
+async fn h_torrents_edit_tracker(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> impl IntoResponse {
+    let form: EditTrackerForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required").into_response();
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
+    };
+    // Validate newUrl *before* removing origUrl so a bad newUrl can't leave the
+    // torrent with neither tracker.
+    let valid_new = url::Url::parse(&form.new_url)
+        .ok()
+        .is_some_and(|u| matches!(u.scheme(), "http" | "https" | "udp"));
+    if !valid_new {
+        return (StatusCode::BAD_REQUEST, "invalid newUrl").into_response();
+    }
+    let removed = api
+        .session()
+        .remove_trackers(&handle, std::slice::from_ref(&form.orig_url))
+        .await
+        .unwrap_or(0);
+    if removed == 0 {
+        return (StatusCode::CONFLICT, "origUrl not found").into_response();
+    }
+    match api
+        .api_torrent_action_add_trackers(idx, vec![form.new_url])
+        .await
+    {
+        Ok(_) => (StatusCode::OK, "Ok.").into_response(),
+        Err(error) => {
+            warn!(%error, "qbit compat: error editing tracker");
+            (StatusCode::CONFLICT, "Failed").into_response()
+        }
+    }
+}
+
+#[derive(Deserialize, Default)]
+struct AddPeersForm {
+    #[serde(default)]
+    hashes: String,
+    #[serde(default)]
+    peers: String,
+}
+
+async fn h_torrents_add_peers(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: AddPeersForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    let peers: Vec<std::net::SocketAddr> = form
+        .peers
+        .split('|')
+        .filter_map(|s| s.trim().parse().ok())
+        .collect();
+    for idx in resolve_hashes(api, &form.hashes) {
+        let Ok(handle) = api.mgr_handle(idx) else {
+            continue;
+        };
+        let Some(live) = handle.live() else {
+            continue;
+        };
+        for addr in &peers {
+            let _ = live.add_peer_if_not_seen(*addr);
+        }
+    }
+    "Ok."
+}
+
+#[derive(Deserialize, Default)]
+struct FilePrioForm {
+    #[serde(default)]
+    hash: String,
+    /// Pipe-separated file indices.
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    priority: u8,
+}
+
+async fn h_torrents_file_prio(State(state): State<Arc<QbitState>>, body: Bytes) -> impl IntoResponse {
+    let form: FilePrioForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    if form.hash.is_empty() {
+        return (StatusCode::BAD_REQUEST, "hash is required");
+    }
+    let idx = match TorrentIdOrHash::parse(&form.hash) {
+        Ok(idx) => idx,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+    let handle = match api.mgr_handle(idx) {
+        Ok(h) => h,
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+    let num_files = match api.api_torrent_details(idx) {
+        Ok(details) => details.files.map(|f| f.len()).unwrap_or(0),
+        Err(_) => return (StatusCode::NOT_FOUND, "Not found"),
+    };
+
+    // qBittorrent priority 0 means "do not download"; anything else downloads.
+    // We only model an include/exclude selection, so map onto only_files.
+    let mut included: HashSet<usize> = match handle.only_files() {
+        Some(files) => files.into_iter().collect(),
+        None => (0..num_files).collect(),
+    };
+    let download = form.priority != 0;
+    for id in form.id.split('|').filter_map(|s| s.trim().parse::<usize>().ok()) {
+        if id >= num_files {
+            return (StatusCode::CONFLICT, "Invalid file id");
+        }
+        if download {
+            included.insert(id);
+        } else {
+            included.remove(&id);
+        }
+    }
+    match api
+        .api_torrent_action_update_only_files(idx, &included)
+        .await
+    {
+        Ok(_) => (StatusCode::OK, "Ok."),
+        Err(error) => {
+            warn!(%error, "qbit compat: error setting file priority");
+            (StatusCode::CONFLICT, "Failed")
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Per-torrent speed limits
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize, Default)]
+struct HashesQuery {
+    #[serde(default)]
+    hashes: String,
+}
+
+#[derive(Deserialize, Default)]
+struct SetTorrentLimitForm {
+    #[serde(default)]
+    hashes: String,
+    /// Bytes/s; <= 0 means unlimited.
+    #[serde(default)]
+    limit: i64,
+}
+
+fn torrent_limit_map(
+    api: &Api,
+    hashes: &str,
+    pick: impl Fn(LimitsConfig) -> Option<NonZeroU32>,
+) -> HashMap<String, u64> {
+    let mut map = HashMap::new();
+    for idx in resolve_hashes(api, hashes) {
+        if let Ok(handle) = api.mgr_handle(idx) {
+            let hash = handle.shared().info_hash.as_string();
+            map.insert(hash, bps_to_u64(pick(handle.rate_limits())));
+        }
+    }
+    map
+}
+
+fn parse_torrent_limit(limit: i64) -> Option<NonZeroU32> {
+    if limit <= 0 {
+        None
+    } else {
+        limit_to_bps(limit as u64)
+    }
+}
+
+async fn h_torrents_download_limit(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashesQuery>,
+) -> impl IntoResponse {
+    let map = torrent_limit_map(&state.api_state.api, &query.hashes, |c| c.download_bps);
+    axum::Json(map)
+}
+
+async fn h_torrents_upload_limit(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<HashesQuery>,
+) -> impl IntoResponse {
+    let map = torrent_limit_map(&state.api_state.api, &query.hashes, |c| c.upload_bps);
+    axum::Json(map)
+}
+
+async fn h_torrents_set_download_limit(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: SetTorrentLimitForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    let bps = parse_torrent_limit(form.limit);
+    for idx in resolve_hashes(api, &form.hashes) {
+        if let Ok(handle) = api.mgr_handle(idx) {
+            handle.set_download_limit(bps);
+        }
+    }
+    "Ok."
+}
+
+async fn h_torrents_set_upload_limit(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: SetTorrentLimitForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let api = &state.api_state.api;
+    let bps = parse_torrent_limit(form.limit);
+    for idx in resolve_hashes(api, &form.hashes) {
+        if let Ok(handle) = api.mgr_handle(idx) {
+            handle.set_upload_limit(bps);
+        }
+    }
+    "Ok."
+}
+
+// ---------------------------------------------------------------------------
+// Tag endpoints (backed by the in-memory QbitTags store)
+// ---------------------------------------------------------------------------
+
+/// Resolve hash(es) to canonical (lowercase hex) info-hash strings, used as the
+/// key space for the tag store. Skips torrents that cannot be resolved.
+fn resolve_info_hashes(api: &Api, hashes_str: &str) -> Vec<String> {
+    resolve_hashes(api, hashes_str)
+        .into_iter()
+        .filter_map(|idx| {
+            api.mgr_handle(idx)
+                .ok()
+                .map(|handle| handle.shared().info_hash.as_string())
+        })
+        .collect()
+}
+
+#[derive(Deserialize, Default)]
+struct TagsForm {
+    #[serde(default)]
+    hashes: String,
+    #[serde(default)]
+    tags: String,
+}
+
+async fn h_torrents_tags(State(state): State<Arc<QbitState>>) -> impl IntoResponse {
+    axum::Json(state.tags.all_tags())
+}
+
+async fn h_torrents_create_tags(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: TagsForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    state.tags.create(&parse_tags(&form.tags));
+    "Ok."
+}
+
+async fn h_torrents_delete_tags(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: TagsForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    state.tags.delete(&parse_tags(&form.tags));
+    "Ok."
+}
+
+async fn h_torrents_add_tags(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: TagsForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let hashes = resolve_info_hashes(&state.api_state.api, &form.hashes);
+    state.tags.add_to(&hashes, &parse_tags(&form.tags));
+    "Ok."
+}
+
+async fn h_torrents_remove_tags(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: TagsForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let hashes = resolve_info_hashes(&state.api_state.api, &form.hashes);
+    state.tags.remove_from(&hashes, &parse_tags(&form.tags));
+    "Ok."
+}
+
+async fn h_torrents_set_tags(State(state): State<Arc<QbitState>>, body: Bytes) -> &'static str {
+    let form: TagsForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
+    let hashes = resolve_info_hashes(&state.api_state.api, &form.hashes);
+    state.tags.set(&hashes, &parse_tags(&form.tags));
     "Ok."
 }
 
@@ -1208,6 +2023,112 @@ async fn h_remove_categories(State(state): State<Arc<QbitState>>, body: Bytes) -
 }
 
 // ---------------------------------------------------------------------------
+// Sync (main polling endpoint)
+// ---------------------------------------------------------------------------
+
+#[derive(Serialize)]
+struct QbitServerState {
+    connection_status: &'static str,
+    dht_nodes: u64,
+    dl_info_data: u64,
+    dl_info_speed: u64,
+    dl_rate_limit: u64,
+    up_info_data: u64,
+    up_info_speed: u64,
+    up_rate_limit: u64,
+    queueing: bool,
+    use_alt_speed_limits: bool,
+    refresh_interval: u64,
+    free_space_on_disk: u64,
+    global_ratio: String,
+}
+
+#[derive(Serialize)]
+struct QbitMainData {
+    rid: u64,
+    full_update: bool,
+    torrents: HashMap<String, QbitTorrentInfo>,
+    categories: HashMap<String, QbitCategory>,
+    tags: Vec<String>,
+    server_state: QbitServerState,
+}
+
+#[derive(Deserialize, Default)]
+struct SyncQuery {
+    #[serde(default)]
+    rid: u64,
+}
+
+/// `sync/maindata` — the primary polling endpoint for WebUI frontends and many
+/// integrations. We do not track per-client deltas, so every response is a
+/// `full_update` snapshot (a valid, if chattier, mode of the protocol); the
+/// `rid` is echoed back incremented so clients keep polling.
+async fn h_sync_maindata(
+    State(state): State<Arc<QbitState>>,
+    Query(query): Query<SyncQuery>,
+) -> impl IntoResponse {
+    let api = &state.api_state.api;
+    let now = now_unix();
+
+    let torrents: HashMap<String, QbitTorrentInfo> = api.session().with_torrents(|iter| {
+        iter.map(|(_id, handle)| {
+            let stats = handle.stats();
+            let mut info = build_torrent_info(handle, &stats, now);
+            info.tags = state.tags.tags_for(&info.hash);
+            (info.hash.clone(), info)
+        })
+        .collect()
+    });
+
+    let categories: HashMap<String, QbitCategory> = api
+        .api_list_categories()
+        .into_iter()
+        .map(|(name, category)| {
+            let save_path = category
+                .save_path
+                .map(|path| path.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            (name.clone(), QbitCategory { name, save_path })
+        })
+        .collect();
+
+    let session_stats = api.api_session_stats();
+    let config = api.session().ratelimits.get_config();
+    let downloaded = session_stats.counters.fetched_bytes;
+    let uploaded = session_stats.counters.uploaded_bytes;
+    let global_ratio = if downloaded == 0 {
+        "0.00".to_string()
+    } else {
+        format!("{:.2}", uploaded as f64 / downloaded as f64)
+    };
+
+    let server_state = QbitServerState {
+        connection_status: "connected",
+        dht_nodes: 0,
+        dl_info_data: downloaded,
+        dl_info_speed: session_stats.download_speed.as_bytes(),
+        dl_rate_limit: bps_to_u64(config.download_bps),
+        up_info_data: uploaded,
+        up_info_speed: session_stats.upload_speed.as_bytes(),
+        up_rate_limit: bps_to_u64(config.upload_bps),
+        queueing: false,
+        use_alt_speed_limits: api.session().alt_speed_enabled(),
+        refresh_interval: 1500,
+        free_space_on_disk: 0,
+        global_ratio,
+    };
+
+    axum::Json(QbitMainData {
+        rid: query.rid.saturating_add(1),
+        full_update: true,
+        torrents,
+        categories,
+        tags: state.tags.all_tags(),
+        server_state,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Auth middleware helper
 // ---------------------------------------------------------------------------
 
@@ -1232,6 +2153,7 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
     let qbit_state = Arc::new(QbitState {
         api_state: api_state.clone(),
         sessions: QbitSessions::new(),
+        tags: QbitTags::default(),
     });
 
     // Auth endpoints (no auth required to reach these)
@@ -1244,32 +2166,78 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/version", get(h_app_version))
         .route("/webapiVersion", get(h_app_webapi_version))
         .route("/buildInfo", get(h_app_build_info))
+        .route("/defaultSavePath", get(h_app_default_save_path))
         .route("/preferences", get(h_app_preferences))
         .route("/setPreferences", post(h_app_set_preferences));
 
     // Torrent endpoints
     let torrents_router = Router::new()
         .route("/info", get(h_torrents_info))
+        .route("/count", get(h_torrents_count))
         .route("/properties", get(h_torrents_properties))
         .route("/files", get(h_torrents_files))
+        .route("/trackers", get(h_torrents_trackers))
+        .route("/webseeds", get(h_torrents_webseeds))
+        .route("/export", get(h_torrents_export))
+        .route("/pieceStates", get(h_torrents_piece_states))
+        .route("/pieceHashes", get(h_torrents_piece_hashes))
         .route("/add", post(h_torrents_add))
         .route("/pause", post(h_torrents_pause))
         .route("/resume", post(h_torrents_resume))
+        .route("/stop", post(h_torrents_stop))
+        .route("/start", post(h_torrents_start))
         .route("/recheck", post(h_torrents_recheck))
+        .route("/reannounce", post(h_torrents_reannounce))
         .route("/delete", post(h_torrents_delete))
+        .route("/addTrackers", post(h_torrents_add_trackers))
+        .route("/removeTrackers", post(h_torrents_remove_trackers))
+        .route("/editTracker", post(h_torrents_edit_tracker))
+        .route("/addPeers", post(h_torrents_add_peers))
+        .route("/filePrio", post(h_torrents_file_prio))
+        .route("/downloadLimit", get(h_torrents_download_limit))
+        .route("/uploadLimit", get(h_torrents_upload_limit))
+        .route("/setDownloadLimit", post(h_torrents_set_download_limit))
+        .route("/setUploadLimit", post(h_torrents_set_upload_limit))
         .route("/setCategory", post(h_torrents_set_category))
+        .route("/tags", get(h_torrents_tags))
+        .route("/createTags", post(h_torrents_create_tags))
+        .route("/deleteTags", post(h_torrents_delete_tags))
+        .route("/addTags", post(h_torrents_add_tags))
+        .route("/removeTags", post(h_torrents_remove_tags))
+        .route("/setTags", post(h_torrents_set_tags))
         .route("/categories", get(h_categories))
         .route("/createCategory", post(h_create_category))
         .route("/editCategory", post(h_edit_category))
         .route("/removeCategories", post(h_remove_categories));
 
-    // Transfer info
-    let transfer_router = Router::new().route("/info", get(h_transfer_info));
+    // Transfer info + session speed limits
+    let transfer_router = Router::new()
+        .route("/info", get(h_transfer_info))
+        .route("/downloadLimit", get(h_transfer_download_limit))
+        .route("/uploadLimit", get(h_transfer_upload_limit))
+        .route("/setDownloadLimit", post(h_transfer_set_download_limit))
+        .route("/setUploadLimit", post(h_transfer_set_upload_limit))
+        .route("/speedLimitsMode", get(h_transfer_speed_limits_mode))
+        .route(
+            "/toggleSpeedLimitsMode",
+            post(h_transfer_toggle_speed_limits_mode),
+        )
+        .route(
+            "/setSpeedLimitsMode",
+            post(h_transfer_set_speed_limits_mode),
+        )
+        .route("/pauseSession", post(h_transfer_pause_session))
+        .route("/resumeSession", post(h_transfer_resume_session));
+
+    // Sync (main polling endpoint). Must stay nested inside protected_router so
+    // it runs behind the SID-cookie auth layer.
+    let sync_router = Router::new().route("/maindata", get(h_sync_maindata));
 
     let protected_router = Router::new()
         .nest("/app", app_router)
         .nest("/torrents", torrents_router)
         .nest("/transfer", transfer_router)
+        .nest("/sync", sync_router)
         .route_layer({
             let qbit_state_for_layer = qbit_state.clone();
             axum::middleware::from_fn(
@@ -1326,8 +2294,8 @@ mod tests {
     };
 
     use super::{
-        QbitSessions, QbitState, h_app_preferences, h_app_set_preferences, h_torrents_recheck,
-        matches_category, qbit_file_name,
+        QbitSessions, QbitState, QbitTags, h_app_preferences, h_app_set_preferences,
+        h_torrents_recheck, matches_category, qbit_file_name,
     };
 
     async fn qbit_state() -> (Arc<QbitState>, Arc<Session>, tempfile::TempDir) {
@@ -1365,6 +2333,7 @@ mod tests {
             Arc::new(QbitState {
                 api_state,
                 sessions: QbitSessions::new(),
+                tags: QbitTags::default(),
             }),
             session,
             output,
@@ -1426,7 +2395,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn recheck_endpoint_accepts_qbittorrent_hash_form() {
+    async fn recheck_endpoint_accepts_qbit_hash_form() {
         let (state, session, output) = qbit_state().await;
         std::fs::write(output.path().join("payload.bin"), vec![0x71; 32 * 1024]).unwrap();
         let torrent = create_torrent(
@@ -1471,8 +2440,64 @@ mod tests {
         assert!(matches!(handle.stats().state, TorrentStatsState::Paused));
     }
 
+    #[tokio::test]
+    async fn per_torrent_rate_limits_round_trip_on_handle() {
+        use std::num::NonZeroU32;
+
+        let (_state, session, output) = qbit_state().await;
+        std::fs::write(output.path().join("payload.bin"), vec![0x71; 32 * 1024]).unwrap();
+        let torrent = create_torrent(
+            output.path(),
+            CreateTorrentOptions {
+                piece_length: Some(16_384),
+                ..Default::default()
+            },
+            &BlockingSpawner::new(1),
+        )
+        .await
+        .unwrap()
+        .as_bytes()
+        .unwrap()
+        .to_vec();
+        let handle = session
+            .add_torrent(
+                AddTorrent::from_bytes(torrent),
+                Some(AddTorrentOptions {
+                    paused: true,
+                    overwrite: true,
+                    output_folder: Some(output.path().to_string_lossy().into_owned()),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .unwrap()
+            .into_handle()
+            .unwrap();
+        handle.wait_until_initialized().await.unwrap();
+
+        // Defaults to unlimited.
+        assert_eq!(handle.rate_limits().download_bps, None);
+        assert_eq!(handle.rate_limits().upload_bps, None);
+
+        // Each direction is set independently and persists on the override
+        // (this torrent is paused, so there is no live limiter to update).
+        handle.set_download_limit(NonZeroU32::new(4096));
+        handle.set_upload_limit(NonZeroU32::new(8192));
+        assert_eq!(handle.rate_limits().download_bps, NonZeroU32::new(4096));
+        assert_eq!(handle.rate_limits().upload_bps, NonZeroU32::new(8192));
+
+        // Setting one leaves the other untouched.
+        handle.set_download_limit(NonZeroU32::new(1024));
+        assert_eq!(handle.rate_limits().download_bps, NonZeroU32::new(1024));
+        assert_eq!(handle.rate_limits().upload_bps, NonZeroU32::new(8192));
+
+        // None clears the limit.
+        handle.set_download_limit(None);
+        assert_eq!(handle.rate_limits().download_bps, None);
+    }
+
     #[test]
-    fn category_filter_supports_qbittorrent_special_values() {
+    fn category_filter_supports_qbit_special_values() {
         assert!(matches_category("all", "Linux ISOs"));
         assert!(matches_category("all", ""));
         assert!(matches_category("uncategorized", ""));
@@ -1542,5 +2567,102 @@ mod tests {
         let now: u64 = 1_700_000_000;
         let result = i64::try_from(now).unwrap_or(i64::MAX);
         assert_eq!(result, 1_700_000_000i64);
+    }
+
+    #[test]
+    fn parse_tags_trims_splits_and_drops_empties() {
+        assert_eq!(
+            super::parse_tags("tv, , radarr ,,sonarr"),
+            vec!["tv".to_string(), "radarr".to_string(), "sonarr".to_string()]
+        );
+        assert!(super::parse_tags("").is_empty());
+        assert!(super::parse_tags("  , ,").is_empty());
+    }
+
+    #[test]
+    fn tag_store_add_remove_delete_and_set() {
+        let tags = QbitTags::default();
+        let a = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string();
+        let b = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string();
+
+        // createTags adds to the global set without touching any torrent.
+        tags.create(&["tv".to_string(), "hd".to_string()]);
+        assert_eq!(tags.all_tags(), vec!["hd".to_string(), "tv".to_string()]);
+        assert_eq!(tags.tags_for(&a), "");
+
+        // addTags associates tags with torrents (and registers new ones).
+        tags.add_to(&[a.clone(), b.clone()], &["tv".to_string(), "new".to_string()]);
+        assert!(tags.has_tag(&a, "tv"));
+        assert!(tags.has_tag(&b, "new"));
+        assert!(tags.all_tags().contains(&"new".to_string()));
+
+        // removeTags with a specific tag only drops it from the given torrent.
+        tags.remove_from(&[a.clone()], &["tv".to_string()]);
+        assert!(!tags.has_tag(&a, "tv"));
+        assert!(tags.has_tag(&a, "new"));
+        assert!(tags.has_tag(&b, "tv"));
+
+        // setTags replaces the whole tag set of a torrent.
+        tags.set(&[b.clone()], &["only".to_string()]);
+        assert_eq!(tags.tags_for(&b), "only");
+
+        // deleteTags removes a tag globally and from every torrent.
+        tags.delete(&["new".to_string()]);
+        assert!(!tags.has_tag(&a, "new"));
+        assert!(!tags.all_tags().contains(&"new".to_string()));
+
+        // removeTags with an empty list clears all tags on the torrent.
+        tags.add_to(&[a.clone()], &["x".to_string(), "y".to_string()]);
+        tags.remove_from(&[a.clone()], &[]);
+        assert_eq!(tags.tags_for(&a), "");
+    }
+
+    #[test]
+    fn offset_limit_pagination_matches_qbittorrent_semantics() {
+        use super::apply_offset_limit;
+        let v = || vec![0, 1, 2, 3, 4];
+        // Normal window.
+        assert_eq!(apply_offset_limit(v(), 1, Some(2)), vec![1, 2]);
+        // Offset past the end -> empty (not the whole list).
+        assert_eq!(apply_offset_limit(v(), 5, None), Vec::<i32>::new());
+        assert_eq!(apply_offset_limit(v(), 99, Some(3)), Vec::<i32>::new());
+        // Offset exactly at the end -> empty.
+        assert_eq!(apply_offset_limit(v(), 5, None), Vec::<i32>::new());
+        // limit == 0 means no limit.
+        assert_eq!(apply_offset_limit(v(), 0, Some(0)), vec![0, 1, 2, 3, 4]);
+        // No offset, no limit.
+        assert_eq!(apply_offset_limit(v(), 0, None), vec![0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn tracker_status_maps_to_qbit_codes() {
+        use super::qbit_tracker_status;
+        use tracker_comms::TrackerAnnounceState::*;
+        assert_eq!(qbit_tracker_status(Disabled), 0);
+        assert_eq!(qbit_tracker_status(NotContacted), 1);
+        assert_eq!(qbit_tracker_status(Working), 2);
+        assert_eq!(qbit_tracker_status(Updating), 3);
+        assert_eq!(qbit_tracker_status(Error), 4);
+    }
+
+    #[test]
+    fn rate_limit_conversions_round_trip_and_treat_zero_as_unlimited() {
+        use std::num::NonZeroU32;
+        assert_eq!(super::limit_to_bps(0), None);
+        assert_eq!(super::bps_to_u64(None), 0);
+        assert_eq!(super::limit_to_bps(1024), NonZeroU32::new(1024));
+        assert_eq!(super::bps_to_u64(NonZeroU32::new(1024)), 1024);
+        // Values beyond u32 saturate rather than overflow.
+        assert_eq!(super::limit_to_bps(u64::MAX), NonZeroU32::new(u32::MAX));
+    }
+
+    #[test]
+    fn per_torrent_limit_treats_non_positive_as_unlimited() {
+        use std::num::NonZeroU32;
+        assert_eq!(super::parse_torrent_limit(0), None);
+        assert_eq!(super::parse_torrent_limit(-1), None);
+        assert_eq!(super::parse_torrent_limit(-999), None);
+        assert_eq!(super::parse_torrent_limit(2048), NonZeroU32::new(2048));
+        assert_eq!(super::parse_torrent_limit(i64::MAX), NonZeroU32::new(u32::MAX));
     }
 }

@@ -1,0 +1,749 @@
+{
+  "upstream": {
+    "webapi_version": "2.16.2",
+    "source_commit": "fe4506e8c6af67cd49720b8254d7b97fe5504a69",
+    "extracted_on": "2026-08-30"
+  },
+  "endpoints": [
+    {
+      "endpoint": "app/buildInfo",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Placeholder values for qt/libtorrent/boost/openssl."
+    },
+    {
+      "endpoint": "app/cookies",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/defaultSavePath",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "app/deleteAPIKey",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/getDirectoryContent",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/getFreeSpaceAtPath",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "app/networkInterfaceAddressList",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "app/networkInterfaceList",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "app/preferences",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Small subset of preference fields."
+    },
+    {
+      "endpoint": "app/processInfo",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/rotateAPIKey",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/sendTestEmail",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/setCookies",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent-internal app feature (2026-08-30 descoping decision)."
+    },
+    {
+      "endpoint": "app/setPreferences",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Only announce_port is settable; other fields rejected."
+    },
+    {
+      "endpoint": "app/shutdown",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "app/version",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Returns a hardcoded version string, not a real qBittorrent version."
+    },
+    {
+      "endpoint": "app/webapiVersion",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "auth/login",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "auth/logout",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "clientdata/load",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: WebUI client-state KV store; not needed for targeted clients."
+    },
+    {
+      "endpoint": "clientdata/store",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: WebUI client-state KV store; not needed for targeted clients."
+    },
+    {
+      "endpoint": "log/main",
+      "method": "GET",
+      "status": "missing",
+      "notes": "No persistent log ring buffer; native API streams logs instead."
+    },
+    {
+      "endpoint": "log/peers",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "rss/addFeed",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/addFolder",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/cloneRule",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/items",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/markAsRead",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/matchingArticles",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/moveItem",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/refreshItem",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/removeItem",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/removeRule",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/renameRule",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/rules",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/setFeedRefreshInterval",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/setFeedURL",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "rss/setRule",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent RSS model (folders, multi-field rules) not bridged; native /rss API + Indexarr are the RSS story."
+    },
+    {
+      "endpoint": "search/delete",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/downloadTorrent",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/enablePlugin",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/installPlugin",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/plugins",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/results",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/start",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/status",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/stop",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/uninstallPlugin",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "search/updatePlugins",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: qBittorrent Python search-plugin system; Indexarr covers discovery natively."
+    },
+    {
+      "endpoint": "sync/maindata",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Always returns a full_update snapshot (no per-client rid deltas); free_space_on_disk and dht_nodes stubbed."
+    },
+    {
+      "endpoint": "sync/torrentPeers",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrentcreator/addTask",
+      "method": "POST",
+      "status": "missing",
+      "notes": "Backend support exists (native /torrents/create API)."
+    },
+    {
+      "endpoint": "torrentcreator/deleteTask",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrentcreator/status",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrentcreator/torrentFile",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/SSLParameters",
+      "method": "GET",
+      "status": "out_of_scope",
+      "notes": "Out of scope: per-torrent SSL certificates not planned."
+    },
+    {
+      "endpoint": "torrents/add",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Supports urls/torrents/savepath/category/paused; other form fields ignored."
+    },
+    {
+      "endpoint": "torrents/addPeers",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Adds peers to live torrents; silently skips torrents that are not yet live."
+    },
+    {
+      "endpoint": "torrents/addTags",
+      "method": "POST",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/addTrackers",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/addWebSeeds",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/bottomPrio",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/categories",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/count",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/createCategory",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/createTags",
+      "method": "POST",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/decreasePrio",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/delete",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/deleteTags",
+      "method": "POST",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/downloadFile",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/downloadLimit",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Per-torrent limit persisted on the torrent and enforced while live (resets are avoided across pause/unpause)."
+    },
+    {
+      "endpoint": "torrents/editCategory",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/editTracker",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Replaces origUrl with newUrl (remove + add); validates newUrl before removing so a bad newUrl is non-destructive."
+    },
+    {
+      "endpoint": "torrents/editWebSeed",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/export",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Returns raw .torrent bytes; 409 while a magnet is still resolving."
+    },
+    {
+      "endpoint": "torrents/fetchMetadata",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/filePrio",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Maps priority 0 to file exclusion and any non-zero priority to inclusion (no per-file priority tiers)."
+    },
+    {
+      "endpoint": "torrents/files",
+      "method": "GET",
+      "status": "partial",
+      "notes": "piece_range is stubbed as [0, 0]."
+    },
+    {
+      "endpoint": "torrents/increasePrio",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/info",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Core fields real; several fields stubbed (tags, limits, magnet_uri, priority)."
+    },
+    {
+      "endpoint": "torrents/parseMetadata",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/pause",
+      "method": "POST",
+      "status": "full",
+      "upstream": false,
+      "notes": "Legacy pre-2.11 name kept for old clients; upstream replaced it with torrents/stop."
+    },
+    {
+      "endpoint": "torrents/pieceAvailability",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/pieceHashes",
+      "method": "GET",
+      "status": "partial",
+      "notes": "v1 piece hashes from metadata; empty array while a magnet is still resolving or for v2-only torrents."
+    },
+    {
+      "endpoint": "torrents/pieceStates",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Emits 0 (not downloaded) / 2 (downloaded) from the have bitfield; the in-flight state 1 is not distinguished."
+    },
+    {
+      "endpoint": "torrents/properties",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Some fields stubbed (creation_date, comment, wasted, reannounce)."
+    },
+    {
+      "endpoint": "torrents/reannounce",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Signals a fresh tracker announce / peer re-discovery on live torrents; a no-op for paused or finished-idle torrents."
+    },
+    {
+      "endpoint": "torrents/recheck",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/removeCategories",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "torrents/removeTags",
+      "method": "POST",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/removeTrackers",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Removes URLs from the tracker set (persisted); an in-flight announce loop for a removed tracker stops at the next re-discovery."
+    },
+    {
+      "endpoint": "torrents/removeWebSeeds",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/rename",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/renameFile",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/renameFolder",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/resume",
+      "method": "POST",
+      "status": "full",
+      "upstream": false,
+      "notes": "Legacy pre-2.11 name kept for old clients; upstream replaced it with torrents/start."
+    },
+    {
+      "endpoint": "torrents/saveMetadata",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setAutoManagement",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setCategory",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Does not return 409 for unknown categories like qBittorrent does."
+    },
+    {
+      "endpoint": "torrents/setComment",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setDownloadLimit",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Per-torrent limit persisted on the torrent and enforced while live (resets are avoided across pause/unpause)."
+    },
+    {
+      "endpoint": "torrents/setDownloadPath",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setForceStart",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setLocation",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setSSLParameters",
+      "method": "POST",
+      "status": "out_of_scope",
+      "notes": "Out of scope: per-torrent SSL certificates not planned."
+    },
+    {
+      "endpoint": "torrents/setSavePath",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setShareLimits",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setSuperSeeding",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/setTags",
+      "method": "POST",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/setUploadLimit",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Per-torrent limit persisted on the torrent and enforced while live (resets are avoided across pause/unpause)."
+    },
+    {
+      "endpoint": "torrents/start",
+      "method": "POST",
+      "status": "full",
+      "notes": "WebAPI 2.11+ name for torrents/resume; shares the resume handler."
+    },
+    {
+      "endpoint": "torrents/stop",
+      "method": "POST",
+      "status": "full",
+      "notes": "WebAPI 2.11+ name for torrents/pause; shares the pause handler."
+    },
+    {
+      "endpoint": "torrents/tags",
+      "method": "GET",
+      "status": "partial",
+      "notes": "In-memory tag store (not persisted across restarts); rtbit has no native tags."
+    },
+    {
+      "endpoint": "torrents/toggleFirstLastPiecePrio",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/toggleSequentialDownload",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/topPrio",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "torrents/trackers",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Real per-tracker announce state; tier always 0 and num_downloaded always -1 (not tracked)."
+    },
+    {
+      "endpoint": "torrents/uploadLimit",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Per-torrent limit persisted on the torrent and enforced while live (resets are avoided across pause/unpause)."
+    },
+    {
+      "endpoint": "torrents/webseeds",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "transfer/banPeers",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "transfer/downloadLimit",
+      "method": "GET",
+      "status": "full"
+    },
+    {
+      "endpoint": "transfer/getSpeedLimits",
+      "method": "GET",
+      "status": "missing"
+    },
+    {
+      "endpoint": "transfer/info",
+      "method": "GET",
+      "status": "partial",
+      "notes": "Real session rate limits; dht_nodes stubbed and connection_status always connected."
+    },
+    {
+      "endpoint": "transfer/pauseSession",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Pauses every torrent (no global session pause)."
+    },
+    {
+      "endpoint": "transfer/resumeSession",
+      "method": "POST",
+      "status": "partial",
+      "notes": "Resumes every torrent (no global session pause)."
+    },
+    {
+      "endpoint": "transfer/setDownloadLimit",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "transfer/setSpeedLimits",
+      "method": "POST",
+      "status": "missing"
+    },
+    {
+      "endpoint": "transfer/setSpeedLimitsMode",
+      "method": "POST",
+      "status": "full",
+      "notes": "Sets the alt-speed mode (native /speed/alt)."
+    },
+    {
+      "endpoint": "transfer/setUploadLimit",
+      "method": "POST",
+      "status": "full"
+    },
+    {
+      "endpoint": "transfer/speedLimitsMode",
+      "method": "GET",
+      "status": "full",
+      "notes": "Reflects the alt-speed toggle (native /speed/alt)."
+    },
+    {
+      "endpoint": "transfer/toggleSpeedLimitsMode",
+      "method": "POST",
+      "status": "full",
+      "notes": "Toggles the alt-speed mode (native /speed/alt)."
+    },
+    {
+      "endpoint": "transfer/uploadLimit",
+      "method": "GET",
+      "status": "full"
+    }
+  ]
+}

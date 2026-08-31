@@ -954,7 +954,6 @@ impl Session {
                     allow_overwrite: opts.overwrite,
                     output_folder,
                     output_folder_root,
-                    ratelimits: opts.ratelimits,
                     initial_peers: opts.initial_peers.clone().unwrap_or_default(),
                     peer_limit: opts.peer_limit.or(self.peer_limit),
                     #[cfg(feature = "disable-upload")]
@@ -965,6 +964,7 @@ impl Session {
                 magnet_name: name,
                 web_seed_urls,
                 category: RwLock::new(opts.category.clone()),
+                ratelimit_override: RwLock::new(opts.ratelimits),
                 tracker_status,
                 added_on: opts.added_on.unwrap_or_else(|| {
                     std::time::SystemTime::now()
@@ -1210,6 +1210,38 @@ impl Session {
             handle.add_peer_stream(peer_rx)?;
         }
         Ok(())
+    }
+
+    /// Remove tracker URLs from a torrent's configured set. Returns the number
+    /// of trackers actually removed. Any in-flight announce loop for a removed
+    /// tracker continues until the next re-discovery; this only changes the set
+    /// used for future announces (and persists the change).
+    pub async fn remove_trackers(
+        self: &Arc<Self>,
+        handle: &ManagedTorrentHandle,
+        trackers: &[String],
+    ) -> anyhow::Result<usize> {
+        // Match on parsed URL where possible so callers can pass either the
+        // exact stored string or an equivalent spelling; fall back to string.
+        let removed = {
+            let mut configured = handle.shared().trackers.write();
+            let mut removed = 0;
+            for tracker in trackers {
+                let matched = url::Url::parse(tracker)
+                    .ok()
+                    .map(|url| configured.remove(&url))
+                    .unwrap_or(false);
+                if matched {
+                    removed += 1;
+                }
+            }
+            removed
+        };
+
+        if removed > 0 {
+            self.try_update_persistence_metadata(handle).await;
+        }
+        Ok(removed)
     }
 
     pub async fn update_only_files(

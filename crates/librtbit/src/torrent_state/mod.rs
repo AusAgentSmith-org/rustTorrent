@@ -115,7 +115,6 @@ pub(crate) struct ManagedTorrentOptions {
     pub allow_overwrite: bool,
     pub output_folder: PathBuf,
     pub output_folder_root: Option<PathBuf>,
-    pub ratelimits: LimitsConfig,
     pub initial_peers: Vec<SocketAddr>,
     pub peer_limit: Option<usize>,
     #[cfg(feature = "disable-upload")]
@@ -200,6 +199,11 @@ pub struct ManagedTorrentShared {
     /// Category assigned to this torrent.
     pub category: RwLock<Option<String>>,
 
+    /// Per-torrent speed limits, mutable at runtime. Seeded from the add-time
+    /// options; read when (re)constructing the live limiter so a limit set
+    /// while paused (or before a pause/unpause) survives. `None` bps = no limit.
+    pub(crate) ratelimit_override: RwLock<LimitsConfig>,
+
     /// Live per-tracker announce status (seeds/peers per tracker etc).
     pub tracker_status: Arc<tracker_comms::TrackerStatusRegistry>,
 
@@ -279,6 +283,43 @@ impl ManagedTorrent {
 
     pub fn only_files(&self) -> Option<Vec<usize>> {
         self.locked.read().only_files.clone()
+    }
+
+    /// Current per-torrent speed limits (the runtime override). `None` bps means
+    /// unlimited in that direction.
+    pub fn rate_limits(&self) -> LimitsConfig {
+        *self.shared.ratelimit_override.read()
+    }
+
+    /// Set the per-torrent download limit (`None` = unlimited). Persisted on the
+    /// runtime override and applied to the live limiter immediately if live.
+    pub fn set_download_limit(&self, bps: Option<std::num::NonZeroU32>) {
+        self.shared.ratelimit_override.write().download_bps = bps;
+        if let Some(live) = self.live() {
+            live.ratelimits.set_download_bps(bps);
+        }
+    }
+
+    /// Set the per-torrent upload limit (`None` = unlimited). See
+    /// [`Self::set_download_limit`].
+    pub fn set_upload_limit(&self, bps: Option<std::num::NonZeroU32>) {
+        self.shared.ratelimit_override.write().upload_bps = bps;
+        if let Some(live) = self.live() {
+            live.ratelimits.set_upload_bps(bps);
+        }
+    }
+
+    /// Force an immediate re-announce to trackers (and a fresh peer discovery
+    /// from DHT/trackers). Returns false if the torrent is not live, in which
+    /// case there is no announce loop to signal.
+    pub fn reannounce(&self) -> bool {
+        match self.live() {
+            Some(live) => {
+                live.rediscovery_notify.notify_one();
+                true
+            }
+            None => false,
+        }
     }
 
     pub fn with_state<R>(&self, f: impl FnOnce(&ManagedTorrentState) -> R) -> R {

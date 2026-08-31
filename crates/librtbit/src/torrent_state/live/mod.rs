@@ -270,7 +270,9 @@ impl TorrentStateLive {
             tokio::sync::mpsc::UnboundedSender<WriterRequest>,
             ChunkInfo,
         )>();
-        let ratelimits = Limits::new(paused.shared.options.ratelimits);
+        // Read the runtime override (seeded from options.ratelimits) so a
+        // per-torrent limit set while paused takes effect on this live state.
+        let ratelimits = Limits::new(*paused.shared.ratelimit_override.read());
 
         let state = Arc::new(TorrentStateLive {
             shared: paused.shared.clone(),
