@@ -9,7 +9,7 @@ name: Runner policy
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   runner-policy:

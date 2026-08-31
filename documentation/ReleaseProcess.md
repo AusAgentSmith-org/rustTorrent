@@ -11,6 +11,28 @@ The current beta release is `0.1.0-beta.3`.
 - Release tag: `v0.1.0-beta.3`
 - Docker tag: `ghcr.io/thedancingdeveloper-org/rusttorrent:v0.1.0-beta.3`
 
+## Branching model
+
+Promotion flow: **`dev` → `main` → cut release (`v*` tag) → prod.**
+
+- **`dev`** is the integration branch. Feature/dependency PRs target `dev`.
+  Pushing `dev` runs CI and publishes the preview image
+  `ghcr.io/thedancingdeveloper-org/rusttorrent:dev` (+ immutable `sha-<commit>`).
+- **`main`** is the promoted, pre-release branch. Promote `dev → main` by PR.
+  Pushing `main` runs CI and publishes `…:staging` (+ `sha-<commit>`) and
+  deploys the website. `main` is protected and its version stays at the current
+  beta until a release is cut.
+- **`v*` tag** (cut from `main`) is the release lever → prod: builds the
+  binaries + `.deb`, publishes them to the download host and the GitHub release,
+  and publishes the multi-arch prod image tagged `…:<tag>`, `…:latest`, `…:beta`
+  (+ `sha-<commit>`).
+
+Nothing auto-deploys the running prod service from these workflows; publication
+is to GHCR + the download host, and the deployment platform (Komodo) pulls the
+tag it is configured for. A deployment that previously tracked `…:dev` for
+"latest main" must repoint to `…:staging`, since `…:dev` now follows the `dev`
+branch.
+
 ## CI Flow
 
 Pushes and tags run the workflows under `.github/workflows/`.
@@ -18,8 +40,8 @@ Pushes and tags run the workflows under `.github/workflows/`.
 The Rust workflow builds the workspace from GitHub. Local development keeps
 `[patch]` sections pointed at sibling crates under `../libs/`.
 
-Main branch pushes publish the public GHCR image as `dev` and an immutable
-`sha-<commit>` tag.
+`dev` branch pushes publish the GHCR image as `dev`; `main` branch pushes
+publish it as `staging`; both add an immutable `sha-<commit>` tag.
 
 Release tags build:
 
