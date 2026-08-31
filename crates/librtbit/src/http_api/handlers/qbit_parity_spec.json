@@ -613,7 +613,8 @@
     {
       "endpoint": "torrents/setShareLimits",
       "method": "POST",
-      "status": "missing"
+      "status": "partial",
+      "notes": "Stores ratio/seeding-time limits and reports them in torrents/info; not auto-enforced (clients apply their own removal). Not persisted across restarts."
     },
     {
       "endpoint": "torrents/setSuperSeeding",

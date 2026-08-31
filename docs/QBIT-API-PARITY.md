@@ -8,7 +8,7 @@ and enforced, and where we currently stand.
 
 ## Current standing (upstream WebAPI 2.16.2, 2026-08-30)
 
-**63 of 93 in-scope endpoints routed (~68%)** — 26 full, 37 partial — plus 2
+**64 of 93 in-scope endpoints routed (~69%)** — 26 full, 38 partial — plus 2
 legacy aliases (`torrents/pause`, `torrents/resume`) that upstream removed in
 WebAPI 2.11. 37 of the 130 upstream endpoints were descoped on 2026-08-30
 (marked `out_of_scope`, enforced as unrouted): `search/*` (Indexarr covers
@@ -26,7 +26,7 @@ in-scope endpoints.
 |---|---|---|
 | `auth` | 2 / 2 | login/logout with SID cookies |
 | `app` | 6 / 10 | version info, `defaultSavePath`, minimal preferences (7 descoped) |
-| `torrents` | 40 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), setLocation/setSavePath, pieces, file prio, per-torrent limits, export, webseeds |
+| `torrents` | 41 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), setLocation/setSavePath, pieces, file prio, per-torrent + share limits, export, webseeds |
 | `transfer` | 10 / 13 | info (real session limits) + session rate limits + alt-speed mode + session pause/resume |
 | `sync` | 1 / 2 | `maindata` (full-update snapshots; no per-client rid deltas) |
 | `torrentcreator` | 4 / 4 | task API over the native `create_torrent` (in-memory tasks) |
@@ -105,9 +105,11 @@ Remaining work, roughly by cost:
 
 1. **Needs a new engine method** (the `will be built` items): queueing
    (`topPrio` / `bottomPrio` / `increasePrio` / `decreasePrio`),
-   `torrents/setShareLimits`, `setSuperSeeding`, `toggleSequentialDownload`,
-   `setForceStart`, `setAutoManagement`, `setDownloadPath` (incomplete-file
-   path). Done since: per-torrent rate limits (`ratelimit_override` on
+   `setSuperSeeding`, `toggleSequentialDownload`, `setForceStart`,
+   `setAutoManagement`, `setDownloadPath` (incomplete-file path). And the
+   **auto-enforcement** half of share limits (`setShareLimits` currently stores
+   and reports the limits but does not auto-pause/remove at the threshold — a
+   periodic session task is the v2). Done since: per-torrent rate limits (`ratelimit_override` on
    `ManagedTorrentShared`, enforced by the live limiter), `reannounce` (signals
    the live re-discovery notify), **file/folder/display rename**, and
    **`setLocation`/`setSavePath`** (whole-torrent relocation — see below).

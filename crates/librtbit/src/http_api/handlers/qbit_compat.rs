@@ -240,6 +240,39 @@ impl QbitTorrentCreator {
     }
 }
 
+/// In-memory per-torrent share limits (max ratio + max seeding minutes). rtbit
+/// does not auto-enforce these; they are stored so the values round-trip and are
+/// surfaced in `torrents/info` for clients that enforce removal themselves
+/// (e.g. Sonarr/Radarr). Not persisted across restarts.
+#[derive(Default)]
+struct QbitShareLimits {
+    limits: RwLock<HashMap<String, (f64, i64)>>,
+}
+
+impl QbitShareLimits {
+    fn set(&self, hashes: &[String], ratio_limit: f64, seeding_time_limit: i64) {
+        let mut limits = self.limits.write();
+        for hash in hashes {
+            limits.insert(hash.clone(), (ratio_limit, seeding_time_limit));
+        }
+    }
+
+    fn get(&self, hash: &str) -> Option<(f64, i64)> {
+        self.limits.read().get(hash).copied()
+    }
+}
+
+/// Overlay stored share limits onto a torrent info view (reporting only).
+fn apply_share_limits(info: &mut QbitTorrentInfo, store: &QbitShareLimits) {
+    if let Some((ratio_limit, seeding_time_limit)) = store.get(&info.hash) {
+        info.ratio_limit = ratio_limit;
+        info.max_ratio = ratio_limit;
+        let minutes = i32::try_from(seeding_time_limit).unwrap_or(-1);
+        info.seeding_time_limit = minutes;
+        info.max_seeding_time = minutes;
+    }
+}
+
 fn parse_tags(raw: &str) -> Vec<String> {
     raw.split(',')
         .map(str::trim)
@@ -261,6 +294,7 @@ pub(crate) struct QbitState {
     sessions: QbitSessions,
     tags: QbitTags,
     creator: QbitTorrentCreator,
+    share_limits: QbitShareLimits,
 }
 
 // ---------------------------------------------------------------------------
@@ -290,7 +324,7 @@ struct QbitTorrentInfo {
     infohash_v2: String,
     last_activity: u64,
     magnet_uri: String,
-    max_ratio: i32,
+    max_ratio: f64,
     max_seeding_time: i32,
     name: String,
     num_complete: u32,
@@ -300,7 +334,7 @@ struct QbitTorrentInfo {
     priority: u32,
     progress: f64,
     ratio: f64,
-    ratio_limit: i32,
+    ratio_limit: f64,
     save_path: String,
     seeding_time: u64,
     seeding_time_limit: i32,
@@ -900,7 +934,7 @@ fn build_torrent_info(
             added_on
         },
         magnet_uri: String::new(),
-        max_ratio: -1,
+        max_ratio: -1.0,
         max_seeding_time: -1,
         name,
         num_complete: num_seeds,
@@ -910,7 +944,7 @@ fn build_torrent_info(
         priority: 0,
         progress,
         ratio,
-        ratio_limit: -1,
+        ratio_limit: -1.0,
         save_path: output_folder,
         seeding_time,
         seeding_time_limit: -1,
@@ -969,6 +1003,7 @@ async fn h_torrents_info(
             let stats = handle.stats();
             let mut info = build_torrent_info(handle, &stats, now);
             info.tags = state.tags.tags_for(&info.hash);
+            apply_share_limits(&mut info, &state.share_limits);
 
             // Filter by hash if specified.
             if let Some(ref hashes) = hash_filter
@@ -2115,6 +2150,42 @@ async fn h_torrents_set_upload_limit(
     "Ok."
 }
 
+fn default_ratio_limit() -> f64 {
+    -1.0
+}
+
+fn default_seeding_time_limit() -> i64 {
+    -1
+}
+
+#[derive(Deserialize)]
+struct SetShareLimitsForm {
+    #[serde(default)]
+    hashes: String,
+    #[serde(default = "default_ratio_limit", alias = "ratioLimit")]
+    ratio_limit: f64,
+    #[serde(default = "default_seeding_time_limit", alias = "seedingTimeLimit")]
+    seeding_time_limit: i64,
+}
+
+/// `torrents/setShareLimits` — store per-torrent ratio / seeding-time limits so
+/// they round-trip and appear in `torrents/info`. rtbit does not auto-enforce
+/// them (clients like Sonarr/Radarr apply their own removal policy).
+async fn h_torrents_set_share_limits(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> &'static str {
+    let form: SetShareLimitsForm = match serde_urlencoded::from_bytes(&body) {
+        Ok(form) => form,
+        Err(_) => return "Ok.",
+    };
+    let hashes = resolve_info_hashes(&state.api_state.api, &form.hashes);
+    state
+        .share_limits
+        .set(&hashes, form.ratio_limit, form.seeding_time_limit);
+    "Ok."
+}
+
 // ---------------------------------------------------------------------------
 // Tag endpoints (backed by the in-memory QbitTags store)
 // ---------------------------------------------------------------------------
@@ -2346,6 +2417,7 @@ async fn h_sync_maindata(
             let stats = handle.stats();
             let mut info = build_torrent_info(handle, &stats, now);
             info.tags = state.tags.tags_for(&info.hash);
+            apply_share_limits(&mut info, &state.share_limits);
             (info.hash.clone(), info)
         })
         .collect()
@@ -2591,6 +2663,7 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         sessions: QbitSessions::new(),
         tags: QbitTags::default(),
         creator: QbitTorrentCreator::default(),
+        share_limits: QbitShareLimits::default(),
     });
 
     // Auth endpoints (no auth required to reach these)
@@ -2638,6 +2711,7 @@ pub(crate) fn make_qbit_router(api_state: ApiState) -> Router {
         .route("/uploadLimit", get(h_torrents_upload_limit))
         .route("/setDownloadLimit", post(h_torrents_set_download_limit))
         .route("/setUploadLimit", post(h_torrents_set_upload_limit))
+        .route("/setShareLimits", post(h_torrents_set_share_limits))
         .route("/setLocation", post(h_torrents_set_location))
         .route("/setSavePath", post(h_torrents_set_location))
         .route("/setCategory", post(h_torrents_set_category))
@@ -2744,7 +2818,7 @@ mod tests {
     };
 
     use super::{
-        CreatorStatus, QbitSessions, QbitState, QbitTags, QbitTorrentCreator,
+        CreatorStatus, QbitSessions, QbitShareLimits, QbitState, QbitTags, QbitTorrentCreator,
         h_app_preferences, h_app_set_preferences, h_torrentcreator_add_task, h_torrents_recheck,
         matches_category, qbit_file_name,
     };
@@ -2787,6 +2861,7 @@ mod tests {
                 sessions: QbitSessions::new(),
                 tags: QbitTags::default(),
         creator: QbitTorrentCreator::default(),
+        share_limits: QbitShareLimits::default(),
             }),
             session,
             output,
@@ -3203,6 +3278,19 @@ mod tests {
         assert_eq!(apply_offset_limit(v(), 0, Some(0)), vec![0, 1, 2, 3, 4]);
         // No offset, no limit.
         assert_eq!(apply_offset_limit(v(), 0, None), vec![0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn share_limits_store_set_and_get() {
+        let store = super::QbitShareLimits::default();
+        assert_eq!(store.get("h1"), None);
+        store.set(&["h1".to_string(), "h2".to_string()], 2.0, 120);
+        assert_eq!(store.get("h1"), Some((2.0, 120)));
+        assert_eq!(store.get("h2"), Some((2.0, 120)));
+        // Re-setting overwrites, and -1 encodes "no limit".
+        store.set(&["h1".to_string()], -1.0, -1);
+        assert_eq!(store.get("h1"), Some((-1.0, -1)));
+        assert_eq!(store.get("h2"), Some((2.0, 120)));
     }
 
     #[test]
