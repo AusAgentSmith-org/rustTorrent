@@ -165,6 +165,14 @@ impl OpenedFile {
             g.path = new_full.to_owned();
             return Ok(());
         }
+        // Never clobber: fs::rename atomically replaces an existing destination,
+        // so refuse when something is already there (unless it is this very
+        // file). This is the guard that keeps a rename from destroying an
+        // unrelated file that happens to sit at the target path, and makes a
+        // colliding batch fail safely instead of overwriting.
+        if new_full != g.path && new_full.try_exists().unwrap_or(true) {
+            anyhow::bail!("cannot rename to {new_full:?}: destination already exists");
+        }
         std::fs::rename(&g.path, new_full)
             .with_context(|| format!("error renaming {:?} -> {new_full:?}", g.path))?;
         let f = OpenOptions::new()

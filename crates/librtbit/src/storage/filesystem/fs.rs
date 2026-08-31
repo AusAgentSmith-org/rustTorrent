@@ -425,6 +425,26 @@ mod tests {
     }
 
     #[test]
+    fn test_storage_rename_file_refuses_to_clobber_existing_destination() {
+        let (storage, dir) = make_test_storage(1);
+        storage.ensure_file_length(0, 8).unwrap();
+        storage.pwrite_all(0, 0, b"torrent!").unwrap();
+
+        // An unrelated file already sits at the target path.
+        let victim = dir.path().join("unrelated.dat");
+        std::fs::write(&victim, b"precious").unwrap();
+
+        // The rename must be refused, and neither file may be touched.
+        assert!(storage.rename_file(0, Path::new("unrelated.dat")).is_err());
+        assert_eq!(std::fs::read(&victim).unwrap(), b"precious");
+        assert!(dir.path().join("file_0.dat").exists());
+        // The torrent file's handle is still usable at its original location.
+        let mut buf = vec![0u8; 8];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"torrent!");
+    }
+
+    #[test]
     fn test_storage_rename_file_rejected_when_read_only() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("payload.dat");

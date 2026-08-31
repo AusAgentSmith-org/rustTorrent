@@ -349,8 +349,10 @@ impl ManagedTorrent {
     /// handles valid, and updates the torrent metadata. All-or-nothing: a
     /// mid-move failure rolls back the renames already applied.
     ///
-    /// `renames` is a list of `(file_id, new_relative_path)`. Not persisted
-    /// across restarts.
+    /// `renames` is a list of `(file_id, new_relative_path)`. A rename whose
+    /// destination already exists on disk is refused (never clobbers), which
+    /// also makes a colliding/cyclic batch fail safely. Not persisted across
+    /// restarts.
     pub fn rename_files(&self, renames: &[(usize, std::path::PathBuf)]) -> anyhow::Result<()> {
         let mut g = self.locked.write();
         let paused = match &mut g.state {
