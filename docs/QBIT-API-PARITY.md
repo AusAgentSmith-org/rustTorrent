@@ -8,7 +8,7 @@ and enforced, and where we currently stand.
 
 ## Current standing (upstream WebAPI 2.16.2, 2026-08-30)
 
-**59 of 93 in-scope endpoints routed (~63%)** — 23 full, 36 partial — plus 2
+**63 of 93 in-scope endpoints routed (~68%)** — 26 full, 37 partial — plus 2
 legacy aliases (`torrents/pause`, `torrents/resume`) that upstream removed in
 WebAPI 2.11. 37 of the 130 upstream endpoints were descoped on 2026-08-30
 (marked `out_of_scope`, enforced as unrouted): `search/*` (Indexarr covers
@@ -29,7 +29,7 @@ in-scope endpoints.
 | `torrents` | 40 / 60 | lifecycle, categories, tags, trackers (add/remove/edit), reannounce, rename (name/file/folder), setLocation/setSavePath, pieces, file prio, per-torrent limits, export, webseeds |
 | `transfer` | 10 / 13 | info (real session limits) + session rate limits + alt-speed mode + session pause/resume |
 | `sync` | 1 / 2 | `maindata` (full-update snapshots; no per-client rid deltas) |
-| `torrentcreator` | 0 / 4 | native `/torrents/create` exists, unbridged |
+| `torrentcreator` | 4 / 4 | task API over the native `create_torrent` (in-memory tasks) |
 | `log` | 0 / 2 | no persistent log ring buffer |
 | `rss`, `search`, `clientdata` | — | descoped entirely |
 
@@ -155,10 +155,10 @@ implemented:
 - **v1 limitations**: renames are not persisted across restarts (re-derived
   from the immutable `.torrent` info on load), and require the torrent stopped.
   Live rename is the documented v2, gated behind the differential-test harness.
-2. **Thin bridges still open**: `torrentcreator/*` (native `/torrents/create`,
-   needs a task-lifecycle store), `torrents/setComment`, web-seed mutation
+2. **Thin bridges still open**: `torrents/setComment`, web-seed mutation
    (`addWebSeeds` / `editWebSeed` / `removeWebSeeds` — `web_seed_urls` is
-   currently immutable).
+   currently immutable). (`torrentcreator/*` is now done — an in-memory task
+   store over the native `create_torrent`; tasks are not persisted.)
 3. **Probably out of scope**: `search/*` (plugin system),
    `app/sendTestEmail`, `app/processInfo`, `clientdata/*`,
    `torrents/SSLParameters`, `log/*`.

@@ -304,23 +304,26 @@
     {
       "endpoint": "torrentcreator/addTask",
       "method": "POST",
-      "status": "missing",
-      "notes": "Backend support exists (native /torrents/create API)."
+      "status": "partial",
+      "notes": "Bridges native create_torrent (sourcePath/trackers/pieceSize/name); other options ignored. Requires server create to be enabled. Tasks not persisted across restarts."
     },
     {
       "endpoint": "torrentcreator/deleteTask",
       "method": "POST",
-      "status": "missing"
+      "status": "full",
+      "notes": "Removes a task from the in-memory store."
     },
     {
       "endpoint": "torrentcreator/status",
       "method": "GET",
-      "status": "missing"
+      "status": "full",
+      "notes": "In-memory task status (Running/Finished/Failed)."
     },
     {
       "endpoint": "torrentcreator/torrentFile",
       "method": "GET",
-      "status": "missing"
+      "status": "full",
+      "notes": "Returns the generated .torrent bytes for a finished task."
     },
     {
       "endpoint": "torrents/SSLParameters",
