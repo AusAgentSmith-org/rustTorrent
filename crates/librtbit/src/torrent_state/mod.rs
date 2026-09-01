@@ -115,7 +115,6 @@ pub(crate) struct ManagedTorrentOptions {
     pub allow_overwrite: bool,
     pub output_folder: PathBuf,
     pub output_folder_root: Option<PathBuf>,
-    pub ratelimits: LimitsConfig,
     pub initial_peers: Vec<SocketAddr>,
     pub peer_limit: Option<usize>,
     #[cfg(feature = "disable-upload")]
@@ -172,6 +171,71 @@ impl TorrentMetadata {
     pub fn lengths(&self) -> &Lengths {
         self.info.lengths()
     }
+
+    /// Return a copy of this metadata with the `relative_filename` of the given
+    /// files replaced. `renames` is a list of `(file_id, new_relative_path)`.
+    /// Only paths change — offsets, lengths and piece ranges are preserved, so
+    /// the chunk tracker stays valid.
+    pub(crate) fn with_renamed_files(&self, renames: &[(usize, std::path::PathBuf)]) -> Self {
+        let mut file_infos = self.file_infos.clone();
+        for (file_id, new_path) in renames {
+            if let Some(fi) = file_infos.get_mut(*file_id) {
+                fi.relative_filename = new_path.clone();
+            }
+        }
+        Self {
+            info: self.info.clone(),
+            torrent_bytes: self.torrent_bytes.clone(),
+            info_bytes: self.info_bytes.clone(),
+            file_infos,
+        }
+    }
+}
+
+/// Validate a batch of file renames against the current file set: each id must
+/// exist, each new path must be relative and free of `.`/`..`/root components,
+/// and the resulting set of paths must stay unique (no collisions).
+fn validate_renames(
+    file_infos: &crate::type_aliases::FileInfos,
+    renames: &[(usize, std::path::PathBuf)],
+) -> anyhow::Result<()> {
+    use std::path::Component;
+
+    if renames.is_empty() {
+        bail!("no files to rename");
+    }
+
+    let mut paths: Vec<std::path::PathBuf> = file_infos
+        .iter()
+        .map(|f| f.relative_filename.clone())
+        .collect();
+
+    for (file_id, new_relative) in renames {
+        if *file_id >= file_infos.len() {
+            bail!("no such file id {file_id}");
+        }
+        if new_relative.as_os_str().is_empty() {
+            bail!("new path for file {file_id} is empty");
+        }
+        if new_relative.is_absolute() {
+            bail!("new path {new_relative:?} must be relative to the torrent root");
+        }
+        for component in new_relative.components() {
+            if !matches!(component, Component::Normal(_)) {
+                bail!("new path {new_relative:?} must not contain '.', '..', or a root");
+            }
+        }
+        paths[*file_id] = new_relative.clone();
+    }
+
+    let mut seen = std::collections::HashSet::with_capacity(paths.len());
+    for path in &paths {
+        if !seen.insert(path) {
+            bail!("rename would create two files at the same path: {path:?}");
+        }
+    }
+
+    Ok(())
 }
 
 /// Common information about torrent shared among all possible states.
@@ -199,6 +263,22 @@ pub struct ManagedTorrentShared {
 
     /// Category assigned to this torrent.
     pub category: RwLock<Option<String>>,
+
+    /// Per-torrent speed limits, mutable at runtime. Seeded from the add-time
+    /// options; read when (re)constructing the live limiter so a limit set
+    /// while paused (or before a pause/unpause) survives. `None` bps = no limit.
+    pub(crate) ratelimit_override: RwLock<LimitsConfig>,
+
+    /// Display-name override set via the compat rename endpoint; takes
+    /// precedence over the metadata/magnet name. `None` = use the torrent's
+    /// own name. Not persisted across restarts.
+    pub(crate) name_override: RwLock<Option<String>>,
+
+    /// Current storage root, mutable at runtime so a whole-torrent relocation
+    /// (`set_location`) can re-anchor storage. Seeded from
+    /// `options.output_folder`; read by the storage factory's `create`. Not
+    /// persisted across restarts.
+    pub(crate) output_folder_override: RwLock<std::path::PathBuf>,
 
     /// Live per-tracker announce status (seeds/peers per tracker etc).
     pub tracker_status: Arc<tracker_comms::TrackerStatusRegistry>,
@@ -250,6 +330,9 @@ impl ManagedTorrent {
     }
 
     pub fn name(&self) -> Option<String> {
+        if let Some(name) = self.shared.name_override.read().clone() {
+            return Some(name);
+        }
         if let Some(m) = &*self.metadata.load() {
             return m
                 .info
@@ -258,6 +341,105 @@ impl ManagedTorrent {
                 .or_else(|| self.shared.magnet_name.clone());
         }
         self.shared.magnet_name.clone()
+    }
+
+    /// The torrent's current storage root. Reflects a `set_location`
+    /// relocation, unlike the add-time `options.output_folder`.
+    pub fn output_folder(&self) -> std::path::PathBuf {
+        self.shared.output_folder_override.read().clone()
+    }
+
+    /// Set (or clear, with `None`) the display-name override for this torrent.
+    /// An empty/whitespace name clears the override.
+    pub fn set_display_name(&self, name: Option<String>) {
+        let name = name.filter(|n| !n.trim().is_empty());
+        *self.shared.name_override.write() = name;
+    }
+
+    /// Rename one or more files within the torrent. Only supported while the
+    /// torrent is stopped (paused); moves the files on disk, keeps the storage
+    /// handles valid, and updates the torrent metadata. All-or-nothing: a
+    /// mid-move failure rolls back the renames already applied.
+    ///
+    /// `renames` is a list of `(file_id, new_relative_path)`. A rename whose
+    /// destination already exists on disk is refused (never clobbers), which
+    /// also makes a colliding/cyclic batch fail safely. Not persisted across
+    /// restarts.
+    pub fn rename_files(&self, renames: &[(usize, std::path::PathBuf)]) -> anyhow::Result<()> {
+        let mut g = self.locked.write();
+        let paused = match &mut g.state {
+            ManagedTorrentState::Paused(paused) => paused,
+            ManagedTorrentState::Live(_) => {
+                bail!("torrent must be stopped before renaming files")
+            }
+            _ => bail!("torrent is not in a renamable state (must be stopped)"),
+        };
+
+        validate_renames(&paused.metadata.file_infos, renames)?;
+
+        // Capture old relative paths (for rollback and directory pruning)
+        // before we start mutating the storage.
+        let old_paths: Vec<(usize, std::path::PathBuf)> = renames
+            .iter()
+            .map(|(file_id, _)| {
+                (
+                    *file_id,
+                    paused.metadata.file_infos[*file_id]
+                        .relative_filename
+                        .clone(),
+                )
+            })
+            .collect();
+
+        for (applied, (file_id, new_relative)) in renames.iter().enumerate() {
+            if let Err(error) = paused.files.rename_file(*file_id, new_relative) {
+                // Roll back the renames already applied, in reverse order.
+                for (rollback_id, old_relative) in old_paths[..applied].iter().rev() {
+                    let _ = paused.files.rename_file(*rollback_id, old_relative);
+                }
+                return Err(error).context("failed to rename file on disk; rolled back");
+            }
+        }
+
+        // Update the metadata (source of truth for deletion, display and any
+        // future storage re-init).
+        let new_metadata = Arc::new(paused.metadata.with_renamed_files(renames));
+        paused.metadata = new_metadata.clone();
+        self.metadata.store(Some(new_metadata));
+
+        // Best-effort prune of source directories left empty by the move.
+        for (_, old_relative) in &old_paths {
+            if let Some(parent) = old_relative.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                let _ = paused.files.remove_directory_if_empty(parent);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Relocate the torrent's files to a new root directory. Only supported
+    /// while the torrent is stopped (paused): moves every file to the same
+    /// relative path under `new_root`, keeps the storage handles valid, and
+    /// re-anchors the storage root. Same-filesystem only — a cross-device move
+    /// is refused (and rolled back) rather than copied. Not persisted across
+    /// restarts.
+    pub fn set_location(&self, new_root: std::path::PathBuf) -> anyhow::Result<()> {
+        let mut g = self.locked.write();
+        let paused = match &mut g.state {
+            ManagedTorrentState::Paused(paused) => paused,
+            ManagedTorrentState::Live(_) => {
+                bail!("torrent must be stopped before changing its location")
+            }
+            _ => bail!("torrent is not in a relocatable state (must be stopped)"),
+        };
+
+        std::fs::create_dir_all(&new_root)
+            .with_context(|| format!("error creating destination directory {new_root:?}"))?;
+        paused.files.move_root(&new_root)?;
+        *self.shared.output_folder_override.write() = new_root;
+        Ok(())
     }
 
     pub fn shared(&self) -> &ManagedTorrentShared {
@@ -279,6 +461,43 @@ impl ManagedTorrent {
 
     pub fn only_files(&self) -> Option<Vec<usize>> {
         self.locked.read().only_files.clone()
+    }
+
+    /// Current per-torrent speed limits (the runtime override). `None` bps means
+    /// unlimited in that direction.
+    pub fn rate_limits(&self) -> LimitsConfig {
+        *self.shared.ratelimit_override.read()
+    }
+
+    /// Set the per-torrent download limit (`None` = unlimited). Persisted on the
+    /// runtime override and applied to the live limiter immediately if live.
+    pub fn set_download_limit(&self, bps: Option<std::num::NonZeroU32>) {
+        self.shared.ratelimit_override.write().download_bps = bps;
+        if let Some(live) = self.live() {
+            live.ratelimits.set_download_bps(bps);
+        }
+    }
+
+    /// Set the per-torrent upload limit (`None` = unlimited). See
+    /// [`Self::set_download_limit`].
+    pub fn set_upload_limit(&self, bps: Option<std::num::NonZeroU32>) {
+        self.shared.ratelimit_override.write().upload_bps = bps;
+        if let Some(live) = self.live() {
+            live.ratelimits.set_upload_bps(bps);
+        }
+    }
+
+    /// Force an immediate re-announce to trackers (and a fresh peer discovery
+    /// from DHT/trackers). Returns false if the torrent is not live, in which
+    /// case there is no announce loop to signal.
+    pub fn reannounce(&self) -> bool {
+        match self.live() {
+            Some(live) => {
+                live.rediscovery_notify.notify_one();
+                true
+            }
+            None => false,
+        }
     }
 
     pub fn with_state<R>(&self, f: impl FnOnce(&ManagedTorrentState) -> R) -> R {

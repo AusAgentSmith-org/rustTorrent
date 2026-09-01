@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::Context;
+use parking_lot::RwLock;
 use tracing::warn;
 
 use crate::{
@@ -38,7 +39,7 @@ impl StorageFactory for FilesystemStorageFactory {
         _metadata: &TorrentMetadata,
     ) -> anyhow::Result<FilesystemStorage> {
         Ok(FilesystemStorage {
-            output_folder: shared.options.output_folder.clone(),
+            output_folder: RwLock::new(shared.output_folder_override.read().clone()),
             opened_files: Default::default(),
             read_only: self.read_only,
         })
@@ -50,7 +51,9 @@ impl StorageFactory for FilesystemStorageFactory {
 }
 
 pub struct FilesystemStorage {
-    pub(super) output_folder: PathBuf,
+    /// Storage root. Mutable so a whole-torrent relocation (`move_root`) can
+    /// re-anchor the storage; only cold paths (init/remove/rename/move) read it.
+    pub(super) output_folder: RwLock<PathBuf>,
     pub(super) opened_files: Vec<OpenedFile>,
     read_only: bool,
 }
@@ -70,7 +73,7 @@ impl FilesystemStorage {
                 .iter()
                 .map(|f| f.take_clone())
                 .collect::<anyhow::Result<Vec<_>>>()?,
-            output_folder: self.output_folder.clone(),
+            output_folder: RwLock::new(self.output_folder.read().clone()),
             read_only: self.read_only,
         })
     }
@@ -110,7 +113,43 @@ impl TorrentStorage for FilesystemStorage {
 
     fn remove_file(&self, _file_id: usize, filename: &Path) -> anyhow::Result<()> {
         self.require_writable()?;
-        Ok(std::fs::remove_file(self.output_folder.join(filename))?)
+        Ok(std::fs::remove_file(
+            self.output_folder.read().join(filename),
+        )?)
+    }
+
+    fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
+        self.require_writable()?;
+        let of = self.opened_files.get(file_id).context("no such file")?;
+        let new_full = self.output_folder.read().join(new_relative);
+        of.rename_to(&new_full)
+    }
+
+    fn move_root(&self, new_root: &Path) -> anyhow::Result<()> {
+        self.require_writable()?;
+        let old_root = self.output_folder.read().clone();
+        if old_root == new_root {
+            return Ok(());
+        }
+        // Move each file to the same relative location under the new root. On
+        // any failure (including a cross-filesystem EXDEV rename), roll the
+        // already-moved files back before returning.
+        for (moved, of) in self.opened_files.iter().enumerate() {
+            if let Err(error) = of.rebase(&old_root, new_root) {
+                for prev in self.opened_files[..moved].iter().rev() {
+                    if let Err(rollback_error) = prev.rebase(new_root, &old_root) {
+                        warn!(
+                            %rollback_error,
+                            "error rolling back a file after a failed relocation; \
+                             storage may be left inconsistent for this torrent"
+                        );
+                    }
+                }
+                return Err(error).context("error relocating torrent; rolled back");
+            }
+        }
+        *self.output_folder.write() = new_root.to_owned();
+        Ok(())
     }
 
     fn ensure_file_length(&self, file_id: usize, len: u64) -> anyhow::Result<()> {
@@ -136,14 +175,14 @@ impl TorrentStorage for FilesystemStorage {
                 .iter()
                 .map(|f| f.take_clone())
                 .collect::<anyhow::Result<Vec<_>>>()?,
-            output_folder: self.output_folder.clone(),
+            output_folder: RwLock::new(self.output_folder.read().clone()),
             read_only: self.read_only,
         }))
     }
 
     fn remove_directory_if_empty(&self, path: &Path) -> anyhow::Result<()> {
         self.require_writable()?;
-        let path = self.output_folder.join(path);
+        let path = self.output_folder.read().join(path);
         if !path.is_dir() {
             anyhow::bail!("cannot remove dir: {path:?} is not a directory")
         }
@@ -165,8 +204,9 @@ impl TorrentStorage for FilesystemStorage {
         metadata: &TorrentMetadata,
     ) -> anyhow::Result<()> {
         let mut files = Vec::<OpenedFile>::new();
+        let output_folder = self.output_folder.read().clone();
         for file_details in metadata.file_infos.iter() {
-            let mut full_path = self.output_folder.clone();
+            let mut full_path = output_folder.clone();
             let relative_path = &file_details.relative_filename;
             full_path.push(relative_path);
 
@@ -242,7 +282,7 @@ mod tests {
             opened_files.push(OpenedFile::new(path, f));
         }
         let storage = FilesystemStorage {
-            output_folder: dir.path().to_owned(),
+            output_folder: RwLock::new(dir.path().to_owned()),
             opened_files,
             read_only: false,
         };
@@ -389,6 +429,122 @@ mod tests {
     }
 
     #[test]
+    fn test_storage_rename_file_moves_and_keeps_handle_usable() {
+        let (storage, dir) = make_test_storage(1);
+        storage.ensure_file_length(0, 64).unwrap();
+        storage.pwrite_all(0, 0, b"payload").unwrap();
+
+        // Rename into a fresh subdirectory (must be created).
+        storage
+            .rename_file(0, Path::new("sub/renamed.dat"))
+            .unwrap();
+
+        // Old path is gone, new path exists with the data.
+        assert!(!dir.path().join("file_0.dat").exists());
+        let new_path = dir.path().join("sub/renamed.dat");
+        assert!(new_path.exists());
+        assert_eq!(&std::fs::read(&new_path).unwrap()[..7], b"payload");
+
+        // The cached handle still reads/writes at the new location.
+        let mut buf = vec![0u8; 7];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"payload");
+        storage.pwrite_all(0, 0, b"updated").unwrap();
+        assert_eq!(&std::fs::read(&new_path).unwrap()[..7], b"updated");
+    }
+
+    #[test]
+    fn test_storage_rename_file_refuses_to_clobber_existing_destination() {
+        let (storage, dir) = make_test_storage(1);
+        storage.ensure_file_length(0, 8).unwrap();
+        storage.pwrite_all(0, 0, b"torrent!").unwrap();
+
+        // An unrelated file already sits at the target path.
+        let victim = dir.path().join("unrelated.dat");
+        std::fs::write(&victim, b"precious").unwrap();
+
+        // The rename must be refused, and neither file may be touched.
+        assert!(storage.rename_file(0, Path::new("unrelated.dat")).is_err());
+        assert_eq!(std::fs::read(&victim).unwrap(), b"precious");
+        assert!(dir.path().join("file_0.dat").exists());
+        // The torrent file's handle is still usable at its original location.
+        let mut buf = vec![0u8; 8];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"torrent!");
+    }
+
+    #[test]
+    fn test_storage_move_root_relocates_all_files_and_keeps_handles() {
+        let (storage, dir) = make_test_storage(2);
+        storage.ensure_file_length(0, 16).unwrap();
+        storage.ensure_file_length(1, 16).unwrap();
+        storage.pwrite_all(0, 0, b"aaaa").unwrap();
+        storage.pwrite_all(1, 0, b"bbbb").unwrap();
+
+        let new_root = dir.path().join("moved");
+        storage.move_root(&new_root).unwrap();
+
+        assert!(!dir.path().join("file_0.dat").exists());
+        assert!(new_root.join("file_0.dat").exists());
+        assert!(new_root.join("file_1.dat").exists());
+
+        // Handles still read at the new location, and a write lands there.
+        let mut buf = vec![0u8; 4];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"aaaa");
+        storage.pwrite_all(1, 0, b"cccc").unwrap();
+        assert_eq!(
+            &std::fs::read(new_root.join("file_1.dat")).unwrap()[..4],
+            b"cccc"
+        );
+
+        // The anchor moved: path-based ops now resolve under the new root.
+        storage.remove_file(0, Path::new("file_0.dat")).unwrap();
+        assert!(!new_root.join("file_0.dat").exists());
+    }
+
+    #[test]
+    fn test_storage_move_root_rolls_back_on_partial_failure() {
+        let (storage, dir) = make_test_storage(2);
+        storage.ensure_file_length(0, 8).unwrap();
+        storage.ensure_file_length(1, 8).unwrap();
+        storage.pwrite_all(0, 0, b"keepme").unwrap();
+
+        let new_root = dir.path().join("dest");
+        std::fs::create_dir_all(&new_root).unwrap();
+        // Block the second file's destination so the relocation fails midway.
+        std::fs::write(new_root.join("file_1.dat"), b"blocker").unwrap();
+
+        assert!(storage.move_root(&new_root).is_err());
+
+        // File 0 was rolled back to the original root and is still usable.
+        assert!(dir.path().join("file_0.dat").exists());
+        assert!(!new_root.join("file_0.dat").exists());
+        let mut buf = vec![0u8; 6];
+        storage.pread_exact(0, 0, &mut buf).unwrap();
+        assert_eq!(&buf, b"keepme");
+        // The unrelated blocker file is untouched.
+        assert_eq!(
+            std::fs::read(new_root.join("file_1.dat")).unwrap(),
+            b"blocker"
+        );
+    }
+
+    #[test]
+    fn test_storage_rename_file_rejected_when_read_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("payload.dat");
+        std::fs::write(&path, b"x").unwrap();
+        let file = OpenOptions::new().read(true).open(&path).unwrap();
+        let storage = FilesystemStorage {
+            output_folder: RwLock::new(dir.path().to_owned()),
+            opened_files: vec![OpenedFile::new(path, file)],
+            read_only: true,
+        };
+        assert!(storage.rename_file(0, Path::new("other.dat")).is_err());
+    }
+
+    #[test]
     fn test_storage_take() {
         let (storage, _dir) = make_test_storage(1);
 
@@ -454,7 +610,7 @@ mod tests {
         std::fs::write(&path, original).unwrap();
         let file = OpenOptions::new().read(true).open(&path).unwrap();
         let storage = FilesystemStorage {
-            output_folder: dir.path().to_owned(),
+            output_folder: RwLock::new(dir.path().to_owned()),
             opened_files: vec![OpenedFile::new(path.clone(), file)],
             read_only: true,
         };

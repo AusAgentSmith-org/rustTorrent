@@ -78,6 +78,18 @@ impl TorrentStorage for MmapFilesystemStorage {
         self.fs.remove_file(file_id, filename)
     }
 
+    fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
+        // The mmap stays valid across a rename on Unix (it is bound to the
+        // inode, not the name); the fs layer moves the file and reopens its fd.
+        self.fs.rename_file(file_id, new_relative)
+    }
+
+    fn move_root(&self, new_root: &Path) -> anyhow::Result<()> {
+        // Same inode-based reasoning as rename_file: the mappings survive the
+        // move on Unix; the fs layer relocates the files and reopens the fds.
+        self.fs.move_root(new_root)
+    }
+
     fn remove_directory_if_empty(&self, path: &Path) -> anyhow::Result<()> {
         self.fs.remove_directory_if_empty(path)
     }

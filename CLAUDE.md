@@ -17,6 +17,18 @@ BitTorrent client written in Rust with a web UI.
   (Service Access table): `GIT_AUTH_TOKEN`/`FORGEJO_TOKEN`/`GITHUB_PAT` live in the `cicd` project,
   env `prod`. Never print token values.
 
+## Coding conventions
+
+- **Do not reference the upstream qBittorrent project by name in code.** The
+  WebUI API v2 compatibility layer must not spell the brand name in Rust
+  identifiers, struct/field names, log messages, or response strings. Use the
+  neutral `qbit` abbreviation (already the established prefix, e.g. `qbit_compat`,
+  `QbitTorrentInfo`) or phrasings like "WebUI API v2 compat". Protocol-level
+  constants the layer must emit for wire compatibility (state strings such as
+  `stoppedDL`, the advertised `webapiVersion`, endpoint paths) are not brand
+  references and are fine. Doc comments may mention the upstream project where
+  needed to explain a compatibility decision, but keep it out of code proper.
+
 ## Codesight
 
 Auto-generated codebase context map: `.codesight/CODESIGHT.md` — routes, schema, components, dependencies, and hot files. Regenerate with `npx codesight`.

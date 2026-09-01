@@ -142,6 +142,7 @@ windows = { version = "0.62", features = ["Win32", "Win32_System", "Win32_System
 anyhow = "1"
 
 [dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std"] }
 tokio-test = "0.4"
 tempfile = "3"

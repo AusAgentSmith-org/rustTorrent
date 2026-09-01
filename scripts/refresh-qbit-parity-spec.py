@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Refresh crates/librtbit/src/http_api/handlers/qbit_parity_spec.json from a
+qBittorrent checkout.
+
+Usage:
+    git clone --depth 1 https://github.com/qbittorrent/qBittorrent.git /tmp/qbittorrent
+    scripts/refresh-qbit-parity-spec.py /tmp/qbittorrent
+
+Re-extracts the upstream WebUI API endpoint inventory (every `<name>Action()`
+in src/webui/api/*controller.h, with methods from the POST allowlist in
+webapplication.h) and merges it into the existing spec:
+
+- existing entries keep their status/notes;
+- new upstream endpoints are added with status "missing";
+- entries that disappeared upstream are kept but flagged upstream: false if we
+  route them (legacy aliases), or dropped with a warning if we don't.
+
+The parity tests in crates/librtbit/src/http_api/handlers/qbit_parity.rs
+enforce that the spec matches the actual compat router.
+"""
+
+import datetime
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+SPEC_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "crates/librtbit/src/http_api/handlers/qbit_parity_spec.json"
+)
+
+# controller header -> URL scope (must match registerAPIController names in
+# qBittorrent's webapplication.cpp).
+SCOPES = {
+    "appcontroller.h": "app",
+    "authcontroller.h": "auth",
+    "clientdatacontroller.h": "clientdata",
+    "logcontroller.h": "log",
+    "rsscontroller.h": "rss",
+    "searchcontroller.h": "search",
+    "synccontroller.h": "sync",
+    "torrentcreatorcontroller.h": "torrentcreator",
+    "torrentscontroller.h": "torrents",
+    "transfercontroller.h": "transfer",
+}
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print(__doc__, file=sys.stderr)
+        return 2
+    qbit = Path(sys.argv[1])
+    api_dir = qbit / "src/webui/api"
+    if not api_dir.is_dir():
+        print(f"error: {api_dir} not found; not a qBittorrent checkout?", file=sys.stderr)
+        return 2
+
+    upstream_endpoints = []
+    for header, scope in SCOPES.items():
+        text = (api_dir / header).read_text()
+        for m in re.finditer(r"void (\w+)Action\(\)", text):
+            upstream_endpoints.append(f"{scope}/{m.group(1)}")
+
+    webapp_h = (qbit / "src/webui/webapplication.h").read_text()
+    post_set = {
+        f"{m.group(1)}/{m.group(2)}"
+        for m in re.finditer(
+            r'\{\{u"(\w+)"_s, u"(\w+)"_s\}, Http::HEADER_REQUEST_METHOD_POST\}',
+            webapp_h,
+        )
+    }
+    version_match = re.search(r"API_VERSION \{(\d+), (\d+), (\d+)\}", webapp_h)
+    if not version_match:
+        print("error: could not find API_VERSION in webapplication.h", file=sys.stderr)
+        return 1
+    version = ".".join(version_match.groups())
+    commit = subprocess.check_output(
+        ["git", "-C", str(qbit), "rev-parse", "HEAD"], text=True
+    ).strip()
+
+    spec = json.loads(SPEC_PATH.read_text())
+    existing = {row["endpoint"]: row for row in spec["endpoints"]}
+    upstream_set = set(upstream_endpoints)
+
+    rows = []
+    added, flagged_legacy, dropped = [], [], []
+    for ep in sorted(upstream_set):
+        row = existing.get(ep)
+        if row is None:
+            row = {"endpoint": ep, "status": "missing"}
+            added.append(ep)
+        row["method"] = "POST" if ep in post_set else "GET"
+        row.pop("upstream", None)
+        rows.append(row)
+
+    for ep, row in existing.items():
+        if ep in upstream_set:
+            continue
+        if row["status"] in ("full", "partial"):
+            if row.get("upstream", True):
+                flagged_legacy.append(ep)
+            row["upstream"] = False
+            rows.append(row)
+        else:
+            dropped.append(ep)
+
+    rows.sort(key=lambda r: r["endpoint"])
+    spec["upstream"] = {
+        "webapi_version": version,
+        "source_commit": commit,
+        "extracted_on": datetime.date.today().isoformat(),
+    }
+    spec["endpoints"] = rows
+    SPEC_PATH.write_text(json.dumps(spec, indent=2) + "\n")
+
+    counts = {}
+    for row in rows:
+        counts[row["status"]] = counts.get(row["status"], 0) + 1
+    print(f"upstream WebAPI v{version} @ {commit[:12]}: {len(rows)} entries {counts}")
+    for label, items in (("added (new upstream)", added),
+                         ("newly flagged legacy (removed upstream, still routed)", flagged_legacy),
+                         ("dropped (removed upstream, never implemented)", dropped)):
+        if items:
+            print(f"  {label}:")
+            for ep in items:
+                print(f"    {ep}")
+    print("run `cargo test -p swarmforge qbit_parity` to validate against the router")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

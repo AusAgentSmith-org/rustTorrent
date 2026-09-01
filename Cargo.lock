@@ -6040,6 +6040,7 @@ dependencies = [
  "tokio-stream",
  "tokio-test",
  "tokio-util",
+ "tower",
  "tower-http",
  "tracing",
  "tracing-subscriber",
