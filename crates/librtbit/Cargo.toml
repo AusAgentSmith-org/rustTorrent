@@ -107,7 +107,7 @@ url = { version = "2", default-features = false, features = ["serde"] }
 hex = "0.4"
 backon = "1.6"
 dashmap = "6"
-base64 = "0.22"
+base64 = "0.23"
 serde_with = "3"
 tokio-util = { version = "0.7", features = ["io"] }
 metrics-exporter-prometheus = { version = "0.18", default-features = false, optional = true }
