@@ -5015,7 +5015,7 @@ dependencies = [
 
 [[package]]
 name = "rtbit"
-version = "0.1.0-beta.3"
+version = "0.1.0-rc.1"
 dependencies = [
  "anyhow",
  "bytes",
