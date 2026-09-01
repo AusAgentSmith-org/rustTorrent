@@ -113,7 +113,9 @@ impl TorrentStorage for FilesystemStorage {
 
     fn remove_file(&self, _file_id: usize, filename: &Path) -> anyhow::Result<()> {
         self.require_writable()?;
-        Ok(std::fs::remove_file(self.output_folder.read().join(filename))?)
+        Ok(std::fs::remove_file(
+            self.output_folder.read().join(filename),
+        )?)
     }
 
     fn rename_file(&self, file_id: usize, new_relative: &Path) -> anyhow::Result<()> {
@@ -491,7 +493,10 @@ mod tests {
         storage.pread_exact(0, 0, &mut buf).unwrap();
         assert_eq!(&buf, b"aaaa");
         storage.pwrite_all(1, 0, b"cccc").unwrap();
-        assert_eq!(&std::fs::read(new_root.join("file_1.dat")).unwrap()[..4], b"cccc");
+        assert_eq!(
+            &std::fs::read(new_root.join("file_1.dat")).unwrap()[..4],
+            b"cccc"
+        );
 
         // The anchor moved: path-based ops now resolve under the new root.
         storage.remove_file(0, Path::new("file_0.dat")).unwrap();
@@ -519,7 +524,10 @@ mod tests {
         storage.pread_exact(0, 0, &mut buf).unwrap();
         assert_eq!(&buf, b"keepme");
         // The unrelated blocker file is untouched.
-        assert_eq!(std::fs::read(new_root.join("file_1.dat")).unwrap(), b"blocker");
+        assert_eq!(
+            std::fs::read(new_root.join("file_1.dat")).unwrap(),
+            b"blocker"
+        );
     }
 
     #[test]

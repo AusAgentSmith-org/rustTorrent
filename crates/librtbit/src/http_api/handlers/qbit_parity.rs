@@ -160,8 +160,7 @@ async fn spec_matches_router() {
         let status = router.clone().oneshot(request).await.unwrap().status();
         // Anything but 404/405 (including 400 for probes lacking required
         // params) proves the route exists with the expected method.
-        let routed =
-            status != StatusCode::NOT_FOUND && status != StatusCode::METHOD_NOT_ALLOWED;
+        let routed = status != StatusCode::NOT_FOUND && status != StatusCode::METHOD_NOT_ALLOWED;
         if routed != ep.status.is_routed() {
             violations.push(format!(
                 "{} {} is marked {:?} in qbit_parity_spec.json but the router returned {status}",

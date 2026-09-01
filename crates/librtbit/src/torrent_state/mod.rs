@@ -384,7 +384,9 @@ impl ManagedTorrent {
             .map(|(file_id, _)| {
                 (
                     *file_id,
-                    paused.metadata.file_infos[*file_id].relative_filename.clone(),
+                    paused.metadata.file_infos[*file_id]
+                        .relative_filename
+                        .clone(),
                 )
             })
             .collect();

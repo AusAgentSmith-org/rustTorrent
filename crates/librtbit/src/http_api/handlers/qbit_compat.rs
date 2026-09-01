@@ -7,8 +7,8 @@
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
     num::{NonZeroU16, NonZeroU32},
-    path::PathBuf,
     path::Path,
+    path::PathBuf,
     sync::Arc,
     time::{Instant, SystemTime, UNIX_EPOCH},
 };
@@ -1388,7 +1388,9 @@ async fn h_torrents_piece_hashes(
             (0..total)
                 .map(|p| {
                     info.get_hash(p).map(|h| {
-                        h.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+                        h.iter()
+                            .map(|byte| format!("{byte:02x}"))
+                            .collect::<String>()
                     })
                 })
                 .collect::<Option<Vec<String>>>()
@@ -1426,11 +1428,7 @@ async fn h_torrents_export(
         Err(_) => return (StatusCode::NOT_FOUND, "Not found").into_response(),
     };
     match handle.with_metadata(|meta| meta.torrent_bytes.clone()) {
-        Ok(bytes) => (
-            [("content-type", "application/x-bittorrent")],
-            bytes,
-        )
-            .into_response(),
+        Ok(bytes) => ([("content-type", "application/x-bittorrent")], bytes).into_response(),
         // Metadata not resolved yet (magnet) — no file to export.
         Err(_) => (StatusCode::CONFLICT, "Metadata not available").into_response(),
     }
@@ -2014,7 +2012,10 @@ struct FilePrioForm {
     priority: u8,
 }
 
-async fn h_torrents_file_prio(State(state): State<Arc<QbitState>>, body: Bytes) -> impl IntoResponse {
+async fn h_torrents_file_prio(
+    State(state): State<Arc<QbitState>>,
+    body: Bytes,
+) -> impl IntoResponse {
     let form: FilePrioForm = serde_urlencoded::from_bytes(&body).unwrap_or_default();
     let api = &state.api_state.api;
     if form.hash.is_empty() {
@@ -2040,7 +2041,11 @@ async fn h_torrents_file_prio(State(state): State<Arc<QbitState>>, body: Bytes) 
         None => (0..num_files).collect(),
     };
     let download = form.priority != 0;
-    for id in form.id.split('|').filter_map(|s| s.trim().parse::<usize>().ok()) {
+    for id in form
+        .id
+        .split('|')
+        .filter_map(|s| s.trim().parse::<usize>().ok())
+    {
         if id >= num_files {
             return (StatusCode::CONFLICT, "Invalid file id");
         }
@@ -2609,11 +2614,7 @@ async fn h_torrentcreator_torrent_file(
 ) -> axum::response::Response {
     match state.creator.get(&query.task_id) {
         Some(task) if matches!(task.status, CreatorStatus::Finished) => match task.torrent_bytes {
-            Some(bytes) => (
-                [("content-type", "application/x-bittorrent")],
-                bytes,
-            )
-                .into_response(),
+            Some(bytes) => ([("content-type", "application/x-bittorrent")], bytes).into_response(),
             None => (StatusCode::INTERNAL_SERVER_ERROR, "no torrent bytes").into_response(),
         },
         Some(_) => (StatusCode::CONFLICT, "task has not finished").into_response(),
@@ -2860,8 +2861,8 @@ mod tests {
                 api_state,
                 sessions: QbitSessions::new(),
                 tags: QbitTags::default(),
-        creator: QbitTorrentCreator::default(),
-        share_limits: QbitShareLimits::default(),
+                creator: QbitTorrentCreator::default(),
+                share_limits: QbitShareLimits::default(),
             }),
             session,
             output,
@@ -3082,14 +3083,21 @@ mod tests {
             new_rel
         );
         assert!(!old_abs.exists(), "old path should be gone");
-        assert!(output.path().join(&new_rel).exists(), "new path should exist");
+        assert!(
+            output.path().join(&new_rel).exists(),
+            "new path should exist"
+        );
 
         // The display-name override is independent of file renames.
         assert!(handle.name().is_some());
         handle.set_display_name(Some("Custom Name".to_string()));
         assert_eq!(handle.name().as_deref(), Some("Custom Name"));
         handle.set_display_name(Some("   ".to_string()));
-        assert_ne!(handle.name().as_deref(), Some("   "), "blank name clears override");
+        assert_ne!(
+            handle.name().as_deref(),
+            Some("   "),
+            "blank name clears override"
+        );
     }
 
     #[tokio::test]
@@ -3237,7 +3245,10 @@ mod tests {
         assert_eq!(tags.tags_for(&a), "");
 
         // addTags associates tags with torrents (and registers new ones).
-        tags.add_to(&[a.clone(), b.clone()], &["tv".to_string(), "new".to_string()]);
+        tags.add_to(
+            &[a.clone(), b.clone()],
+            &["tv".to_string(), "new".to_string()],
+        );
         assert!(tags.has_tag(&a, "tv"));
         assert!(tags.has_tag(&b, "new"));
         assert!(tags.all_tags().contains(&"new".to_string()));
@@ -3302,7 +3313,11 @@ mod tests {
         assert_eq!(task.source_path, "/data/movie");
         assert_eq!(creator.all().len(), 1);
 
-        creator.finish(&id, Some(bytes::Bytes::from_static(b"torrent")), "abc".to_string());
+        creator.finish(
+            &id,
+            Some(bytes::Bytes::from_static(b"torrent")),
+            "abc".to_string(),
+        );
         let task = creator.get(&id).unwrap();
         assert!(matches!(task.status, CreatorStatus::Finished));
         assert_eq!(task.info_hash.as_deref(), Some("abc"));
@@ -3325,10 +3340,7 @@ mod tests {
         let (state, _session, output) = qbit_state().await;
         std::fs::write(output.path().join("data.bin"), vec![7u8; 4096]).unwrap();
 
-        let body = Bytes::from(format!(
-            "sourcePath={}",
-            output.path().to_string_lossy()
-        ));
+        let body = Bytes::from(format!("sourcePath={}", output.path().to_string_lossy()));
         let response = h_torrentcreator_add_task(axum::extract::State(state.clone()), body)
             .await
             .into_response();
@@ -3339,7 +3351,10 @@ mod tests {
         assert_eq!(all.len(), 1);
         let (id, _) = all.into_iter().next().unwrap();
         for _ in 0..200 {
-            if !matches!(state.creator.get(&id).unwrap().status, CreatorStatus::Running) {
+            if !matches!(
+                state.creator.get(&id).unwrap().status,
+                CreatorStatus::Running
+            ) {
                 break;
             }
             tokio::time::sleep(std::time::Duration::from_millis(20)).await;
@@ -3350,7 +3365,10 @@ mod tests {
             "creation did not finish: {:?}",
             task.error
         );
-        assert!(task.torrent_bytes.is_some(), "expected generated torrent bytes");
+        assert!(
+            task.torrent_bytes.is_some(),
+            "expected generated torrent bytes"
+        );
         assert!(task.info_hash.is_some());
     }
 
@@ -3383,6 +3401,9 @@ mod tests {
         assert_eq!(super::parse_torrent_limit(-1), None);
         assert_eq!(super::parse_torrent_limit(-999), None);
         assert_eq!(super::parse_torrent_limit(2048), NonZeroU32::new(2048));
-        assert_eq!(super::parse_torrent_limit(i64::MAX), NonZeroU32::new(u32::MAX));
+        assert_eq!(
+            super::parse_torrent_limit(i64::MAX),
+            NonZeroU32::new(u32::MAX)
+        );
     }
 }
